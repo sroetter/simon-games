@@ -54,7 +54,7 @@
             max-width: 300px;
         }
 
-        #startButton, #playAgainButton {
+        #startButton, #playAgainButton, .backButton {
             padding: 15px 40px;
             font-size: 20px;
             font-weight: bold;
@@ -64,11 +64,20 @@
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s;
+            margin: 10px;
         }
 
-        #startButton:hover, #playAgainButton:hover {
+        #startButton:hover, #playAgainButton:hover, .backButton:hover {
             background: #2a5298;
             transform: scale(1.05);
+        }
+
+        .backButton {
+            background: #6c757d;
+        }
+
+        .backButton:hover {
+            background: #5a6268;
         }
 
         #startButton:disabled {
@@ -232,6 +241,7 @@
                 <input type="text" id="nameInput" placeholder="Enter your name" maxlength="20">
             </div>
             <button id="startButton">Start Game</button>
+            <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
         </div>
 
         <!-- Game Screen -->
@@ -260,6 +270,7 @@
             <div id="finalScore"></div>
             <div id="newHighScore">🎉 New High Score! 🎉</div>
             <button id="playAgainButton">Play Again</button>
+            <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
         </div>
     </div>
 

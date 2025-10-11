@@ -94,7 +94,7 @@
             margin-bottom: 30px;
         }
 
-        #restartButton {
+        #restartButton, #nextLevelButton, .backButton {
             padding: 15px 40px;
             font-size: 20px;
             font-weight: bold;
@@ -104,11 +104,21 @@
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s;
+            margin: 10px;
         }
 
-        #restartButton:hover {
+        #restartButton:hover, #nextLevelButton:hover, .backButton:hover {
             background: #fff;
             transform: scale(1.05);
+        }
+
+        .backButton {
+            background: #6c757d;
+            color: white;
+        }
+
+        .backButton:hover {
+            background: #5a6268;
         }
 
         #winScreen {
@@ -154,18 +164,21 @@
             Use Arrow Keys to move Pac-Man<br>
             Eat all dots to win! Avoid ghosts!
         </div>
+        <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
     </div>
 
     <div id="gameOver">
         <h2>GAME OVER!</h2>
         <p>Final Score: <span id="finalScore">0</span></p>
         <button id="restartButton">Play Again</button>
+        <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
     </div>
 
     <div id="winScreen">
         <h2>YOU WIN!</h2>
         <p>Final Score: <span id="winScore">0</span></p>
         <button id="nextLevelButton">Play Again</button>
+        <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
     </div>
 
     <script>
