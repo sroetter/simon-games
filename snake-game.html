@@ -315,9 +315,9 @@
                 score += 10;
                 updateScore();
                 placeFood();
-                // Speed up slightly
-                if (score % 50 === 0 && gameSpeed > 200) {
-                    gameSpeed -= 10;
+                // Speed up with each fruit
+                if (gameSpeed > 100) {
+                    gameSpeed -= 5;
                     clearInterval(gameLoop);
                     gameLoop = setInterval(updateGame, gameSpeed);
                 }
