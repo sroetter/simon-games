@@ -124,6 +124,117 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
         }
+
+        .trex-container {
+            position: fixed;
+            bottom: 100px;
+            left: -300px;
+            font-size: 120px;
+            z-index: 1000;
+            animation: trex-walk 6s ease-in-out forwards;
+        }
+
+        @keyframes trex-walk {
+            0% {
+                left: -300px;
+                transform: rotate(0deg);
+            }
+            25% {
+                left: 20%;
+                transform: rotate(-5deg);
+            }
+            26% {
+                transform: rotate(5deg);
+            }
+            27% {
+                transform: rotate(-5deg);
+            }
+            28% {
+                transform: rotate(5deg);
+            }
+            29% {
+                transform: rotate(0deg);
+            }
+            50% {
+                left: 50%;
+                transform: translateY(0) rotate(0deg) scale(1);
+            }
+            55% {
+                transform: translateY(-20px) rotate(10deg) scale(1.1);
+            }
+            60% {
+                transform: translateY(0) rotate(-10deg) scale(1);
+            }
+            65% {
+                transform: translateY(-20px) rotate(10deg) scale(1.1);
+            }
+            70% {
+                transform: translateY(0) rotate(-10deg) scale(1);
+            }
+            75% {
+                left: 50%;
+                transform: translateY(-20px) rotate(15deg) scale(1.1);
+            }
+            100% {
+                left: 120%;
+                transform: rotate(20deg) scale(1);
+            }
+        }
+
+        .speech-bubble {
+            position: absolute;
+            top: -80px;
+            left: 50px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+            animation: bubble-appear 0.5s ease-out 1.5s both;
+        }
+
+        .speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 30px;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 15px solid white;
+        }
+
+        @keyframes bubble-appear {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .trex-smile {
+            animation: smile-flash 0.3s ease-in-out 2.5s 3;
+        }
+
+        @keyframes smile-flash {
+            0%, 100% {
+                filter: brightness(1);
+            }
+            50% {
+                filter: brightness(1.5) saturate(2);
+                transform: scale(1.1);
+            }
+        }
     </style>
 </head>
 <body>
@@ -208,6 +319,7 @@
                 gameActive = false;
                 playAgainButton.classList.add('show');
                 createConfetti();
+                createTRex();
                 playWinSound();
                 highlightWinningCells(winningCombination);
                 return;
@@ -252,6 +364,32 @@
                     }, 5000);
                 }, i * 30);
             }
+        }
+
+        function createTRex() {
+            // Create T-Rex container
+            const trexContainer = document.createElement('div');
+            trexContainer.classList.add('trex-container');
+
+            // Create T-Rex emoji/character
+            const trex = document.createElement('div');
+            trex.textContent = '🦖';
+            trex.classList.add('trex-smile');
+
+            // Create speech bubble
+            const speechBubble = document.createElement('div');
+            speechBubble.classList.add('speech-bubble');
+            speechBubble.textContent = 'You won!';
+
+            // Append elements
+            trexContainer.appendChild(speechBubble);
+            trexContainer.appendChild(trex);
+            document.body.appendChild(trexContainer);
+
+            // Remove T-Rex after animation completes
+            setTimeout(() => {
+                trexContainer.remove();
+            }, 6500);
         }
 
         function playWinSound() {
