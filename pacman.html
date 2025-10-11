@@ -185,6 +185,8 @@
         let maze = [];
         let lastMoveTime = 0;
         let moveDelay = 200; // milliseconds between moves
+        let frightenedMode = false;
+        let frightenedTimer = null;
 
         // Simple maze layout (1 = wall, 0 = path)
         const mazeLayout = [
@@ -232,6 +234,11 @@
             for (let y = 0; y < gridHeight; y++) {
                 for (let x = 0; x < gridWidth; x++) {
                     if (maze[y][x] === 0) {
+                        // Skip dots in the ghost cage area
+                        if (isInCage(x, y)) {
+                            continue;
+                        }
+
                         // Power pellets in corners
                         if ((x === 1 && y === 1) || (x === 26 && y === 1) ||
                             (x === 1 && y === 26) || (x === 26 && y === 26)) {
@@ -246,10 +253,10 @@
             // Initialize ghosts with strategies - spread them out in the cage
             // Cage is rows 12-16, columns 11-16 (looking at mazeLayout, these are the 0s in the center)
             ghosts = [
-                { x: 12, y: 13, color: '#ff0000', direction: 'right', name: 'Blinky', hasEscaped: false, strategy: 'direct', lastDirection: null },
-                { x: 15, y: 13, color: '#ffb8ff', direction: 'left', name: 'Pinky', hasEscaped: false, strategy: 'ambush', lastDirection: null },
-                { x: 12, y: 15, color: '#00ffff', direction: 'up', name: 'Inky', hasEscaped: false, strategy: 'flank', lastDirection: null },
-                { x: 15, y: 15, color: '#ffb851', direction: 'down', name: 'Clyde', hasEscaped: false, strategy: 'patrol', lastDirection: null }
+                { x: 12, y: 13, color: '#ff0000', normalColor: '#ff0000', direction: 'right', name: 'Blinky', hasEscaped: false, strategy: 'direct', lastDirection: null, frightened: false, eaten: false },
+                { x: 15, y: 13, color: '#ffb8ff', normalColor: '#ffb8ff', direction: 'left', name: 'Pinky', hasEscaped: false, strategy: 'ambush', lastDirection: null, frightened: false, eaten: false },
+                { x: 12, y: 15, color: '#00ffff', normalColor: '#00ffff', direction: 'up', name: 'Inky', hasEscaped: false, strategy: 'flank', lastDirection: null, frightened: false, eaten: false },
+                { x: 15, y: 15, color: '#ffb851', normalColor: '#ffb851', direction: 'down', name: 'Clyde', hasEscaped: false, strategy: 'patrol', lastDirection: null, frightened: false, eaten: false }
             ];
 
             updateScore();
@@ -410,12 +417,43 @@
                     score += 50;
                     updateScore();
 
+                    // Activate frightened mode
+                    activateFrightenedMode();
+
                     if (dots.length === 0 && powerPellets.length === 0) {
                         winGame();
                     }
                 }
             }
             // If we hit a wall, pacman.direction stays the same, so we'll keep trying
+        }
+
+        function activateFrightenedMode() {
+            frightenedMode = true;
+
+            // Clear any existing timer
+            if (frightenedTimer) {
+                clearTimeout(frightenedTimer);
+            }
+
+            // Make all ghosts frightened and blue
+            ghosts.forEach(ghost => {
+                if (!ghost.eaten) {
+                    ghost.frightened = true;
+                    ghost.color = '#0000aa'; // Dark blue
+                }
+            });
+
+            // Set timer to end frightened mode after 7500ms
+            frightenedTimer = setTimeout(() => {
+                frightenedMode = false;
+                ghosts.forEach(ghost => {
+                    if (!ghost.eaten) {
+                        ghost.frightened = false;
+                        ghost.color = ghost.normalColor;
+                    }
+                });
+            }, 7500);
         }
 
         function isInCage(x, y) {
@@ -517,9 +555,6 @@
                             ghost.hasEscaped = true;
                         }
 
-                        // Outside cage - 100% chase using team strategy
-                        const target = getTargetForGhost(ghost);
-
                         // Prevent backtracking - ghosts shouldn't reverse direction
                         const oppositeDirection = {
                             'up': 'down',
@@ -535,17 +570,30 @@
 
                         const movesToConsider = forwardMoves.length > 0 ? forwardMoves : validMoves;
 
-                        // Find moves that get closer to target
-                        const towardsTarget = movesToConsider.map(m => {
-                            const dist = Math.abs(m.x - target.x) + Math.abs(m.y - target.y);
-                            return { ...m, dist };
-                        }).sort((a, b) => a.dist - b.dist);
+                        if (ghost.frightened) {
+                            // Frightened mode - RUN AWAY from Pac-Man
+                            const awayFromPacman = movesToConsider.map(m => {
+                                const dist = Math.abs(m.x - pacman.x) + Math.abs(m.y - pacman.y);
+                                return { ...m, dist };
+                            }).sort((a, b) => b.dist - a.dist); // Sort descending - furthest first
 
-                        // Pick best move (or second best 10% of the time for unpredictability)
-                        if (towardsTarget.length > 1 && Math.random() < 0.1) {
-                            move = towardsTarget[1];
+                            move = awayFromPacman[0];
                         } else {
-                            move = towardsTarget[0];
+                            // Normal mode - chase using team strategy
+                            const target = getTargetForGhost(ghost);
+
+                            // Find moves that get closer to target
+                            const towardsTarget = movesToConsider.map(m => {
+                                const dist = Math.abs(m.x - target.x) + Math.abs(m.y - target.y);
+                                return { ...m, dist };
+                            }).sort((a, b) => a.dist - b.dist);
+
+                            // Pick best move (or second best 10% of the time for unpredictability)
+                            if (towardsTarget.length > 1 && Math.random() < 0.1) {
+                                move = towardsTarget[1];
+                            } else {
+                                move = towardsTarget[0];
+                            }
                         }
                     }
 
@@ -561,46 +609,100 @@
 
         function checkGhostCollision() {
             ghosts.forEach(ghost => {
-                if (ghost.x === pacman.x && ghost.y === pacman.y) {
-                    lives--;
-                    updateLives();
+                if (ghost.x === pacman.x && ghost.y === pacman.y && !ghost.eaten) {
+                    if (ghost.frightened) {
+                        // Eat the ghost!
+                        score += 200;
+                        updateScore();
+                        ghost.eaten = true;
+                        ghost.frightened = false;
 
-                    if (lives <= 0) {
-                        gameOver();
+                        // Send ghost back to cage
+                        resetGhostToCage(ghost);
                     } else {
-                        // Reset positions for Pac-Man and ghosts
-                        pacman.x = 14;
-                        pacman.y = 23;
-                        pacman.direction = 'left';
-                        pacman.nextDirection = null;
+                        // Ghost catches Pac-Man
+                        lives--;
+                        updateLives();
 
-                        // Reset ghosts to starting positions
-                        ghosts[0].x = 12;
-                        ghosts[0].y = 13;
-                        ghosts[0].direction = 'right';
-                        ghosts[0].hasEscaped = false;
-                        ghosts[0].lastDirection = null;
+                        if (lives <= 0) {
+                            gameOver();
+                        } else {
+                            // Reset positions for Pac-Man and ghosts
+                            pacman.x = 14;
+                            pacman.y = 23;
+                            pacman.direction = 'left';
+                            pacman.nextDirection = null;
 
-                        ghosts[1].x = 15;
-                        ghosts[1].y = 13;
-                        ghosts[1].direction = 'left';
-                        ghosts[1].hasEscaped = false;
-                        ghosts[1].lastDirection = null;
-
-                        ghosts[2].x = 12;
-                        ghosts[2].y = 15;
-                        ghosts[2].direction = 'up';
-                        ghosts[2].hasEscaped = false;
-                        ghosts[2].lastDirection = null;
-
-                        ghosts[3].x = 15;
-                        ghosts[3].y = 15;
-                        ghosts[3].direction = 'down';
-                        ghosts[3].hasEscaped = false;
-                        ghosts[3].lastDirection = null;
+                            // Reset ghosts to starting positions
+                            resetAllGhosts();
+                        }
                     }
                 }
             });
+        }
+
+        function resetGhostToCage(ghost) {
+            // Determine starting position based on ghost name
+            if (ghost.name === 'Blinky') {
+                ghost.x = 12;
+                ghost.y = 13;
+                ghost.direction = 'right';
+            } else if (ghost.name === 'Pinky') {
+                ghost.x = 15;
+                ghost.y = 13;
+                ghost.direction = 'left';
+            } else if (ghost.name === 'Inky') {
+                ghost.x = 12;
+                ghost.y = 15;
+                ghost.direction = 'up';
+            } else if (ghost.name === 'Clyde') {
+                ghost.x = 15;
+                ghost.y = 15;
+                ghost.direction = 'down';
+            }
+
+            ghost.hasEscaped = false;
+            ghost.lastDirection = null;
+            ghost.color = ghost.normalColor;
+            ghost.eaten = false;
+        }
+
+        function resetAllGhosts() {
+            ghosts[0].x = 12;
+            ghosts[0].y = 13;
+            ghosts[0].direction = 'right';
+            ghosts[0].hasEscaped = false;
+            ghosts[0].lastDirection = null;
+            ghosts[0].frightened = false;
+            ghosts[0].eaten = false;
+            ghosts[0].color = ghosts[0].normalColor;
+
+            ghosts[1].x = 15;
+            ghosts[1].y = 13;
+            ghosts[1].direction = 'left';
+            ghosts[1].hasEscaped = false;
+            ghosts[1].lastDirection = null;
+            ghosts[1].frightened = false;
+            ghosts[1].eaten = false;
+            ghosts[1].color = ghosts[1].normalColor;
+
+            ghosts[2].x = 12;
+            ghosts[2].y = 15;
+            ghosts[2].direction = 'up';
+            ghosts[2].hasEscaped = false;
+            ghosts[2].lastDirection = null;
+            ghosts[2].frightened = false;
+            ghosts[2].eaten = false;
+            ghosts[2].color = ghosts[2].normalColor;
+
+            ghosts[3].x = 15;
+            ghosts[3].y = 15;
+            ghosts[3].direction = 'down';
+            ghosts[3].hasEscaped = false;
+            ghosts[3].lastDirection = null;
+            ghosts[3].frightened = false;
+            ghosts[3].eaten = false;
+            ghosts[3].color = ghosts[3].normalColor;
         }
 
         function updateScore() {
