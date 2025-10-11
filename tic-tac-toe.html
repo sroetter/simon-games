@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        #status {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #333;
+            min-height: 35px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 10px;
+            margin: 0 auto 30px;
+            max-width: 380px;
+        }
+
+        .cell {
+            background: #f0f0f0;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            font-size: 48px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: #333;
+        }
+
+        .cell:hover:not(.taken) {
+            background: #e0e0e0;
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .cell.taken {
+            cursor: not-allowed;
+        }
+
+        .cell.X {
+            color: #667eea;
+        }
+
+        .cell.O {
+            color: #764ba2;
+        }
+
+        #playAgain {
+            display: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        #playAgain:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        #playAgain.show {
+            display: inline-block;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            position: absolute;
+            animation: confetti-fall linear forwards;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .win-animation {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="status">X's turn to play</div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <button id="playAgain">Play Again</button>
+    </div>
+
+    <script>
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+
+        const statusDisplay = document.getElementById('status');
+        const cells = document.querySelectorAll('.cell');
+        const playAgainButton = document.getElementById('playAgain');
+
+        const winningConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        function handleCellClick(event) {
+            const clickedCell = event.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            if (gameBoard[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            updateCell(clickedCell, clickedCellIndex);
+            checkResult();
+        }
+
+        function updateCell(cell, index) {
+            gameBoard[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add('taken', currentPlayer);
+        }
+
+        function checkResult() {
+            let roundWon = false;
+            let winningCombination = null;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                const a = gameBoard[winCondition[0]];
+                const b = gameBoard[winCondition[1]];
+                const c = gameBoard[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') {
+                    continue;
+                }
+
+                if (a === b && b === c) {
+                    roundWon = true;
+                    winningCombination = winCondition;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusDisplay.textContent = `${currentPlayer} wins!`;
+                statusDisplay.classList.add('win-animation');
+                gameActive = false;
+                playAgainButton.classList.add('show');
+                createConfetti();
+                playWinSound();
+                highlightWinningCells(winningCombination);
+                return;
+            }
+
+            const roundDraw = !gameBoard.includes('');
+            if (roundDraw) {
+                statusDisplay.textContent = "It's a tie!";
+                gameActive = false;
+                playAgainButton.classList.add('show');
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusDisplay.textContent = `${currentPlayer}'s turn to play`;
+        }
+
+        function highlightWinningCells(combination) {
+            combination.forEach(index => {
+                cells[index].style.background = '#c7f5c7';
+            });
+        }
+
+        function createConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493'];
+            const confettiCount = 100;
+
+            for (let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.classList.add('confetti');
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.height = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    confetti.style.top = '-10px';
+                    document.body.appendChild(confetti);
+
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 5000);
+                }, i * 30);
+            }
+        }
+
+        function playWinSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Play a cheerful ascending melody
+            const notes = [261.63, 329.63, 392.00, 523.25]; // C, E, G, C (major chord arpeggio)
+
+            notes.forEach((frequency, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+
+                const startTime = audioContext.currentTime + (index * 0.15);
+                const stopTime = startTime + 0.3;
+
+                gainNode.gain.setValueAtTime(0.3, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, stopTime);
+
+                oscillator.start(startTime);
+                oscillator.stop(stopTime);
+            });
+        }
+
+        function resetGame() {
+            currentPlayer = 'X';
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            statusDisplay.textContent = "X's turn to play";
+            statusDisplay.classList.remove('win-animation');
+            playAgainButton.classList.remove('show');
+
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('taken', 'X', 'O');
+                cell.style.background = '#f0f0f0';
+            });
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        playAgainButton.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
