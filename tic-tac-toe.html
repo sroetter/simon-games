@@ -100,6 +100,75 @@
             display: inline-block;
         }
 
+        .mode-selection {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .mode-selection.hidden {
+            display: none;
+        }
+
+        .mode-button {
+            padding: 20px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mode-button:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .mode-button.selected {
+            background: #764ba2;
+        }
+
+        .difficulty-selection {
+            display: none;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .difficulty-selection.show {
+            display: flex;
+        }
+
+        .difficulty-button {
+            padding: 15px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 200px;
+        }
+
+        .difficulty-button:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .difficulty-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
         .confetti {
             position: fixed;
             width: 10px;
@@ -239,6 +308,16 @@
 </head>
 <body>
     <div class="container">
+        <div class="mode-selection" id="modeSelection">
+            <button class="mode-button" id="twoPlayerMode">2 Players</button>
+            <button class="mode-button" id="aiMode">vs AI</button>
+        </div>
+        <div class="difficulty-selection" id="difficultySelection">
+            <div class="difficulty-title">Choose Difficulty:</div>
+            <button class="difficulty-button" id="easyMode">Easy 😊</button>
+            <button class="difficulty-button" id="mediumMode">Medium 🤔</button>
+            <button class="difficulty-button" id="hardMode">Hard 😈</button>
+        </div>
         <div id="status">X's turn to play</div>
         <div class="board" id="board">
             <div class="cell" data-index="0"></div>
@@ -258,10 +337,21 @@
         let currentPlayer = 'X';
         let gameBoard = ['', '', '', '', '', '', '', '', ''];
         let gameActive = true;
+        let gameMode = null; // 'twoPlayer' or 'ai'
+        let aiDifficulty = null; // 'easy', 'medium', or 'hard'
+        const PLAYER = 'X';
+        const AI = 'O';
 
         const statusDisplay = document.getElementById('status');
         const cells = document.querySelectorAll('.cell');
         const playAgainButton = document.getElementById('playAgain');
+        const modeSelection = document.getElementById('modeSelection');
+        const difficultySelection = document.getElementById('difficultySelection');
+        const twoPlayerButton = document.getElementById('twoPlayerMode');
+        const aiButton = document.getElementById('aiMode');
+        const easyButton = document.getElementById('easyMode');
+        const mediumButton = document.getElementById('mediumMode');
+        const hardButton = document.getElementById('hardMode');
 
         const winningConditions = [
             [0, 1, 2],
@@ -274,25 +364,83 @@
             [2, 4, 6]
         ];
 
+        // Mode selection
+        twoPlayerButton.addEventListener('click', () => {
+            gameMode = 'twoPlayer';
+            modeSelection.classList.add('hidden');
+            statusDisplay.textContent = "X's turn to play";
+        });
+
+        aiButton.addEventListener('click', () => {
+            gameMode = 'ai';
+            modeSelection.classList.add('hidden');
+            difficultySelection.classList.add('show');
+        });
+
+        // Difficulty selection
+        easyButton.addEventListener('click', () => {
+            aiDifficulty = 'easy';
+            difficultySelection.classList.remove('show');
+            statusDisplay.textContent = "Your turn!";
+        });
+
+        mediumButton.addEventListener('click', () => {
+            aiDifficulty = 'medium';
+            difficultySelection.classList.remove('show');
+            statusDisplay.textContent = "Your turn!";
+        });
+
+        hardButton.addEventListener('click', () => {
+            aiDifficulty = 'hard';
+            difficultySelection.classList.remove('show');
+            statusDisplay.textContent = "Your turn!";
+        });
+
         function handleCellClick(event) {
             const clickedCell = event.target;
             const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
 
-            if (gameBoard[clickedCellIndex] !== '' || !gameActive) {
+            if (gameBoard[clickedCellIndex] !== '' || !gameActive || !gameMode) {
                 return;
             }
 
-            updateCell(clickedCell, clickedCellIndex);
-            checkResult();
+            // If AI mode, check that difficulty is selected
+            if (gameMode === 'ai' && !aiDifficulty) {
+                return;
+            }
+
+            if (gameMode === 'twoPlayer') {
+                updateCell(clickedCell, clickedCellIndex, currentPlayer);
+                checkResult();
+            } else if (gameMode === 'ai') {
+                updateCell(clickedCell, clickedCellIndex, PLAYER);
+                if (checkResult(PLAYER)) {
+                    return;
+                }
+
+                // AI move after short delay
+                gameActive = false; // Prevent clicks during AI turn
+                statusDisplay.textContent = 'AI is thinking...';
+                setTimeout(() => {
+                    makeAIMove();
+                    checkResult(AI);
+                }, 500);
+            }
         }
 
-        function updateCell(cell, index) {
-            gameBoard[index] = currentPlayer;
-            cell.textContent = currentPlayer;
-            cell.classList.add('taken', currentPlayer);
+        function updateCell(cell, index, player) {
+            console.log('Updating cell', index, 'with player', player);
+            gameBoard[index] = player;
+            cell.textContent = player;
+            cell.classList.add('taken', player);
+
+            // Update currentPlayer for two-player mode
+            if (gameMode === 'twoPlayer') {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            }
         }
 
-        function checkResult() {
+        function checkResult(player = null) {
             let roundWon = false;
             let winningCombination = null;
 
@@ -314,15 +462,26 @@
             }
 
             if (roundWon) {
-                statusDisplay.textContent = `${currentPlayer} wins!`;
+                if (gameMode === 'ai') {
+                    if (player === PLAYER) {
+                        statusDisplay.textContent = 'You win!';
+                        createConfetti();
+                        createTRex();
+                        playWinSound();
+                    } else {
+                        statusDisplay.textContent = 'AI wins!';
+                    }
+                } else {
+                    statusDisplay.textContent = `${currentPlayer} wins!`;
+                    createConfetti();
+                    createTRex();
+                    playWinSound();
+                }
                 statusDisplay.classList.add('win-animation');
                 gameActive = false;
                 playAgainButton.classList.add('show');
-                createConfetti();
-                createTRex();
-                playWinSound();
                 highlightWinningCells(winningCombination);
-                return;
+                return true;
             }
 
             const roundDraw = !gameBoard.includes('');
@@ -330,11 +489,22 @@
                 statusDisplay.textContent = "It's a tie!";
                 gameActive = false;
                 playAgainButton.classList.add('show');
-                return;
+                return true;
             }
 
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            statusDisplay.textContent = `${currentPlayer}'s turn to play`;
+            if (gameMode === 'ai') {
+                if (player === PLAYER) {
+                    // After player move, AI will move (gameActive set in timeout)
+                } else {
+                    // After AI move, player's turn
+                    gameActive = true;
+                    statusDisplay.textContent = 'Your turn!';
+                }
+            } else if (gameMode === 'twoPlayer') {
+                statusDisplay.textContent = `${currentPlayer}'s turn to play`;
+            }
+
+            return false;
         }
 
         function highlightWinningCells(combination) {
@@ -392,6 +562,100 @@
             }, 6500);
         }
 
+        // AI Functions
+        function makeAIMove() {
+            let move = -1;
+
+            if (aiDifficulty === 'easy') {
+                move = getRandomMove();
+            } else if (aiDifficulty === 'medium') {
+                // 50% chance of optimal move, 50% random
+                move = Math.random() < 0.5 ? getBestMove() : getRandomMove();
+            } else {
+                // Hard mode - always optimal
+                move = getBestMove();
+            }
+
+            if (move !== -1) {
+                const cell = cells[move];
+                updateCell(cell, move, AI);
+            }
+        }
+
+        function getRandomMove() {
+            const availableMoves = [];
+            for (let i = 0; i < 9; i++) {
+                if (gameBoard[i] === '') {
+                    availableMoves.push(i);
+                }
+            }
+            return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        }
+
+        function getBestMove() {
+            let bestScore = -Infinity;
+            let bestMove = -1;
+
+            for (let i = 0; i < 9; i++) {
+                if (gameBoard[i] === '') {
+                    gameBoard[i] = AI;
+                    let score = minimax(gameBoard, 0, false);
+                    gameBoard[i] = '';
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = i;
+                    }
+                }
+            }
+
+            return bestMove;
+        }
+
+        function minimax(board, depth, isMaximizing) {
+            const winner = checkWinner();
+
+            if (winner === AI) return 10 - depth;
+            if (winner === PLAYER) return depth - 10;
+            if (!board.includes('')) return 0;
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = AI;
+                        let score = minimax(board, depth + 1, false);
+                        board[i] = '';
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = PLAYER;
+                        let score = minimax(board, depth + 1, true);
+                        board[i] = '';
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function checkWinner() {
+            for (let condition of winningConditions) {
+                const [a, b, c] = condition;
+                if (gameBoard[a] !== '' &&
+                    gameBoard[a] === gameBoard[b] &&
+                    gameBoard[a] === gameBoard[c]) {
+                    return gameBoard[a];
+                }
+            }
+            return null;
+        }
+
         function playWinSound() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -423,6 +687,10 @@
             currentPlayer = 'X';
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             gameActive = true;
+            gameMode = null;
+            aiDifficulty = null;
+            modeSelection.classList.remove('hidden');
+            difficultySelection.classList.remove('show');
             statusDisplay.textContent = "X's turn to play";
             statusDisplay.classList.remove('win-animation');
             playAgainButton.classList.remove('show');
