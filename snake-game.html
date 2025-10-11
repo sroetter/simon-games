@@ -88,6 +88,7 @@
 
         .game-area {
             flex: 0 0 auto;
+            position: relative;
         }
 
         #gameCanvas {
@@ -95,6 +96,27 @@
             border-radius: 10px;
             background: #f0f0f0;
             display: block;
+        }
+
+        .chomp-text {
+            position: absolute;
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            animation: chomp-fade 0.6s ease-out forwards;
+        }
+
+        @keyframes chomp-fade {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px) scale(1.2);
+            }
         }
 
         #scoreDisplay {
@@ -331,6 +353,7 @@
             if (checkFoodCollision()) {
                 score += 10;
                 updateScore();
+                showChomp(foodX, foodY);
                 placeFood();
                 // Speed up with each fruit
                 if (gameSpeed > 100) {
@@ -462,13 +485,35 @@
                 }
             });
 
-            // Draw food
+            // Draw food (apple)
+            const appleCenterX = foodX * gridSize + gridSize / 2;
+            const appleCenterY = foodY * gridSize + gridSize / 2;
+            const appleRadius = gridSize / 2 - 2;
+
+            // Draw apple body
             ctx.fillStyle = '#d9534f';
             ctx.beginPath();
-            ctx.arc(
-                foodX * gridSize + gridSize / 2,
-                foodY * gridSize + gridSize / 2,
-                gridSize / 2 - 2,
+            ctx.arc(appleCenterX, appleCenterY, appleRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw stem
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(appleCenterX, appleCenterY - appleRadius);
+            ctx.lineTo(appleCenterX + 2, appleCenterY - appleRadius - 5);
+            ctx.stroke();
+
+            // Draw leaf
+            ctx.fillStyle = '#2d7f2d';
+            ctx.beginPath();
+            ctx.ellipse(
+                appleCenterX + 5,
+                appleCenterY - appleRadius - 4,
+                4,
+                2.5,
+                Math.PI / 4,
                 0,
                 Math.PI * 2
             );
@@ -481,6 +526,29 @@
 
         function updateSpeed() {
             speedDisplay.textContent = `Speed: ${gameSpeed}ms`;
+        }
+
+        function showChomp(x, y) {
+            const gameArea = document.querySelector('.game-area');
+            const chompText = document.createElement('div');
+            chompText.classList.add('chomp-text');
+            chompText.textContent = 'CHOMP';
+
+            // Position the text at the food location
+            // Add 4px for border offset
+            const canvasRect = canvas.getBoundingClientRect();
+            const left = x * gridSize + gridSize / 2 - 40; // Center text roughly
+            const top = y * gridSize + gridSize / 2 - 18; // Center text roughly
+
+            chompText.style.left = (left + 4) + 'px';
+            chompText.style.top = (top + 4) + 'px';
+
+            gameArea.appendChild(chompText);
+
+            // Remove after animation
+            setTimeout(() => {
+                chompText.remove();
+            }, 600);
         }
 
         // Drum music functions
