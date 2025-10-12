@@ -76,6 +76,11 @@
             font-size: 28px;
             font-weight: bold;
             color: #667eea;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 35px;
         }
 
         .player-info.active .player-score {
@@ -118,9 +123,9 @@
         }
 
         .card.matched {
-            background: #d4edda;
-            border: 3px solid #28a745;
-            cursor: default;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease-out;
         }
 
         .card-back {
@@ -282,8 +287,8 @@
         let cards = [];
         let flippedCards = [];
         let currentPlayer = 1;
-        let player1Score = 0;
-        let player2Score = 0;
+        let player1Animals = [];
+        let player2Animals = [];
         let canFlip = true;
         let matchedPairs = 0;
 
@@ -302,8 +307,8 @@
             cards = [];
             flippedCards = [];
             currentPlayer = 1;
-            player1Score = 0;
-            player2Score = 0;
+            player1Animals = [];
+            player2Animals = [];
             matchedPairs = 0;
             canFlip = true;
 
@@ -366,11 +371,11 @@
                     card1.classList.remove('flipped');
                     card2.classList.remove('flipped');
 
-                    // Award point to current player
+                    // Award animal to current player
                     if (currentPlayer === 1) {
-                        player1Score++;
+                        player1Animals.push(animal1);
                     } else {
-                        player2Score++;
+                        player2Animals.push(animal1);
                     }
 
                     updateScores();
@@ -405,8 +410,12 @@
         }
 
         function updateScores() {
-            player1ScoreDisplay.textContent = player1Score;
-            player2ScoreDisplay.textContent = player2Score;
+            player1ScoreDisplay.innerHTML = player1Animals.length > 0
+                ? player1Animals.join(' ')
+                : '<span style="color: #ccc;">0</span>';
+            player2ScoreDisplay.innerHTML = player2Animals.length > 0
+                ? player2Animals.join(' ')
+                : '<span style="color: #ccc;">0</span>';
         }
 
         function updateCurrentPlayer() {
@@ -425,11 +434,14 @@
 
             // Determine winner
             let winnerText = '';
-            if (player1Score > player2Score) {
+            const player1Count = player1Animals.length;
+            const player2Count = player2Animals.length;
+
+            if (player1Count > player2Count) {
                 winnerText = '🎉 Player 1 Wins! 🎉';
                 document.getElementById('finalPlayer1').classList.add('winner');
                 document.getElementById('finalPlayer2').classList.remove('winner');
-            } else if (player2Score > player1Score) {
+            } else if (player2Count > player1Count) {
                 winnerText = '🎉 Player 2 Wins! 🎉';
                 document.getElementById('finalPlayer2').classList.add('winner');
                 document.getElementById('finalPlayer1').classList.remove('winner');
@@ -440,8 +452,12 @@
             }
 
             document.getElementById('winnerText').textContent = winnerText;
-            document.getElementById('finalScore1').textContent = player1Score;
-            document.getElementById('finalScore2').textContent = player2Score;
+            document.getElementById('finalScore1').innerHTML = player1Animals.length > 0
+                ? player1Animals.join(' ')
+                : '0';
+            document.getElementById('finalScore2').innerHTML = player2Animals.length > 0
+                ? player2Animals.join(' ')
+                : '0';
 
             playWinSound();
         }
