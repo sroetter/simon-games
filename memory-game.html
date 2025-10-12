@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match - Animal Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 42px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .player-info {
+            background: #f8f9fa;
+            padding: 15px 25px;
+            border-radius: 10px;
+            min-width: 150px;
+            transition: all 0.3s;
+        }
+
+        .player-info.active {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .player-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .player-score {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .player-info.active .player-score {
+            color: white;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .card:hover:not(.flipped):not(.matched) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .card.flipped {
+            background: white;
+            border: 3px solid #667eea;
+        }
+
+        .card.matched {
+            background: #d4edda;
+            border: 3px solid #28a745;
+            cursor: default;
+        }
+
+        .card-back {
+            display: block;
+            font-size: 40px;
+        }
+
+        .card.flipped .card-back,
+        .card.matched .card-back {
+            display: none;
+        }
+
+        .card-front {
+            display: none;
+        }
+
+        .card.flipped .card-front,
+        .card.matched .card-front {
+            display: block;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        .backButton {
+            background: #6c757d;
+        }
+
+        .backButton:hover {
+            background: #5a6268;
+        }
+
+        .game-over {
+            display: none;
+            text-align: center;
+        }
+
+        .game-over.show {
+            display: block;
+        }
+
+        .game-over h2 {
+            color: #28a745;
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        .winner-announcement {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .final-scores {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .final-score {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-radius: 10px;
+            min-width: 150px;
+        }
+
+        .final-score.winner {
+            background: #d4edda;
+            border: 3px solid #28a745;
+        }
+
+        @media (max-width: 600px) {
+            .game-board {
+                gap: 10px;
+            }
+
+            .card {
+                font-size: 35px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="gameArea">
+            <h1>🐾 Memory Match</h1>
+            <p class="subtitle">Find all the matching animal pairs!</p>
+
+            <div class="game-info">
+                <div class="player-info active" id="player1Info">
+                    <div class="player-name">Player 1</div>
+                    <div class="player-score" id="player1Score">0</div>
+                </div>
+                <div class="player-info" id="player2Info">
+                    <div class="player-name">Player 2</div>
+                    <div class="player-score" id="player2Score">0</div>
+                </div>
+            </div>
+
+            <div class="game-board" id="gameBoard"></div>
+
+            <div class="buttons">
+                <button id="newGameBtn">New Game</button>
+                <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
+            </div>
+        </div>
+
+        <div id="gameOver" class="game-over">
+            <h2>Game Over!</h2>
+            <div class="winner-announcement" id="winnerText"></div>
+            <div class="final-scores">
+                <div class="final-score" id="finalPlayer1">
+                    <div class="player-name">Player 1</div>
+                    <div class="player-score" id="finalScore1">0</div>
+                </div>
+                <div class="final-score" id="finalPlayer2">
+                    <div class="player-name">Player 2</div>
+                    <div class="player-score" id="finalScore2">0</div>
+                </div>
+            </div>
+            <div class="buttons">
+                <button id="playAgainBtn">Play Again</button>
+                <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Animal emojis for the cards
+        const animals = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
+
+        let cards = [];
+        let flippedCards = [];
+        let currentPlayer = 1;
+        let player1Score = 0;
+        let player2Score = 0;
+        let canFlip = true;
+        let matchedPairs = 0;
+
+        const gameBoard = document.getElementById('gameBoard');
+        const player1Info = document.getElementById('player1Info');
+        const player2Info = document.getElementById('player2Info');
+        const player1ScoreDisplay = document.getElementById('player1Score');
+        const player2ScoreDisplay = document.getElementById('player2Score');
+        const gameArea = document.getElementById('gameArea');
+        const gameOverScreen = document.getElementById('gameOver');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+
+        function initGame() {
+            // Reset game state
+            cards = [];
+            flippedCards = [];
+            currentPlayer = 1;
+            player1Score = 0;
+            player2Score = 0;
+            matchedPairs = 0;
+            canFlip = true;
+
+            // Create pairs of animals
+            const cardPairs = [...animals, ...animals];
+
+            // Shuffle cards
+            cardPairs.sort(() => Math.random() - 0.5);
+
+            // Create card elements
+            gameBoard.innerHTML = '';
+            cardPairs.forEach((animal, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.animal = animal;
+                card.dataset.index = index;
+                card.innerHTML = `
+                    <span class="card-back">🎴</span>
+                    <span class="card-front">${animal}</span>
+                `;
+                card.addEventListener('click', () => flipCard(card));
+                gameBoard.appendChild(card);
+                cards.push(card);
+            });
+
+            // Update display
+            updateScores();
+            updateCurrentPlayer();
+
+            // Show game area
+            gameArea.style.display = 'block';
+            gameOverScreen.classList.remove('show');
+        }
+
+        function flipCard(card) {
+            if (!canFlip) return;
+            if (card.classList.contains('flipped')) return;
+            if (card.classList.contains('matched')) return;
+            if (flippedCards.length >= 2) return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                canFlip = false;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            const animal1 = card1.dataset.animal;
+            const animal2 = card2.dataset.animal;
+
+            if (animal1 === animal2) {
+                // Match found!
+                setTimeout(() => {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+
+                    // Award point to current player
+                    if (currentPlayer === 1) {
+                        player1Score++;
+                    } else {
+                        player2Score++;
+                    }
+
+                    updateScores();
+                    matchedPairs++;
+
+                    flippedCards = [];
+                    canFlip = true;
+
+                    // Play success sound
+                    playMatchSound();
+
+                    // Check if game is over
+                    if (matchedPairs === animals.length) {
+                        setTimeout(endGame, 500);
+                    }
+
+                    // Current player gets another turn
+                }, 500);
+            } else {
+                // No match
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    flippedCards = [];
+                    canFlip = true;
+
+                    // Switch player
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    updateCurrentPlayer();
+                }, 1000);
+            }
+        }
+
+        function updateScores() {
+            player1ScoreDisplay.textContent = player1Score;
+            player2ScoreDisplay.textContent = player2Score;
+        }
+
+        function updateCurrentPlayer() {
+            if (currentPlayer === 1) {
+                player1Info.classList.add('active');
+                player2Info.classList.remove('active');
+            } else {
+                player1Info.classList.remove('active');
+                player2Info.classList.add('active');
+            }
+        }
+
+        function endGame() {
+            gameArea.style.display = 'none';
+            gameOverScreen.classList.add('show');
+
+            // Determine winner
+            let winnerText = '';
+            if (player1Score > player2Score) {
+                winnerText = '🎉 Player 1 Wins! 🎉';
+                document.getElementById('finalPlayer1').classList.add('winner');
+                document.getElementById('finalPlayer2').classList.remove('winner');
+            } else if (player2Score > player1Score) {
+                winnerText = '🎉 Player 2 Wins! 🎉';
+                document.getElementById('finalPlayer2').classList.add('winner');
+                document.getElementById('finalPlayer1').classList.remove('winner');
+            } else {
+                winnerText = '🤝 It\'s a Tie! 🤝';
+                document.getElementById('finalPlayer1').classList.remove('winner');
+                document.getElementById('finalPlayer2').classList.remove('winner');
+            }
+
+            document.getElementById('winnerText').textContent = winnerText;
+            document.getElementById('finalScore1').textContent = player1Score;
+            document.getElementById('finalScore2').textContent = player2Score;
+
+            playWinSound();
+        }
+
+        function playMatchSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            const now = audioContext.currentTime;
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+            oscillator.start(now);
+            oscillator.stop(now + 0.2);
+        }
+
+        function playWinSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C
+
+            notes.forEach((frequency, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+
+                const startTime = audioContext.currentTime + (index * 0.15);
+                const stopTime = startTime + 0.3;
+
+                gainNode.gain.setValueAtTime(0.2, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, stopTime);
+
+                oscillator.start(startTime);
+                oscillator.stop(stopTime);
+            });
+        }
+
+        // Event listeners
+        newGameBtn.addEventListener('click', initGame);
+        playAgainBtn.addEventListener('click', initGame);
+
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
