@@ -807,16 +807,16 @@
         // Initialize default high scores - always ensure these are present
         function initializeDefaultScores() {
             const baseScores = [
-                {name: 'Alex', score: 550, timestamp: Date.now() - 86400000, protected: true},
-                {name: 'Simon', score: 460, timestamp: Date.now() - 172800000, protected: true},
-                {name: 'Simon', score: 460, timestamp: Date.now() - 259200000, protected: true},
-                {name: 'Simon', score: 290, timestamp: Date.now() - 345600000, protected: true},
-                {name: 'Simon', score: 280, timestamp: Date.now() - 432000000, protected: true},
-                {name: 'Simon', score: 270, timestamp: Date.now() - 518400000, protected: true},
-                {name: 'Alex', score: 250, timestamp: Date.now() - 604800000, protected: true},
-                {name: 'Simon', score: 230, timestamp: Date.now() - 691200000, protected: true},
-                {name: 'Simon', score: 160, timestamp: Date.now() - 777600000, protected: true},
-                {name: 'Simon', score: 120, timestamp: Date.now() - 864000000, protected: true}
+                {name: 'Alex', score: 550, timestamp: Date.now() - 86400000},
+                {name: 'Simon', score: 460, timestamp: Date.now() - 172800000},
+                {name: 'Simon', score: 460, timestamp: Date.now() - 259200000},
+                {name: 'Simon', score: 290, timestamp: Date.now() - 345600000},
+                {name: 'Simon', score: 280, timestamp: Date.now() - 432000000},
+                {name: 'Simon', score: 270, timestamp: Date.now() - 518400000},
+                {name: 'Alex', score: 250, timestamp: Date.now() - 604800000},
+                {name: 'Simon', score: 230, timestamp: Date.now() - 691200000},
+                {name: 'Simon', score: 160, timestamp: Date.now() - 777600000},
+                {name: 'Simon', score: 120, timestamp: Date.now() - 864000000}
             ];
 
             const existingScores = getHighScores();
@@ -828,6 +828,7 @@
         // Initialize
         startButton.disabled = true;
         initializeDefaultScores();
+        // Always display scores on load
         displayHighScores(null, nameScreenScoreList);
     </script>
 </body>
