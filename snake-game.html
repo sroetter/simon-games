@@ -242,6 +242,11 @@
             </div>
             <button id="startButton">Start Game</button>
             <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
+
+            <div class="high-scores" style="margin-top: 30px; display: inline-block;">
+                <h2>🏆 High Scores</h2>
+                <ul id="nameScreenScoreList" class="score-list"></ul>
+            </div>
         </div>
 
         <!-- Game Screen -->
@@ -271,6 +276,11 @@
             <div id="newHighScore">🎉 New High Score! 🎉</div>
             <button id="playAgainButton">Play Again</button>
             <button class="backButton" onclick="window.location.href='index.html'">Back to Home</button>
+
+            <div class="high-scores" style="margin-top: 30px; display: inline-block;">
+                <h2>🏆 High Scores</h2>
+                <ul id="gameOverScoreList" class="score-list"></ul>
+            </div>
         </div>
     </div>
 
@@ -309,6 +319,8 @@
         const finalScoreDisplay = document.getElementById('finalScore');
         const newHighScoreDisplay = document.getElementById('newHighScore');
         const scoreList = document.getElementById('scoreList');
+        const nameScreenScoreList = document.getElementById('nameScreenScoreList');
+        const gameOverScoreList = document.getElementById('gameOverScoreList');
 
         // Name input validation
         nameInput.addEventListener('input', () => {
@@ -697,18 +709,25 @@
             } else {
                 newHighScoreDisplay.classList.remove('show');
             }
+
+            // Display high scores on game over screen with highlight
+            displayHighScores(score, gameOverScoreList);
         }
 
         // High score management
         function saveHighScore(name, score) {
             let highScores = getHighScores();
-            highScores.push({name, score, timestamp: Date.now()});
-            highScores.sort((a, b) => b.score - a.score);
-            highScores = highScores.slice(0, 10); // Keep top 10
-            localStorage.setItem('snakeHighScores', JSON.stringify(highScores));
 
-            // Check if it's a new high score (in top 10)
-            return highScores.some(hs => hs.name === name && hs.score === score && hs.timestamp === highScores[highScores.length - 1].timestamp);
+            // Only add if score beats the 10th place score
+            if (highScores.length < 10 || score > highScores[highScores.length - 1].score) {
+                highScores.push({name, score, timestamp: Date.now()});
+                highScores.sort((a, b) => b.score - a.score);
+                highScores = highScores.slice(0, 10); // Keep top 10
+                localStorage.setItem('snakeHighScores', JSON.stringify(highScores));
+                return true; // New high score!
+            }
+
+            return false; // Didn't make top 10
         }
 
         function getHighScores() {
@@ -716,12 +735,12 @@
             return scores ? JSON.parse(scores) : [];
         }
 
-        function displayHighScores(highlightScore = null) {
+        function displayHighScores(highlightScore = null, targetList = scoreList) {
             const highScores = getHighScores();
-            scoreList.innerHTML = '';
+            targetList.innerHTML = '';
 
             if (highScores.length === 0) {
-                scoreList.innerHTML = '<li style="text-align: center; color: #999;">No scores yet!</li>';
+                targetList.innerHTML = '<li style="text-align: center; color: #999;">No scores yet!</li>';
                 return;
             }
 
@@ -736,7 +755,7 @@
                     <span class="score-name">${hs.name}</span>
                     <span class="score-value">${hs.score}</span>
                 `;
-                scoreList.appendChild(li);
+                targetList.appendChild(li);
             });
         }
 
@@ -785,8 +804,31 @@
             }
         });
 
+        // Initialize default high scores - always ensure these are present
+        function initializeDefaultScores() {
+            const baseScores = [
+                {name: 'Alex', score: 550, timestamp: Date.now() - 86400000, protected: true},
+                {name: 'Simon', score: 460, timestamp: Date.now() - 172800000, protected: true},
+                {name: 'Simon', score: 460, timestamp: Date.now() - 259200000, protected: true},
+                {name: 'Simon', score: 290, timestamp: Date.now() - 345600000, protected: true},
+                {name: 'Simon', score: 280, timestamp: Date.now() - 432000000, protected: true},
+                {name: 'Simon', score: 270, timestamp: Date.now() - 518400000, protected: true},
+                {name: 'Alex', score: 250, timestamp: Date.now() - 604800000, protected: true},
+                {name: 'Simon', score: 230, timestamp: Date.now() - 691200000, protected: true},
+                {name: 'Simon', score: 160, timestamp: Date.now() - 777600000, protected: true},
+                {name: 'Simon', score: 120, timestamp: Date.now() - 864000000, protected: true}
+            ];
+
+            const existingScores = getHighScores();
+            if (existingScores.length === 0) {
+                localStorage.setItem('snakeHighScores', JSON.stringify(baseScores));
+            }
+        }
+
         // Initialize
         startButton.disabled = true;
+        initializeDefaultScores();
+        displayHighScores(null, nameScreenScoreList);
     </script>
 </body>
 </html>
