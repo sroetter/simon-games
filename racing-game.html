@@ -250,6 +250,62 @@
             margin: 20px 0;
             color: #333;
         }
+
+        .loadout-selector {
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .loadout-selector h3 {
+            font-size: 20px;
+            color: #1e3c72;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .loadout-category {
+            margin-bottom: 20px;
+        }
+
+        .loadout-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .loadout-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .loadout-option {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 3px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .loadout-option.locked {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .loadout-option.selected {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            border-color: #00d084;
+            transform: scale(1.05);
+        }
+
+        .loadout-option:not(.locked):hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -296,19 +352,19 @@
                 <div class="upgrade-icon">🚗</div>
                 <div class="upgrade-title">Car</div>
                 <div class="upgrade-level" id="carLevel">Basic Car</div>
-                <div class="upgrade-requirement">Next: 500 points</div>
+                <div class="upgrade-requirement">Next: 2000 points</div>
             </div>
             <div class="upgrade-card" id="fuelUpgrade">
                 <div class="upgrade-icon">⛽</div>
                 <div class="upgrade-title">Fuel Tank</div>
                 <div class="upgrade-level" id="fuelLevel">Level 1</div>
-                <div class="upgrade-requirement">Next: 300 points</div>
+                <div class="upgrade-requirement">Next: 1500 points</div>
             </div>
             <div class="upgrade-card" id="wheelUpgrade">
                 <div class="upgrade-icon">🛞</div>
                 <div class="upgrade-title">Wheels</div>
                 <div class="upgrade-level" id="wheelLevel">Stock Wheels</div>
-                <div class="upgrade-requirement">Next: 400 points</div>
+                <div class="upgrade-requirement">Next: 1800 points</div>
             </div>
         </div>
     </div>
@@ -322,6 +378,26 @@
                 <div>Distance: <strong id="finalDistance">0</strong>m</div>
                 <div>Score: <strong id="finalScore">0</strong></div>
             </div>
+
+            <div class="loadout-selector">
+                <h3>🏎️ Select Your Loadout</h3>
+
+                <div class="loadout-category">
+                    <div class="loadout-label">Car:</div>
+                    <div class="loadout-options" id="carOptions"></div>
+                </div>
+
+                <div class="loadout-category">
+                    <div class="loadout-label">Fuel Tank:</div>
+                    <div class="loadout-options" id="fuelOptions"></div>
+                </div>
+
+                <div class="loadout-category">
+                    <div class="loadout-label">Wheels:</div>
+                    <div class="loadout-options" id="wheelOptions"></div>
+                </div>
+            </div>
+
             <button class="start-btn" onclick="restartGame()">Race Again</button>
             <button class="back-btn" onclick="window.location.href='index.html'">Back to Gallery</button>
         </div>
@@ -355,8 +431,15 @@
             carType: 0 // 0: basic, 1: sports, 2: race, 3: super
         };
 
-        // Upgrades
+        // Upgrades (highest unlocked)
         let upgrades = {
+            car: 0,
+            fuel: 0,
+            wheels: 0
+        };
+
+        // Selected loadout (what the player is using)
+        let selectedLoadout = {
             car: 0,
             fuel: 0,
             wheels: 0
@@ -364,23 +447,23 @@
 
         const carTypes = [
             { name: 'Basic Car', color: '#3498db', score: 0 },
-            { name: 'Sports Car', color: '#e74c3c', score: 500 },
-            { name: 'Race Car', color: '#f39c12', score: 1200 },
-            { name: 'Super Car', color: '#9b59b6', score: 2500 }
+            { name: 'Sports Car', color: '#e74c3c', score: 2000 },
+            { name: 'Race Car', color: '#f39c12', score: 5000 },
+            { name: 'Super Car', color: '#9b59b6', score: 10000 }
         ];
 
         const fuelUpgrades = [
             { name: 'Level 1', drain: 0.05, score: 0 },
-            { name: 'Level 2', drain: 0.04, score: 300 },
-            { name: 'Level 3', drain: 0.03, score: 800 },
-            { name: 'Level 4', drain: 0.02, score: 1500 }
+            { name: 'Level 2', drain: 0.04, score: 1500 },
+            { name: 'Level 3', drain: 0.03, score: 3500 },
+            { name: 'Level 4', drain: 0.02, score: 7000 }
         ];
 
         const wheelUpgrades = [
             { name: 'Stock Wheels', speed: 5, score: 0 },
-            { name: 'Sport Wheels', speed: 6, score: 400 },
-            { name: 'Racing Slicks', speed: 7.5, score: 1000 },
-            { name: 'Turbo Wheels', speed: 9, score: 2000 }
+            { name: 'Sport Wheels', speed: 6, score: 1800 },
+            { name: 'Racing Slicks', speed: 7.5, score: 4000 },
+            { name: 'Turbo Wheels', speed: 9, score: 8000 }
         ];
 
         // Traffic
@@ -389,6 +472,9 @@
 
         // Fuel pickups
         let fuelPickups = [];
+
+        // Exhaust particles
+        let exhaustParticles = [];
 
         // Controls
         let keys = {};
@@ -401,6 +487,35 @@
             keys[e.key] = false;
         });
 
+        // LocalStorage functions
+        function saveUnlockedUpgrades() {
+            localStorage.setItem('racingGameUpgrades', JSON.stringify(upgrades));
+        }
+
+        function loadUnlockedUpgrades() {
+            const saved = localStorage.getItem('racingGameUpgrades');
+            if (saved) {
+                const loaded = JSON.parse(saved);
+                upgrades.car = loaded.car || 0;
+                upgrades.fuel = loaded.fuel || 0;
+                upgrades.wheels = loaded.wheels || 0;
+            }
+        }
+
+        function saveSelectedLoadout() {
+            localStorage.setItem('racingGameLoadout', JSON.stringify(selectedLoadout));
+        }
+
+        function loadSelectedLoadout() {
+            const saved = localStorage.getItem('racingGameLoadout');
+            if (saved) {
+                const loaded = JSON.parse(saved);
+                selectedLoadout.car = loaded.car || 0;
+                selectedLoadout.fuel = loaded.fuel || 0;
+                selectedLoadout.wheels = loaded.wheels || 0;
+            }
+        }
+
         function startGame() {
             if (gameActive) return;
 
@@ -412,7 +527,12 @@
             fuel = 100;
             traffic = [];
             fuelPickups = [];
+            exhaustParticles = [];
             player.x = canvas.width / 2 - 20;
+
+            // Apply selected loadout
+            fuelDrainRate = fuelUpgrades[selectedLoadout.fuel].drain;
+            player.speed = wheelUpgrades[selectedLoadout.wheels].speed;
 
             document.getElementById('startBtn').textContent = '🏁 RACING...';
             document.getElementById('startBtn').disabled = true;
@@ -461,6 +581,32 @@
             if ((keys['ArrowRight'] || keys['d'] || keys['D']) && player.x < canvas.width - 100 - player.width) {
                 player.x += player.speed;
             }
+
+            // Spawn exhaust particles from player car
+            if (speed > 1 && Math.random() < 0.3) {
+                exhaustParticles.push({
+                    x: player.x + player.width / 2 - 8,
+                    y: player.y,
+                    size: 8 + Math.random() * 6,
+                    opacity: 0.6,
+                    speedY: -speed * 0.5
+                });
+                exhaustParticles.push({
+                    x: player.x + player.width / 2 + 2,
+                    y: player.y,
+                    size: 8 + Math.random() * 6,
+                    opacity: 0.6,
+                    speedY: -speed * 0.5
+                });
+            }
+
+            // Update exhaust particles
+            exhaustParticles = exhaustParticles.filter(particle => {
+                particle.y += particle.speedY;
+                particle.opacity -= 0.02;
+                particle.size += 0.5;
+                return particle.opacity > 0 && particle.y > -50;
+            });
 
             // Update road
             roadOffset += speed;
@@ -572,6 +718,14 @@
             }
             ctx.setLineDash([]);
 
+            // Draw exhaust particles
+            exhaustParticles.forEach(particle => {
+                ctx.fillStyle = `rgba(100, 100, 100, ${particle.opacity})`;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
             // Draw fuel pickups
             fuelPickups.forEach(pickup => {
                 ctx.fillStyle = '#2ecc71';
@@ -587,7 +741,7 @@
             });
 
             // Draw player
-            const carColor = carTypes[upgrades.car].color;
+            const carColor = carTypes[selectedLoadout.car].color;
             drawCar(player.x, player.y, player.width, player.height, carColor);
         }
 
@@ -626,12 +780,16 @@
         }
 
         function checkUpgrades() {
+            let unlocked = false;
+
             // Check car upgrades
             for (let i = upgrades.car + 1; i < carTypes.length; i++) {
                 if (score >= carTypes[i].score && upgrades.car < i) {
                     upgrades.car = i;
+                    selectedLoadout.car = i; // Auto-equip new unlocks
                     showNotification(`🏎️ ${carTypes[i].name} Unlocked!`);
                     updateUpgradeUI();
+                    unlocked = true;
                 }
             }
 
@@ -639,9 +797,11 @@
             for (let i = upgrades.fuel + 1; i < fuelUpgrades.length; i++) {
                 if (score >= fuelUpgrades[i].score && upgrades.fuel < i) {
                     upgrades.fuel = i;
+                    selectedLoadout.fuel = i; // Auto-equip new unlocks
                     fuelDrainRate = fuelUpgrades[i].drain;
                     showNotification(`⛽ ${fuelUpgrades[i].name} Fuel Tank Unlocked!`);
                     updateUpgradeUI();
+                    unlocked = true;
                 }
             }
 
@@ -649,10 +809,18 @@
             for (let i = upgrades.wheels + 1; i < wheelUpgrades.length; i++) {
                 if (score >= wheelUpgrades[i].score && upgrades.wheels < i) {
                     upgrades.wheels = i;
+                    selectedLoadout.wheels = i; // Auto-equip new unlocks
                     player.speed = wheelUpgrades[i].speed;
                     showNotification(`🛞 ${wheelUpgrades[i].name} Unlocked!`);
                     updateUpgradeUI();
+                    unlocked = true;
                 }
+            }
+
+            // Save if anything was unlocked
+            if (unlocked) {
+                saveUnlockedUpgrades();
+                saveSelectedLoadout();
             }
         }
 
@@ -701,6 +869,80 @@
             }, 2000);
         }
 
+        function populateLoadoutSelector() {
+            // Populate car options
+            const carOptions = document.getElementById('carOptions');
+            carOptions.innerHTML = '';
+            for (let i = 0; i < carTypes.length; i++) {
+                const option = document.createElement('div');
+                option.className = 'loadout-option';
+                option.textContent = carTypes[i].name;
+
+                if (i > upgrades.car) {
+                    option.classList.add('locked');
+                    option.textContent += ' 🔒';
+                } else {
+                    option.onclick = () => selectLoadout('car', i);
+                }
+
+                if (i === selectedLoadout.car) {
+                    option.classList.add('selected');
+                }
+
+                carOptions.appendChild(option);
+            }
+
+            // Populate fuel options
+            const fuelOptions = document.getElementById('fuelOptions');
+            fuelOptions.innerHTML = '';
+            for (let i = 0; i < fuelUpgrades.length; i++) {
+                const option = document.createElement('div');
+                option.className = 'loadout-option';
+                option.textContent = fuelUpgrades[i].name;
+
+                if (i > upgrades.fuel) {
+                    option.classList.add('locked');
+                    option.textContent += ' 🔒';
+                } else {
+                    option.onclick = () => selectLoadout('fuel', i);
+                }
+
+                if (i === selectedLoadout.fuel) {
+                    option.classList.add('selected');
+                }
+
+                fuelOptions.appendChild(option);
+            }
+
+            // Populate wheel options
+            const wheelOptions = document.getElementById('wheelOptions');
+            wheelOptions.innerHTML = '';
+            for (let i = 0; i < wheelUpgrades.length; i++) {
+                const option = document.createElement('div');
+                option.className = 'loadout-option';
+                option.textContent = wheelUpgrades[i].name;
+
+                if (i > upgrades.wheels) {
+                    option.classList.add('locked');
+                    option.textContent += ' 🔒';
+                } else {
+                    option.onclick = () => selectLoadout('wheels', i);
+                }
+
+                if (i === selectedLoadout.wheels) {
+                    option.classList.add('selected');
+                }
+
+                wheelOptions.appendChild(option);
+            }
+        }
+
+        function selectLoadout(type, index) {
+            selectedLoadout[type] = index;
+            saveSelectedLoadout();
+            populateLoadoutSelector();
+        }
+
         function gameOver() {
             gameActive = false;
             document.getElementById('startBtn').textContent = '🏁 START RACE';
@@ -708,6 +950,8 @@
 
             document.getElementById('finalDistance').textContent = Math.floor(distance) + 'm';
             document.getElementById('finalScore').textContent = score;
+
+            populateLoadoutSelector();
             document.getElementById('gameOverScreen').style.display = 'flex';
         }
 
@@ -716,7 +960,9 @@
             startGame();
         }
 
-        // Initial upgrade UI
+        // Initialize on page load
+        loadUnlockedUpgrades();
+        loadSelectedLoadout();
         updateUpgradeUI();
     </script>
 </body>
