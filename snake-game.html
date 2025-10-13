@@ -259,7 +259,7 @@
                     <div id="playerName"></div>
                     <div class="controls">
                         Use Arrow Keys to move<br>
-                        Eat the red food to grow!
+                        Eat the colorful fruits to grow!
                     </div>
                 </div>
                 <div class="high-scores">
@@ -296,10 +296,20 @@
         let velocityY = 0;
         let foodX = 15;
         let foodY = 15;
+        let foodType = 0; // Type of current fruit
         let score = 0;
         let playerName = '';
         let gameLoop = null;
         let gameSpeed = 400;
+
+        // Fruit types with colors and point values
+        const fruits = [
+            {name: 'apple', color: '#d9534f', points: 10},
+            {name: 'orange', color: '#ff8c00', points: 10},
+            {name: 'banana', color: '#ffe135', points: 10},
+            {name: 'grape', color: '#9370db', points: 10},
+            {name: 'strawberry', color: '#ff1744', points: 10}
+        ];
 
         // Audio variables
         let audioContext = null;
@@ -374,9 +384,9 @@
                 return;
             }
             if (checkFoodCollision()) {
-                score += 10;
+                score += fruits[foodType].points;
                 updateScore();
-                showChomp(foodX, foodY);
+                showChomp(foodX, foodY, fruits[foodType].points);
                 placeFood();
                 // Speed up with each fruit
                 if (gameSpeed > 100) {
@@ -433,6 +443,8 @@
                     }
                 }
             }
+            // Randomly select a fruit type
+            foodType = Math.floor(Math.random() * fruits.length);
         }
 
         function drawGame() {
@@ -508,39 +520,114 @@
                 }
             });
 
-            // Draw food (apple)
-            const appleCenterX = foodX * gridSize + gridSize / 2;
-            const appleCenterY = foodY * gridSize + gridSize / 2;
-            const appleRadius = gridSize / 2 - 2;
+            // Draw food (fruit)
+            const fruitCenterX = foodX * gridSize + gridSize / 2;
+            const fruitCenterY = foodY * gridSize + gridSize / 2;
+            const fruitRadius = gridSize / 2 - 2;
+            const currentFruit = fruits[foodType];
 
-            // Draw apple body
-            ctx.fillStyle = '#d9534f';
-            ctx.beginPath();
-            ctx.arc(appleCenterX, appleCenterY, appleRadius, 0, Math.PI * 2);
-            ctx.fill();
+            if (currentFruit.name === 'banana') {
+                // Draw banana as an elongated curved shape
+                ctx.fillStyle = currentFruit.color;
+                ctx.beginPath();
+                ctx.ellipse(fruitCenterX, fruitCenterY, fruitRadius * 1.5, fruitRadius * 0.7, Math.PI / 6, 0, Math.PI * 2);
+                ctx.fill();
 
-            // Draw stem
-            ctx.strokeStyle = '#654321';
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(appleCenterX, appleCenterY - appleRadius);
-            ctx.lineTo(appleCenterX + 2, appleCenterY - appleRadius - 5);
-            ctx.stroke();
+                // Add highlight shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.ellipse(fruitCenterX - fruitRadius / 2, fruitCenterY - fruitRadius / 4, fruitRadius / 2, fruitRadius / 4, Math.PI / 6, 0, Math.PI * 2);
+                ctx.fill();
 
-            // Draw leaf
-            ctx.fillStyle = '#2d7f2d';
-            ctx.beginPath();
-            ctx.ellipse(
-                appleCenterX + 5,
-                appleCenterY - appleRadius - 4,
-                4,
-                2.5,
-                Math.PI / 4,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
+                // Draw banana stem (brown tip)
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.arc(fruitCenterX + fruitRadius, fruitCenterY - fruitRadius / 3, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (currentFruit.name === 'strawberry') {
+                // Draw strawberry as a circle
+                ctx.fillStyle = currentFruit.color;
+                ctx.beginPath();
+                ctx.arc(fruitCenterX, fruitCenterY, fruitRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add highlight shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(fruitCenterX - fruitRadius / 3, fruitCenterY - fruitRadius / 3, fruitRadius / 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add seeds (small black dots) - scattered pattern
+                ctx.fillStyle = '#000000';
+                const seedPositions = [
+                    {x: -fruitRadius / 3, y: -fruitRadius / 2.5},
+                    {x: fruitRadius / 3, y: -fruitRadius / 3},
+                    {x: -fruitRadius / 2, y: fruitRadius / 4},
+                    {x: fruitRadius / 2.5, y: fruitRadius / 5},
+                    {x: -fruitRadius / 4, y: fruitRadius / 2},
+                    {x: fruitRadius / 4, y: fruitRadius / 1.8},
+                    {x: 0, y: 0},
+                    {x: fruitRadius / 2, y: -fruitRadius / 5}
+                ];
+                seedPositions.forEach(pos => {
+                    ctx.beginPath();
+                    ctx.arc(fruitCenterX + pos.x, fruitCenterY + pos.y, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Draw green leaves on top
+                ctx.fillStyle = '#2d7f2d';
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.ellipse(
+                        fruitCenterX + (i - 1) * 4,
+                        fruitCenterY - fruitRadius - 3,
+                        3,
+                        4,
+                        Math.PI / 6 * i,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            } else {
+                // Draw other fruits (apple, orange, grape) as circles
+                ctx.fillStyle = currentFruit.color;
+                ctx.beginPath();
+                ctx.arc(fruitCenterX, fruitCenterY, fruitRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add a highlight shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(fruitCenterX - fruitRadius / 3, fruitCenterY - fruitRadius / 3, fruitRadius / 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw stem for all fruits
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(fruitCenterX, fruitCenterY - fruitRadius);
+                ctx.lineTo(fruitCenterX + 2, fruitCenterY - fruitRadius - 5);
+                ctx.stroke();
+
+                // Draw leaf (except for grapes)
+                if (currentFruit.name !== 'grape') {
+                    ctx.fillStyle = '#2d7f2d';
+                    ctx.beginPath();
+                    ctx.ellipse(
+                        fruitCenterX + 5,
+                        fruitCenterY - fruitRadius - 4,
+                        4,
+                        2.5,
+                        Math.PI / 4,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            }
         }
 
         function updateScore() {
@@ -551,7 +638,7 @@
             speedDisplay.textContent = `Speed: ${gameSpeed}ms`;
         }
 
-        function showChomp(x, y) {
+        function showChomp(x, y, points) {
             const gameArea = document.querySelector('.game-area');
             const chompText = document.createElement('div');
             chompText.classList.add('chomp-text');
@@ -715,6 +802,16 @@
         }
 
         // High score management
+        function initializeHighScores() {
+            // Only initialize if localStorage is empty
+            if (!localStorage.getItem('snakeHighScores')) {
+                const baseScores = [
+                    {name: 'Alex', score: 550, timestamp: 1700000001}
+                ];
+                localStorage.setItem('snakeHighScores', JSON.stringify(baseScores));
+            }
+        }
+
         function saveHighScore(name, score) {
             let highScores = getHighScores();
 
@@ -725,18 +822,13 @@
             // Sort by score descending
             highScores.sort((a, b) => b.score - a.score);
 
-            // Keep top 10 player scores only (don't save base scores to localStorage)
+            // Keep top 10 - these are all permanent until beaten
             highScores = highScores.slice(0, 10);
 
             localStorage.setItem('snakeHighScores', JSON.stringify(highScores));
 
-            // Check if this score made it into top 10 of ALL scores (including base)
-            const baseScores = getBaseScores();
-            const allScores = [...highScores, ...baseScores];
-            allScores.sort((a, b) => b.score - a.score);
-            const top10 = allScores.slice(0, 10);
-
-            return top10.some(s => s.timestamp === newScore.timestamp);
+            // Check if this score made it into top 10
+            return highScores.some(s => s.timestamp === newScore.timestamp);
         }
 
         function getHighScores() {
@@ -744,33 +836,20 @@
             return scores ? JSON.parse(scores) : [];
         }
 
-        function getBaseScores() {
-            // These are the permanent baseline scores that can only be removed if beaten
-            // Using fixed timestamps to ensure consistency
-            return [
-                {name: 'Alex', score: 550, timestamp: 1700000001}
-            ];
-        }
-
         function displayHighScores(highlightScore = null, targetList = scoreList) {
-            const highScores = getHighScores();
-            const baseScores = getBaseScores();
+            let highScores = getHighScores();
 
-            // Merge and sort all scores
-            const allScores = [...highScores, ...baseScores];
-            allScores.sort((a, b) => b.score - a.score);
-
-            // Keep top 10 (base scores have fixed timestamps so no duplicates)
-            const top10 = allScores.slice(0, 10);
+            // Ensure we only display top 10
+            highScores = highScores.slice(0, 10);
 
             targetList.innerHTML = '';
 
-            if (top10.length === 0) {
+            if (highScores.length === 0) {
                 targetList.innerHTML = '<li style="text-align: center; color: #999;">No scores yet!</li>';
                 return;
             }
 
-            top10.forEach((hs, index) => {
+            highScores.forEach((hs, index) => {
                 const li = document.createElement('li');
                 li.className = 'score-item';
                 if (highlightScore && hs.score === highlightScore && hs.name === playerName) {
@@ -832,6 +911,7 @@
 
         // Initialize
         startButton.disabled = true;
+        initializeHighScores();
         displayHighScores(null, nameScreenScoreList);
     </script>
 </body>
