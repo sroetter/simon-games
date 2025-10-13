@@ -419,7 +419,7 @@
         let targetSpeed = 0;
         let fuel = 100;
         let maxFuel = 100;
-        let fuelDrainRate = 0.05;
+        let fuelDrainRate = 0.0425;
 
         // Player car
         let player = {
@@ -453,10 +453,10 @@
         ];
 
         const fuelUpgrades = [
-            { name: 'Level 1', drain: 0.05, score: 0 },
-            { name: 'Level 2', drain: 0.04, score: 1100 },
-            { name: 'Level 3', drain: 0.03, score: 2600 },
-            { name: 'Level 4', drain: 0.02, score: 5200 }
+            { name: 'Level 1', drain: 0.0425, score: 0 },
+            { name: 'Level 2', drain: 0.034, score: 1100 },
+            { name: 'Level 3', drain: 0.0255, score: 2600 },
+            { name: 'Level 4', drain: 0.017, score: 5200 }
         ];
 
         const wheelUpgrades = [
@@ -623,7 +623,7 @@
             if (roadOffset > 40) roadOffset = 0;
 
             // Spawn traffic
-            if (Math.random() < 0.0134) {
+            if (Math.random() < 0.01206) {
                 const roadLeftEdge = canvas.width / 2 - 150;
                 const roadRightEdge = canvas.width / 2 + 150;
                 const carWidth = 40;
@@ -652,7 +652,7 @@
             });
 
             // Spawn fuel pickups
-            if (Math.random() < 0.005 && fuel < 80) {
+            if (Math.random() < 0.00335 && fuel < 80) {
                 const roadLeftEdge = canvas.width / 2 - 150;
                 const roadRightEdge = canvas.width / 2 + 150;
                 const pickupWidth = 20;
