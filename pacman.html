@@ -334,9 +334,10 @@
         }
 
         function drawGhosts() {
-            console.log('Drawing', ghosts.length, 'ghosts:', ghosts.map(g => `${g.name}(${g.x},${g.y})`).join(', '));
             ghosts.forEach((ghost, index) => {
-                console.log(`Ghost ${index}: ${ghost.name} at (${ghost.x}, ${ghost.y}) color: ${ghost.color}`);
+                // Don't draw ghosts that have been eaten
+                if (ghost.eaten) return;
+
                 const centerX = ghost.x * tileSize + tileSize / 2;
                 const centerY = ghost.y * tileSize + tileSize / 2;
 
@@ -518,6 +519,9 @@
             if (!gameActive) return;
 
             ghosts.forEach(ghost => {
+                // Don't move ghosts that have been eaten
+                if (ghost.eaten) return;
+
                 const directions = ['up', 'down', 'left', 'right'];
                 const validMoves = [];
 
@@ -677,7 +681,11 @@
             ghost.hasEscaped = false;
             ghost.lastDirection = null;
             ghost.color = ghost.normalColor;
-            ghost.eaten = false;
+
+            // Respawn the ghost after 3 seconds
+            setTimeout(() => {
+                ghost.eaten = false;
+            }, 3000);
         }
 
         function resetAllGhosts() {
