@@ -186,7 +186,7 @@
         let gameStarted = false;
         let score = 0;
         let highScore = localStorage.getItem('kangarooHighScore') || 0;
-        let gameSpeed = 5;
+        let gameSpeed = 2.5;
         let frameCount = 0;
 
         let kangaroo = {
@@ -466,8 +466,8 @@
                 }
             });
 
-            // Spawn new obstacles
-            if (frameCount % 100 === 0 || (obstacles.length === 0 && frameCount > 50)) {
+            // Spawn new obstacles (farther apart)
+            if (frameCount % 150 === 0 || (obstacles.length === 0 && frameCount > 50)) {
                 spawnObstacle();
             }
 
@@ -485,7 +485,7 @@
 
             // Update UI
             document.getElementById('score').textContent = Math.floor(score / 10);
-            document.getElementById('speed').textContent = (gameSpeed / 5).toFixed(1) + 'x';
+            document.getElementById('speed').textContent = (gameSpeed / 2.5).toFixed(1) + 'x';
         }
 
         function draw() {
@@ -499,6 +499,25 @@
             gradient.addColorStop(1, '#D2B48C');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw scoreboard at top
+            if (gameRunning) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, 0, canvas.width, 50);
+
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('SCORE: ' + Math.floor(score / 10), 20, 32);
+
+                ctx.textAlign = 'center';
+                ctx.fillText('HIGH: ' + highScore, canvas.width / 2, 32);
+
+                ctx.textAlign = 'right';
+                ctx.fillText('SPEED: ' + (gameSpeed / 2.5).toFixed(1) + 'x', canvas.width - 20, 32);
+
+                ctx.textAlign = 'left'; // Reset alignment
+            }
 
             // Draw clouds
             clouds.forEach(drawCloud);
@@ -537,7 +556,7 @@
             gameStarted = true;
             gameRunning = true;
             score = 0;
-            gameSpeed = 5;
+            gameSpeed = 2.5;
             frameCount = 0;
             obstacles = [];
 
