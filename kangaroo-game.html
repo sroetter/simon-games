@@ -178,8 +178,8 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        const GRAVITY = 0.6;
-        const JUMP_FORCE = -13;
+        const GRAVITY = 0.36;  // 40% smaller (0.6 * 0.6)
+        const JUMP_FORCE = -8.64;  // Calculated for 0.8 second jump (24 frames * 0.36)
         const GROUND_Y = 320;
 
         let gameRunning = false;
@@ -192,8 +192,8 @@
         let kangaroo = {
             x: 80,
             y: GROUND_Y,
-            width: 50,
-            height: 60,
+            width: 30,  // 40% smaller (50 * 0.6)
+            height: 36,  // 40% smaller (60 * 0.6)
             vy: 0,
             jumping: false,
             ducking: false
@@ -215,85 +215,85 @@
 
         function drawKangaroo() {
             const k = kangaroo;
-            const baseY = k.ducking ? k.y + 20 : k.y;
-            const bodyHeight = k.ducking ? 40 : 60;
+            const baseY = k.ducking ? k.y + 12 : k.y;  // 20 * 0.6 = 12
+            const bodyHeight = k.ducking ? 24 : 36;  // 40 * 0.6 = 24, 60 * 0.6 = 36
 
             ctx.save();
 
             // Body
             ctx.fillStyle = '#D2691E';
-            ctx.fillRect(k.x, baseY, 40, bodyHeight);
+            ctx.fillRect(k.x, baseY, 24, bodyHeight);  // 40 * 0.6 = 24
 
             if (!k.ducking) {
                 // Head
                 ctx.fillStyle = '#D2691E';
-                ctx.fillRect(k.x + 25, baseY - 25, 30, 30);
+                ctx.fillRect(k.x + 15, baseY - 15, 18, 18);  // 25 * 0.6 = 15, 30 * 0.6 = 18
 
                 // Ears
                 ctx.fillStyle = '#8B4513';
-                ctx.fillRect(k.x + 28, baseY - 40, 8, 18);
-                ctx.fillRect(k.x + 42, baseY - 40, 8, 18);
+                ctx.fillRect(k.x + 17, baseY - 24, 5, 11);  // scaled positions and sizes
+                ctx.fillRect(k.x + 25, baseY - 24, 5, 11);
 
                 // Ear inside
                 ctx.fillStyle = '#FFB6C1';
-                ctx.fillRect(k.x + 30, baseY - 38, 4, 14);
-                ctx.fillRect(k.x + 44, baseY - 38, 4, 14);
+                ctx.fillRect(k.x + 18, baseY - 23, 2, 8);
+                ctx.fillRect(k.x + 26, baseY - 23, 2, 8);
 
                 // Eye
                 ctx.fillStyle = '#000000';
-                ctx.fillRect(k.x + 38, baseY - 18, 6, 6);
+                ctx.fillRect(k.x + 23, baseY - 11, 4, 4);  // 6 * 0.6 = 3.6 ≈ 4
 
                 // Nose
                 ctx.fillStyle = '#000000';
-                ctx.fillRect(k.x + 48, baseY - 10, 4, 4);
+                ctx.fillRect(k.x + 29, baseY - 6, 2, 2);  // 4 * 0.6 = 2.4 ≈ 2
             }
 
             // Arms
             ctx.fillStyle = '#D2691E';
             if (k.ducking) {
-                ctx.fillRect(k.x + 5, baseY + 10, 12, 8);
+                ctx.fillRect(k.x + 3, baseY + 6, 7, 5);  // scaled
             } else {
-                ctx.fillRect(k.x + 8, baseY + 20, 10, 25);
+                ctx.fillRect(k.x + 5, baseY + 12, 6, 15);  // scaled
             }
 
             // Tail
             ctx.fillStyle = '#8B4513';
             if (k.ducking) {
-                ctx.fillRect(k.x - 25, baseY + 15, 30, 12);
+                ctx.fillRect(k.x - 15, baseY + 9, 18, 7);  // scaled
             } else {
-                ctx.fillRect(k.x - 15, baseY + 35, 20, 30);
+                ctx.fillRect(k.x - 9, baseY + 21, 12, 18);  // scaled
             }
 
             // Legs (animated)
             ctx.fillStyle = '#D2691E';
-            const legOffset = k.jumping ? 0 : Math.sin(frameCount * 0.3) * 3;
+            const legOffset = k.jumping ? 0 : Math.sin(frameCount * 0.3) * 1.8;  // 3 * 0.6 = 1.8
 
             if (k.ducking) {
                 // Crouched legs
-                ctx.fillRect(k.x + 10, baseY + 30, 12, 15);
-                ctx.fillRect(k.x + 25, baseY + 30, 12, 15);
+                ctx.fillRect(k.x + 6, baseY + 18, 7, 9);  // scaled
+                ctx.fillRect(k.x + 15, baseY + 18, 7, 9);  // scaled
             } else {
                 // Standing/jumping legs
-                ctx.fillRect(k.x + 8, baseY + bodyHeight - 5, 12, 20);
-                ctx.fillRect(k.x + 24, baseY + bodyHeight - 5 + legOffset, 12, 20);
+                ctx.fillRect(k.x + 5, baseY + bodyHeight - 3, 7, 12);  // scaled
+                ctx.fillRect(k.x + 14, baseY + bodyHeight - 3 + legOffset, 7, 12);  // scaled
             }
 
             // Feet
             ctx.fillStyle = '#654321';
             if (k.ducking) {
-                ctx.fillRect(k.x + 10, baseY + 42, 15, 6);
-                ctx.fillRect(k.x + 25, baseY + 42, 15, 6);
+                ctx.fillRect(k.x + 6, baseY + 25, 9, 4);  // scaled
+                ctx.fillRect(k.x + 15, baseY + 25, 9, 4);  // scaled
             } else {
-                ctx.fillRect(k.x + 6, baseY + bodyHeight + 15, 16, 6);
-                ctx.fillRect(k.x + 22, baseY + bodyHeight + 15 + legOffset, 16, 6);
+                ctx.fillRect(k.x + 4, baseY + bodyHeight + 9, 10, 4);  // scaled
+                ctx.fillRect(k.x + 13, baseY + bodyHeight + 9 + legOffset, 10, 4);  // scaled
             }
 
             // Pouch (belly)
             ctx.fillStyle = '#FFE4B5';
             if (k.ducking) {
-                ctx.fillRect(k.x + 15, baseY + 15, 20, 15);
+                ctx.fillRect(k.x + 9, baseY + 9, 12, 9);  // scaled
             } else {
-                ctx.fillRect(k.x + 12, baseY + 25, 20, 25);
+                ctx.fillRect(k.x + 7, baseY + 15, 12, 15);  // scaled
             }
 
             ctx.restore();
@@ -305,57 +305,57 @@
                 ctx.fillStyle = '#808080';
                 ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
 
-                // Rock details
+                // Rock details (scaled)
                 ctx.fillStyle = '#696969';
-                ctx.fillRect(obstacle.x + 5, obstacle.y + 5, obstacle.width - 15, obstacle.height - 15);
+                ctx.fillRect(obstacle.x + 3, obstacle.y + 3, obstacle.width - 9, obstacle.height - 9);  // 5 * 0.6 = 3, 15 * 0.6 = 9
 
                 ctx.fillStyle = '#A9A9A9';
-                ctx.fillRect(obstacle.x + 2, obstacle.y + 2, 10, 10);
-                ctx.fillRect(obstacle.x + obstacle.width - 12, obstacle.y + 8, 8, 8);
+                ctx.fillRect(obstacle.x + 1, obstacle.y + 1, 6, 6);  // 2 * 0.6 = 1.2 ≈ 1, 10 * 0.6 = 6
+                ctx.fillRect(obstacle.x + obstacle.width - 7, obstacle.y + 5, 5, 5);  // scaled
             } else if (obstacle.type === 'cactus') {
-                // Cactus
+                // Cactus (scaled)
                 ctx.fillStyle = '#228B22';
-                ctx.fillRect(obstacle.x + 15, obstacle.y, 20, obstacle.height);
+                ctx.fillRect(obstacle.x + 9, obstacle.y, 12, obstacle.height);  // 15 * 0.6 = 9, 20 * 0.6 = 12
 
-                // Arms
-                ctx.fillRect(obstacle.x, obstacle.y + 20, 15, 8);
-                ctx.fillRect(obstacle.x, obstacle.y + 20, 8, 25);
+                // Arms (scaled)
+                ctx.fillRect(obstacle.x, obstacle.y + 12, 9, 5);  // 20 * 0.6 = 12, 15 * 0.6 = 9, 8 * 0.6 = 5
+                ctx.fillRect(obstacle.x, obstacle.y + 12, 5, 15);  // 8 * 0.6 = 5, 25 * 0.6 = 15
 
-                ctx.fillRect(obstacle.x + 35, obstacle.y + 30, 15, 8);
-                ctx.fillRect(obstacle.x + 42, obstacle.y + 30, 8, 20);
+                ctx.fillRect(obstacle.x + 21, obstacle.y + 18, 9, 5);  // 35 * 0.6 = 21, 30 * 0.6 = 18
+                ctx.fillRect(obstacle.x + 25, obstacle.y + 18, 5, 12);  // 42 * 0.6 = 25, 20 * 0.6 = 12
 
-                // Spikes
+                // Spikes (scaled)
                 ctx.fillStyle = '#006400';
                 for (let i = 0; i < 5; i++) {
-                    ctx.fillRect(obstacle.x + 12 + i * 8, obstacle.y + i * 12, 3, 6);
+                    ctx.fillRect(obstacle.x + 7 + i * 5, obstacle.y + i * 7, 2, 4);  // scaled
                 }
             } else if (obstacle.type === 'bird') {
-                // Flying bird
-                const wingFlap = Math.sin(frameCount * 0.2) * 5;
+                // Flying bird (scaled)
+                const wingFlap = Math.sin(frameCount * 0.2) * 3;  // 5 * 0.6 = 3
 
-                // Body
+                // Body (scaled)
                 ctx.fillStyle = '#8B4513';
-                ctx.fillRect(obstacle.x + 10, obstacle.y + 10, 25, 15);
+                ctx.fillRect(obstacle.x + 6, obstacle.y + 6, 15, 9);  // 10 * 0.6 = 6, 25 * 0.6 = 15, 15 * 0.6 = 9
 
-                // Head
+                // Head (scaled)
                 ctx.fillStyle = '#8B4513';
-                ctx.fillRect(obstacle.x + 30, obstacle.y + 8, 15, 15);
+                ctx.fillRect(obstacle.x + 18, obstacle.y + 5, 9, 9);  // 30 * 0.6 = 18, 8 * 0.6 = 5, 15 * 0.6 = 9
 
-                // Beak
+                // Beak (scaled)
                 ctx.fillStyle = '#FFD700';
-                ctx.fillRect(obstacle.x + 45, obstacle.y + 13, 8, 6);
+                ctx.fillRect(obstacle.x + 27, obstacle.y + 8, 5, 4);  // 45 * 0.6 = 27, 13 * 0.6 = 8, 8 * 0.6 = 5, 6 * 0.6 = 4
 
-                // Eye
+                // Eye (scaled)
                 ctx.fillStyle = '#000000';
-                ctx.fillRect(obstacle.x + 38, obstacle.y + 12, 4, 4);
+                ctx.fillRect(obstacle.x + 23, obstacle.y + 7, 2, 2);  // 38 * 0.6 = 23, 12 * 0.6 = 7, 4 * 0.6 = 2
 
-                // Wings
+                // Wings (scaled)
                 ctx.fillStyle = '#654321';
-                ctx.fillRect(obstacle.x, obstacle.y + 12 + wingFlap, 15, 8);
-                ctx.fillRect(obstacle.x + 30, obstacle.y + 12 - wingFlap, 15, 8);
+                ctx.fillRect(obstacle.x, obstacle.y + 7 + wingFlap, 9, 5);  // 12 * 0.6 = 7, 15 * 0.6 = 9, 8 * 0.6 = 5
+                ctx.fillRect(obstacle.x + 18, obstacle.y + 7 - wingFlap, 9, 5);  // 30 * 0.6 = 18
 
-                // Tail
-                ctx.fillRect(obstacle.x - 5, obstacle.y + 15, 12, 6);
+                // Tail (scaled)
+                ctx.fillRect(obstacle.x - 3, obstacle.y + 9, 7, 4);  // 5 * 0.6 = 3, 15 * 0.6 = 9, 12 * 0.6 = 7, 6 * 0.6 = 4
             }
         }
 
@@ -389,7 +389,8 @@
         }
 
         function spawnObstacle() {
-            const types = ['rock', 'rock', 'cactus', 'bird'];
+            // Only spawn birds after reaching 1000 points
+            const types = score >= 1000 ? ['rock', 'rock', 'cactus', 'bird'] : ['rock', 'rock', 'cactus'];
             const type = types[Math.floor(Math.random() * types.length)];
 
             let obstacle = {
@@ -398,16 +399,16 @@
             };
 
             if (type === 'rock') {
-                obstacle.width = 30 + Math.random() * 20;
-                obstacle.height = 30 + Math.random() * 20;
+                obstacle.width = (30 + Math.random() * 20) * 0.6;  // 40% smaller
+                obstacle.height = (30 + Math.random() * 20) * 0.6;  // 40% smaller
                 obstacle.y = GROUND_Y + 60 - obstacle.height;
             } else if (type === 'cactus') {
-                obstacle.width = 50;
-                obstacle.height = 60 + Math.random() * 20;
+                obstacle.width = 50 * 0.6;  // 30
+                obstacle.height = (60 + Math.random() * 20) * 0.6;  // 40% smaller
                 obstacle.y = GROUND_Y + 60 - obstacle.height;
             } else if (type === 'bird') {
-                obstacle.width = 50;
-                obstacle.height = 30;
+                obstacle.width = 50 * 0.6;  // 30
+                obstacle.height = 30 * 0.6;  // 18
                 obstacle.y = GROUND_Y - 50 - Math.random() * 100;
             }
 
@@ -425,7 +426,10 @@
             if (!gameRunning) return;
 
             frameCount++;
-            score++;
+            // Score increases by 1 every 3 frames (60fps / 3 = 20 points per second)
+            if (frameCount % 3 === 0) {
+                score++;
+            }
 
             // Increase speed over time
             if (frameCount % 300 === 0) {
@@ -450,10 +454,10 @@
 
                 // Check collision
                 const kangarooBox = {
-                    x: kangaroo.x + 5,
-                    y: kangaroo.ducking ? kangaroo.y + 20 : kangaroo.y,
-                    width: kangaroo.width - 10,
-                    height: kangaroo.ducking ? 40 : kangaroo.height
+                    x: kangaroo.x + 3,  // 5 * 0.6 = 3
+                    y: kangaroo.ducking ? kangaroo.y + 12 : kangaroo.y,  // 20 * 0.6 = 12
+                    width: kangaroo.width - 6,  // 10 * 0.6 = 6
+                    height: kangaroo.ducking ? 24 : kangaroo.height  // 40 * 0.6 = 24
                 };
 
                 if (checkCollision(kangarooBox, obstacle)) {
@@ -484,7 +488,7 @@
             groundOffset = (groundOffset + gameSpeed) % 50;
 
             // Update UI
-            document.getElementById('score').textContent = Math.floor(score / 10);
+            document.getElementById('score').textContent = score;
             document.getElementById('speed').textContent = (gameSpeed / 2.5).toFixed(1) + 'x';
         }
 
@@ -508,7 +512,7 @@
                 ctx.fillStyle = 'white';
                 ctx.font = 'bold 24px Arial';
                 ctx.textAlign = 'left';
-                ctx.fillText('SCORE: ' + Math.floor(score / 10), 20, 32);
+                ctx.fillText('SCORE: ' + score, 20, 32);
 
                 ctx.textAlign = 'center';
                 ctx.fillText('HIGH: ' + highScore, canvas.width / 2, 32);
@@ -577,7 +581,7 @@
         function gameOver() {
             gameRunning = false;
 
-            const finalScore = Math.floor(score / 10);
+            const finalScore = score;
 
             if (finalScore > highScore) {
                 highScore = finalScore;
