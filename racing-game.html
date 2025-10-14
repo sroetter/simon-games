@@ -313,7 +313,7 @@
         <h1>🏎️ Turbo Racer</h1>
 
         <div class="instructions">
-            Use <strong>Arrow Keys</strong> or <strong>A/D</strong> to steer • Avoid traffic • Stay on the road • Collect fuel • Score points to unlock upgrades!
+            Use <strong>Arrow Keys</strong> or <strong>A/D</strong> to steer • <strong>SPACE</strong> to brake • Avoid traffic • Stay on the road • Collect fuel • Score points to unlock upgrades!
         </div>
 
         <div class="stats-bar">
@@ -456,21 +456,33 @@
             { name: 'Basic Car', color: '#3498db', score: 0 },
             { name: 'Sports Car', color: '#e74c3c', score: 1500 },
             { name: 'Race Car', color: '#f39c12', score: 3800 },
-            { name: 'Super Car', color: '#9b59b6', score: 7500 }
+            { name: 'Super Car', color: '#9b59b6', score: 7500 },
+            { name: 'Hyper Car', color: '#e056fd', score: 12000 },
+            { name: 'Proto Car', color: '#00ffff', score: 18000 },
+            { name: 'Mega Car', color: '#ff1493', score: 25000 },
+            { name: 'Ultra Car', color: '#ffd700', score: 35000 }
         ];
 
         const fuelUpgrades = [
             { name: 'Level 1', drain: 0.0425, score: 0 },
             { name: 'Level 2', drain: 0.034, score: 1100 },
             { name: 'Level 3', drain: 0.0255, score: 2600 },
-            { name: 'Level 4', drain: 0.017, score: 5200 }
+            { name: 'Level 4', drain: 0.017, score: 5200 },
+            { name: 'Level 5', drain: 0.0127, score: 8500 },
+            { name: 'Level 6', drain: 0.0095, score: 13000 },
+            { name: 'Level 7', drain: 0.0071, score: 19000 },
+            { name: 'Level 8', drain: 0.0053, score: 27000 }
         ];
 
         const wheelUpgrades = [
-            { name: 'Stock Wheels', speed: 5, score: 0 },
-            { name: 'Sport Wheels', speed: 6, score: 1300 },
-            { name: 'Racing Slicks', speed: 7.5, score: 3000 },
-            { name: 'Turbo Wheels', speed: 9, score: 6000 }
+            { name: 'Stock Wheels', speed: 5, handling: 5, score: 0 },
+            { name: 'Sport Wheels', speed: 6, handling: 6.5, score: 1300 },
+            { name: 'Racing Slicks', speed: 7.5, handling: 8, score: 3000 },
+            { name: 'Turbo Wheels', speed: 9, handling: 9.5, score: 6000 },
+            { name: 'Nitro Wheels', speed: 10.5, handling: 11, score: 10000 },
+            { name: 'Rocket Wheels', speed: 12, handling: 12.5, score: 15000 },
+            { name: 'Plasma Wheels', speed: 13.5, handling: 14, score: 22000 },
+            { name: 'Quantum Wheels', speed: 15, handling: 16, score: 30000 }
         ];
 
         // Track themes
@@ -542,6 +554,13 @@
 
         // Snow particles
         let snowParticles = [];
+
+        // Stoplight system
+        let stoplights = [];
+        let atStoplight = false;
+        let stoplightTimer = 0;
+        const STOPLIGHT_INTERVAL = 500; // Every 500m
+        const STOPLIGHT_DURATION = 5000; // 5 seconds at red light
 
         // Controls
         let keys = {};
@@ -659,11 +678,19 @@
             const roadRightEdge = canvas.width / 2 + 150;
 
             // Player movement (allow movement beyond road edges, but will trigger game over)
+            // Better wheels = better handling (faster steering)
+            const handling = wheelUpgrades[selectedLoadout.wheels].handling;
             if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-                player.x -= player.speed;
+                player.x -= handling;
             }
             if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-                player.x += player.speed;
+                player.x += handling;
+            }
+
+            // Brake with spacebar
+            if (keys[' ']) {
+                speed *= 0.95;
+                targetSpeed = Math.max(2, targetSpeed * 0.98);
             }
 
             // Check if player is off the road (on grass)
@@ -756,21 +783,29 @@
             if (roadOffset > 40) roadOffset = 0;
 
             // Spawn traffic
-            if (Math.random() < 0.01206) {
+            if (Math.random() < 0.0225) {
                 const roadLeftEdge = canvas.width / 2 - 150;
                 const roadRightEdge = canvas.width / 2 + 150;
                 const carWidth = 40;
-                // Spawn cars randomly across the entire road width
-                const randomX = roadLeftEdge + Math.random() * (roadRightEdge - roadLeftEdge - carWidth);
-                traffic.push({
-                    x: randomX,
-                    y: -80,
-                    width: carWidth,
-                    height: 70,
-                    speed: 2 + Math.random() * 2,
-                    color: ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'][Math.floor(Math.random() * 4)],
-                    carType: Math.floor(Math.random() * 4) // Random car type 0-3
-                });
+                const minGap = 30; // Minimum gap between cars
+                const spawnY = -80;
+
+                // Check if there's any car too close to the spawn position
+                const canSpawn = !traffic.some(car => car.y > spawnY - minGap && car.y < spawnY + minGap);
+
+                if (canSpawn) {
+                    // Spawn cars randomly across the entire road width
+                    const randomX = roadLeftEdge + Math.random() * (roadRightEdge - roadLeftEdge - carWidth);
+                    traffic.push({
+                        x: randomX,
+                        y: spawnY,
+                        width: carWidth,
+                        height: 70,
+                        speed: 2 + Math.random() * 2,
+                        color: ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'][Math.floor(Math.random() * 4)],
+                        carType: Math.floor(Math.random() * 4) // Random car type 0-3
+                    });
+                }
             }
 
             // Update traffic
@@ -909,7 +944,9 @@
 
             // Draw player
             const carColor = carTypes[selectedLoadout.car].color;
-            drawCar(player.x, player.y, player.width, player.height, carColor, selectedLoadout.car);
+            // Use modulo to cycle through 4 visual styles for 8 car types
+            const visualStyle = selectedLoadout.car % 4;
+            drawCar(player.x, player.y, player.width, player.height, carColor, visualStyle);
         }
 
         function drawCar(x, y, width, height, color, carType = 0) {
@@ -977,48 +1014,48 @@
                 ctx.fillRect(x + width - 17, y + height - 8, 10, 6);
             }
 
-            // Race Car (Type 2)
+            // Race Car (Type 2) - Similar size to Sports Car
             else if (carType === 2) {
-                // Car body (wider and lower)
+                // Car body (similar to sports car)
                 ctx.fillStyle = color;
-                ctx.fillRect(x + 2, y + 18, width - 4, height - 23);
+                ctx.fillRect(x + 4, y + 15, width - 8, height - 20);
 
-                // Car top (very low profile)
+                // Car top (sleek like sports car)
                 ctx.fillStyle = color;
-                ctx.fillRect(x + 6, y + 8, width - 12, 18);
+                ctx.fillRect(x + 7, y + 5, width - 14, 22);
 
-                // Large spoiler
+                // Spoiler (slightly larger than sports)
                 ctx.fillStyle = color;
-                ctx.fillRect(x + 3, y - 5, width - 6, 6);
-                ctx.fillRect(x + 5, y - 5, 3, 13);
-                ctx.fillRect(x + width - 8, y - 5, 3, 13);
+                ctx.fillRect(x + 5, y - 2, width - 10, 6);
+                ctx.fillRect(x + 6, y - 2, 3, 8);
+                ctx.fillRect(x + width - 9, y - 2, 3, 8);
 
                 // Windows (dark tinted)
                 ctx.fillStyle = '#1a252f';
-                ctx.fillRect(x + 8, y + 10, width - 16, 6);
-                ctx.fillRect(x + 8, y + 18, width - 16, 6);
+                ctx.fillRect(x + 9, y + 7, width - 18, 8);
+                ctx.fillRect(x + 9, y + 18, width - 18, 7);
 
                 // Racing stripes (dual)
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(x + width / 2 - 5, y + 8, 3, height - 13);
-                ctx.fillRect(x + width / 2 + 2, y + 8, 3, height - 13);
+                ctx.fillRect(x + width / 2 - 5, y + 5, 3, height - 10);
+                ctx.fillRect(x + width / 2 + 2, y + 5, 3, height - 10);
 
                 // Numbers
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 12px Arial';
                 ctx.fillText('1', x + width / 2 - 3, y + 40);
 
-                // Wheels (wide racing wheels)
+                // Wheels (same as sports car)
                 ctx.fillStyle = '#000';
-                ctx.fillRect(x - 3, y + 6, 12, 20);
-                ctx.fillRect(x + width - 9, y + 6, 12, 20);
-                ctx.fillRect(x - 3, y + height - 30, 12, 20);
-                ctx.fillRect(x + width - 9, y + height - 30, 12, 20);
+                ctx.fillRect(x - 2, y + 8, 10, 18);
+                ctx.fillRect(x + width - 8, y + 8, 10, 18);
+                ctx.fillRect(x - 2, y + height - 28, 10, 18);
+                ctx.fillRect(x + width - 8, y + height - 28, 10, 18);
 
                 // Headlights (LED style)
                 ctx.fillStyle = '#00ffff';
-                ctx.fillRect(x + 5, y + height - 8, 12, 6);
-                ctx.fillRect(x + width - 17, y + height - 8, 12, 6);
+                ctx.fillRect(x + 7, y + height - 8, 10, 6);
+                ctx.fillRect(x + width - 17, y + height - 8, 10, 6);
             }
 
             // Super Car (Type 3)

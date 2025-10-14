@@ -282,6 +282,34 @@
         <div id="craftRecipes"></div>
     </div>
 
+    <div class="craft-menu" id="furnaceMenu" style="display: none;">
+        <span class="close-craft" onclick="closeFurnaceMenu()">×</span>
+        <h2>🔥 Furnace</h2>
+        <div style="margin: 15px 0;">
+            <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                <div style="font-weight: bold; margin-bottom: 8px;">Input Item:</div>
+                <select id="furnaceInput" style="width: 100%; padding: 8px; border-radius: 5px; border: 2px solid #ccc;">
+                    <option value="">Select item to smelt...</option>
+                </select>
+            </div>
+            <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                <div style="font-weight: bold; margin-bottom: 8px;">Fuel:</div>
+                <select id="furnaceFuel" style="width: 100%; padding: 8px; border-radius: 5px; border: 2px solid #ccc;">
+                    <option value="">Select fuel...</option>
+                </select>
+            </div>
+            <div id="furnaceProgress" style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: none;">
+                <div style="font-weight: bold; margin-bottom: 8px;">Smelting Progress:</div>
+                <div style="background: #ccc; height: 20px; border-radius: 10px; overflow: hidden;">
+                    <div id="furnaceProgressBar" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+            </div>
+            <button onclick="startSmelting()" style="width: 100%; padding: 12px; font-size: 16px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                Start Smelting
+            </button>
+        </div>
+    </div>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -294,77 +322,464 @@
         // Block types
         const BLOCKS = {
             AIR: 0,
+            // Terrain
             GRASS: 1,
             DIRT: 2,
             STONE: 3,
-            WOOD: 4,
-            LEAVES: 5,
-            PLANKS: 6,
-            COAL_ORE: 7,
-            IRON_ORE: 8,
-            DIAMOND_ORE: 9,
-            CRAFTING_TABLE: 10,
-            STICK: 11,
-            TORCH: 12
+            COBBLESTONE: 4,
+            SAND: 5,
+            GRAVEL: 6,
+            SANDSTONE: 7,
+            RED_SAND: 8,
+            RED_SANDSTONE: 9,
+            SNOW_BLOCK: 10,
+            ICE: 11,
+            CLAY: 12,
+            // Wood types - Logs
+            OAK_LOG: 13,
+            BIRCH_LOG: 14,
+            SPRUCE_LOG: 15,
+            JUNGLE_LOG: 16,
+            ACACIA_LOG: 17,
+            DARK_OAK_LOG: 18,
+            // Wood types - Planks
+            OAK_PLANKS: 19,
+            BIRCH_PLANKS: 20,
+            SPRUCE_PLANKS: 21,
+            JUNGLE_PLANKS: 22,
+            ACACIA_PLANKS: 23,
+            DARK_OAK_PLANKS: 24,
+            // Leaves
+            OAK_LEAVES: 25,
+            BIRCH_LEAVES: 26,
+            SPRUCE_LEAVES: 27,
+            JUNGLE_LEAVES: 28,
+            // Ores
+            COAL_ORE: 29,
+            IRON_ORE: 30,
+            GOLD_ORE: 31,
+            DIAMOND_ORE: 32,
+            EMERALD_ORE: 33,
+            LAPIS_ORE: 34,
+            REDSTONE_ORE: 35,
+            COPPER_ORE: 36,
+            // Processed materials
+            IRON_BLOCK: 37,
+            GOLD_BLOCK: 38,
+            DIAMOND_BLOCK: 39,
+            EMERALD_BLOCK: 40,
+            COAL_BLOCK: 41,
+            COPPER_BLOCK: 42,
+            // Building blocks
+            BRICKS: 43,
+            STONE_BRICKS: 44,
+            MOSSY_COBBLESTONE: 45,
+            MOSSY_STONE_BRICKS: 46,
+            GLASS: 47,
+            OBSIDIAN: 48,
+            // Functional blocks
+            CRAFTING_TABLE: 49,
+            FURNACE: 50,
+            CHEST: 51,
+            LADDER: 52,
+            TNT: 53,
+            BOOKSHELF: 54,
+            // Liquids
+            WATER: 55,
+            LAVA: 56,
+            // Other
+            BEDROCK: 57,
+            SPONGE: 58,
+            WOOL_WHITE: 59,
+            WOOL_RED: 60,
+            WOOL_BLUE: 61,
+            WOOL_GREEN: 62,
+            WOOL_YELLOW: 63,
+            WOOL_ORANGE: 64,
+            TERRACOTTA: 65,
+            // Items (not placeable)
+            STICK: 100,
+            COAL: 101,
+            IRON_INGOT: 102,
+            GOLD_INGOT: 103,
+            DIAMOND: 104,
+            EMERALD: 105,
+            TORCH: 106,
+            // Tools - Wooden
+            WOODEN_PICKAXE: 107,
+            WOODEN_AXE: 108,
+            WOODEN_SHOVEL: 109,
+            WOODEN_SWORD: 110,
+            // Tools - Stone
+            STONE_PICKAXE: 111,
+            STONE_AXE: 112,
+            STONE_SHOVEL: 113,
+            STONE_SWORD: 114,
+            // Tools - Iron
+            IRON_PICKAXE: 115,
+            IRON_AXE: 116,
+            IRON_SHOVEL: 117,
+            IRON_SWORD: 118,
+            // Tools - Gold
+            GOLD_PICKAXE: 119,
+            GOLD_AXE: 120,
+            GOLD_SHOVEL: 121,
+            GOLD_SWORD: 122,
+            // Tools - Diamond
+            DIAMOND_PICKAXE: 123,
+            DIAMOND_AXE: 124,
+            DIAMOND_SHOVEL: 125,
+            DIAMOND_SWORD: 126
         };
 
         const BLOCK_COLORS = {
             [BLOCKS.AIR]: null,
+            // Terrain
             [BLOCKS.GRASS]: { top: '#7ec850', side: '#6b9e3e' },
             [BLOCKS.DIRT]: '#8B4513',
             [BLOCKS.STONE]: '#808080',
-            [BLOCKS.WOOD]: '#8B4513',
-            [BLOCKS.LEAVES]: '#228B22',
-            [BLOCKS.PLANKS]: '#DEB887',
+            [BLOCKS.COBBLESTONE]: '#6B6B6B',
+            [BLOCKS.SAND]: '#EDC9AF',
+            [BLOCKS.GRAVEL]: '#7F7F7F',
+            [BLOCKS.SANDSTONE]: '#D9B88F',
+            [BLOCKS.RED_SAND]: '#C47A40',
+            [BLOCKS.RED_SANDSTONE]: '#BC6E3F',
+            [BLOCKS.SNOW_BLOCK]: '#FFFFFF',
+            [BLOCKS.ICE]: '#A0D5F5',
+            [BLOCKS.CLAY]: '#A4AAB8',
+            // Wood types - Logs
+            [BLOCKS.OAK_LOG]: '#8B6914',
+            [BLOCKS.BIRCH_LOG]: '#E8D9B8',
+            [BLOCKS.SPRUCE_LOG]: '#4A3319',
+            [BLOCKS.JUNGLE_LOG]: '#725E3C',
+            [BLOCKS.ACACIA_LOG]: '#A0522D',
+            [BLOCKS.DARK_OAK_LOG]: '#3D2817',
+            // Wood types - Planks
+            [BLOCKS.OAK_PLANKS]: '#C9995C',
+            [BLOCKS.BIRCH_PLANKS]: '#D7CB8D',
+            [BLOCKS.SPRUCE_PLANKS]: '#6B5434',
+            [BLOCKS.JUNGLE_PLANKS]: '#B1814B',
+            [BLOCKS.ACACIA_PLANKS]: '#BA6337',
+            [BLOCKS.DARK_OAK_PLANKS]: '#4B3621',
+            // Leaves
+            [BLOCKS.OAK_LEAVES]: '#228B22',
+            [BLOCKS.BIRCH_LEAVES]: '#5FAC42',
+            [BLOCKS.SPRUCE_LEAVES]: '#287233',
+            [BLOCKS.JUNGLE_LEAVES]: '#3D9B3A',
+            // Ores
             [BLOCKS.COAL_ORE]: '#404040',
             [BLOCKS.IRON_ORE]: '#D4A373',
+            [BLOCKS.GOLD_ORE]: '#FCEE4B',
             [BLOCKS.DIAMOND_ORE]: '#00CED1',
+            [BLOCKS.EMERALD_ORE]: '#50C878',
+            [BLOCKS.LAPIS_ORE]: '#1E4D8B',
+            [BLOCKS.REDSTONE_ORE]: '#C00000',
+            [BLOCKS.COPPER_ORE]: '#D26E4B',
+            // Processed materials
+            [BLOCKS.IRON_BLOCK]: '#D8D8D8',
+            [BLOCKS.GOLD_BLOCK]: '#FFD700',
+            [BLOCKS.DIAMOND_BLOCK]: '#5DECF5',
+            [BLOCKS.EMERALD_BLOCK]: '#2BE872',
+            [BLOCKS.COAL_BLOCK]: '#1A1A1A',
+            [BLOCKS.COPPER_BLOCK]: '#E77C56',
+            // Building blocks
+            [BLOCKS.BRICKS]: '#8B4049',
+            [BLOCKS.STONE_BRICKS]: '#7A7A7A',
+            [BLOCKS.MOSSY_COBBLESTONE]: '#637B5E',
+            [BLOCKS.MOSSY_STONE_BRICKS]: '#6B826B',
+            [BLOCKS.GLASS]: 'rgba(173, 216, 230, 0.4)',
+            [BLOCKS.OBSIDIAN]: '#1A0D2E',
+            // Functional blocks
             [BLOCKS.CRAFTING_TABLE]: '#8B7355',
+            [BLOCKS.FURNACE]: '#6B6B6B',
+            [BLOCKS.CHEST]: '#805A3C',
+            [BLOCKS.LADDER]: '#9F7A3A',
+            [BLOCKS.TNT]: '#FF0000',
+            [BLOCKS.BOOKSHELF]: '#76542B',
+            // Liquids
+            [BLOCKS.WATER]: 'rgba(0, 119, 190, 0.6)',
+            [BLOCKS.LAVA]: '#FF4500',
+            // Other
+            [BLOCKS.BEDROCK]: '#2F2F2F',
+            [BLOCKS.SPONGE]: '#BDB76B',
+            [BLOCKS.WOOL_WHITE]: '#FFFFFF',
+            [BLOCKS.WOOL_RED]: '#DC143C',
+            [BLOCKS.WOOL_BLUE]: '#1E90FF',
+            [BLOCKS.WOOL_GREEN]: '#32CD32',
+            [BLOCKS.WOOL_YELLOW]: '#FFD700',
+            [BLOCKS.WOOL_ORANGE]: '#FF8C00',
+            [BLOCKS.TERRACOTTA]: '#CD853F',
+            // Items
             [BLOCKS.TORCH]: '#FFA500'
         };
 
         const BLOCK_NAMES = {
+            // Terrain
             [BLOCKS.GRASS]: '🌱',
             [BLOCKS.DIRT]: '🟫',
             [BLOCKS.STONE]: '🪨',
-            [BLOCKS.WOOD]: '🪵',
-            [BLOCKS.LEAVES]: '🍃',
-            [BLOCKS.PLANKS]: '📦',
+            [BLOCKS.COBBLESTONE]: '⬛',
+            [BLOCKS.SAND]: '🟨',
+            [BLOCKS.GRAVEL]: '⚫',
+            [BLOCKS.SANDSTONE]: '🟧',
+            [BLOCKS.RED_SAND]: '🟥',
+            [BLOCKS.RED_SANDSTONE]: '🔴',
+            [BLOCKS.SNOW_BLOCK]: '⬜',
+            [BLOCKS.ICE]: '🧊',
+            [BLOCKS.CLAY]: '🔲',
+            // Wood types - Logs
+            [BLOCKS.OAK_LOG]: '🪵',
+            [BLOCKS.BIRCH_LOG]: '🌳',
+            [BLOCKS.SPRUCE_LOG]: '🌲',
+            [BLOCKS.JUNGLE_LOG]: '🌴',
+            [BLOCKS.ACACIA_LOG]: '🌾',
+            [BLOCKS.DARK_OAK_LOG]: '🪨',
+            // Wood types - Planks
+            [BLOCKS.OAK_PLANKS]: '📦',
+            [BLOCKS.BIRCH_PLANKS]: '📋',
+            [BLOCKS.SPRUCE_PLANKS]: '🟤',
+            [BLOCKS.JUNGLE_PLANKS]: '🧱',
+            [BLOCKS.ACACIA_PLANKS]: '🟠',
+            [BLOCKS.DARK_OAK_PLANKS]: '⬛',
+            // Leaves
+            [BLOCKS.OAK_LEAVES]: '🍃',
+            [BLOCKS.BIRCH_LEAVES]: '🌿',
+            [BLOCKS.SPRUCE_LEAVES]: '🥬',
+            [BLOCKS.JUNGLE_LEAVES]: '☘️',
+            // Ores
             [BLOCKS.COAL_ORE]: '⚫',
             [BLOCKS.IRON_ORE]: '⚪',
+            [BLOCKS.GOLD_ORE]: '🟡',
             [BLOCKS.DIAMOND_ORE]: '💎',
+            [BLOCKS.EMERALD_ORE]: '💚',
+            [BLOCKS.LAPIS_ORE]: '🔵',
+            [BLOCKS.REDSTONE_ORE]: '🔴',
+            [BLOCKS.COPPER_ORE]: '🟠',
+            // Processed materials
+            [BLOCKS.IRON_BLOCK]: '⬜',
+            [BLOCKS.GOLD_BLOCK]: '🟨',
+            [BLOCKS.DIAMOND_BLOCK]: '💠',
+            [BLOCKS.EMERALD_BLOCK]: '🟩',
+            [BLOCKS.COAL_BLOCK]: '⬛',
+            [BLOCKS.COPPER_BLOCK]: '🟧',
+            // Building blocks
+            [BLOCKS.BRICKS]: '🧱',
+            [BLOCKS.STONE_BRICKS]: '🔲',
+            [BLOCKS.MOSSY_COBBLESTONE]: '🟩',
+            [BLOCKS.MOSSY_STONE_BRICKS]: '🌿',
+            [BLOCKS.GLASS]: '◻️',
+            [BLOCKS.OBSIDIAN]: '⬛',
+            // Functional blocks
             [BLOCKS.CRAFTING_TABLE]: '🔨',
+            [BLOCKS.FURNACE]: '🔥',
+            [BLOCKS.CHEST]: '📦',
+            [BLOCKS.LADDER]: '🪜',
+            [BLOCKS.TNT]: '🧨',
+            [BLOCKS.BOOKSHELF]: '📚',
+            // Liquids
+            [BLOCKS.WATER]: '💧',
+            [BLOCKS.LAVA]: '🌋',
+            // Other
+            [BLOCKS.BEDROCK]: '⬛',
+            [BLOCKS.SPONGE]: '🧽',
+            [BLOCKS.WOOL_WHITE]: '🤍',
+            [BLOCKS.WOOL_RED]: '❤️',
+            [BLOCKS.WOOL_BLUE]: '💙',
+            [BLOCKS.WOOL_GREEN]: '💚',
+            [BLOCKS.WOOL_YELLOW]: '💛',
+            [BLOCKS.WOOL_ORANGE]: '🧡',
+            [BLOCKS.TERRACOTTA]: '🟧',
+            // Items
             [BLOCKS.STICK]: '🦴',
-            [BLOCKS.TORCH]: '🔥'
+            [BLOCKS.COAL]: '⚫',
+            [BLOCKS.IRON_INGOT]: '⚪',
+            [BLOCKS.GOLD_INGOT]: '🟡',
+            [BLOCKS.DIAMOND]: '💎',
+            [BLOCKS.EMERALD]: '💚',
+            [BLOCKS.TORCH]: '🔥',
+            // Tools - Wooden
+            [BLOCKS.WOODEN_PICKAXE]: '🪓',
+            [BLOCKS.WOODEN_AXE]: '🪓',
+            [BLOCKS.WOODEN_SHOVEL]: '🗡️',
+            [BLOCKS.WOODEN_SWORD]: '🗡️',
+            // Tools - Stone
+            [BLOCKS.STONE_PICKAXE]: '⛏️',
+            [BLOCKS.STONE_AXE]: '🪓',
+            [BLOCKS.STONE_SHOVEL]: '🗡️',
+            [BLOCKS.STONE_SWORD]: '⚔️',
+            // Tools - Iron
+            [BLOCKS.IRON_PICKAXE]: '⛏️',
+            [BLOCKS.IRON_AXE]: '🪓',
+            [BLOCKS.IRON_SHOVEL]: '🗡️',
+            [BLOCKS.IRON_SWORD]: '⚔️',
+            // Tools - Gold
+            [BLOCKS.GOLD_PICKAXE]: '⛏️',
+            [BLOCKS.GOLD_AXE]: '🪓',
+            [BLOCKS.GOLD_SHOVEL]: '🗡️',
+            [BLOCKS.GOLD_SWORD]: '⚔️',
+            // Tools - Diamond
+            [BLOCKS.DIAMOND_PICKAXE]: '⛏️',
+            [BLOCKS.DIAMOND_AXE]: '🪓',
+            [BLOCKS.DIAMOND_SHOVEL]: '🗡️',
+            [BLOCKS.DIAMOND_SWORD]: '⚔️'
         };
 
         // Crafting recipes
         const RECIPES = [
-            {
-                name: '📦 Planks',
-                result: BLOCKS.PLANKS,
-                count: 4,
-                ingredients: { [BLOCKS.WOOD]: 1 }
-            },
-            {
-                name: '🦴 Sticks',
-                result: BLOCKS.STICK,
-                count: 4,
-                ingredients: { [BLOCKS.PLANKS]: 2 }
-            },
-            {
-                name: '🔨 Crafting Table',
-                result: BLOCKS.CRAFTING_TABLE,
-                count: 1,
-                ingredients: { [BLOCKS.PLANKS]: 4 }
-            },
-            {
-                name: '🔥 Torch',
-                result: BLOCKS.TORCH,
-                count: 4,
-                ingredients: { [BLOCKS.COAL_ORE]: 1, [BLOCKS.STICK]: 1 }
-            }
+            // Basic wood crafting
+            { name: '📦 Oak Planks', result: BLOCKS.OAK_PLANKS, count: 4, ingredients: { [BLOCKS.OAK_LOG]: 1 } },
+            { name: '📋 Birch Planks', result: BLOCKS.BIRCH_PLANKS, count: 4, ingredients: { [BLOCKS.BIRCH_LOG]: 1 } },
+            { name: '🟤 Spruce Planks', result: BLOCKS.SPRUCE_PLANKS, count: 4, ingredients: { [BLOCKS.SPRUCE_LOG]: 1 } },
+            { name: '🧱 Jungle Planks', result: BLOCKS.JUNGLE_PLANKS, count: 4, ingredients: { [BLOCKS.JUNGLE_LOG]: 1 } },
+            { name: '🟠 Acacia Planks', result: BLOCKS.ACACIA_PLANKS, count: 4, ingredients: { [BLOCKS.ACACIA_LOG]: 1 } },
+            { name: '⬛ Dark Oak Planks', result: BLOCKS.DARK_OAK_PLANKS, count: 4, ingredients: { [BLOCKS.DARK_OAK_LOG]: 1 } },
+            { name: '🦴 Sticks', result: BLOCKS.STICK, count: 4, ingredients: { [BLOCKS.OAK_PLANKS]: 2 } },
+
+            // Functional blocks
+            { name: '🔨 Crafting Table', result: BLOCKS.CRAFTING_TABLE, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 4 } },
+            { name: '🔥 Furnace', result: BLOCKS.FURNACE, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 8 } },
+            { name: '📦 Chest', result: BLOCKS.CHEST, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 8 } },
+            { name: '🪜 Ladder', result: BLOCKS.LADDER, count: 3, ingredients: { [BLOCKS.STICK]: 7 } },
+            { name: '🔥 Torch', result: BLOCKS.TORCH, count: 4, ingredients: { [BLOCKS.COAL]: 1, [BLOCKS.STICK]: 1 } },
+
+            // Building blocks
+            { name: '🔲 Stone Bricks', result: BLOCKS.STONE_BRICKS, count: 4, ingredients: { [BLOCKS.STONE]: 4 } },
+            { name: '🟧 Sandstone', result: BLOCKS.SANDSTONE, count: 1, ingredients: { [BLOCKS.SAND]: 4 } },
+            { name: '🔴 Red Sandstone', result: BLOCKS.RED_SANDSTONE, count: 1, ingredients: { [BLOCKS.RED_SAND]: 4 } },
+            { name: '📚 Bookshelf', result: BLOCKS.BOOKSHELF, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 6 } },
+            { name: '🧨 TNT', result: BLOCKS.TNT, count: 1, ingredients: { [BLOCKS.SAND]: 4 } },
+
+            // Material blocks
+            { name: '⬛ Coal Block', result: BLOCKS.COAL_BLOCK, count: 1, ingredients: { [BLOCKS.COAL]: 9 } },
+            { name: '⬜ Iron Block', result: BLOCKS.IRON_BLOCK, count: 1, ingredients: { [BLOCKS.IRON_INGOT]: 9 } },
+            { name: '🟨 Gold Block', result: BLOCKS.GOLD_BLOCK, count: 1, ingredients: { [BLOCKS.GOLD_INGOT]: 9 } },
+            { name: '💠 Diamond Block', result: BLOCKS.DIAMOND_BLOCK, count: 1, ingredients: { [BLOCKS.DIAMOND]: 9 } },
+            { name: '🟩 Emerald Block', result: BLOCKS.EMERALD_BLOCK, count: 1, ingredients: { [BLOCKS.EMERALD]: 9 } },
+            { name: '🟧 Copper Block', result: BLOCKS.COPPER_BLOCK, count: 1, ingredients: { [BLOCKS.COPPER_ORE]: 9 } },
+
+            // Wool
+            { name: '🤍 White Wool', result: BLOCKS.WOOL_WHITE, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 1 } },
+            { name: '❤️ Red Wool', result: BLOCKS.WOOL_RED, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 1 } },
+            { name: '💙 Blue Wool', result: BLOCKS.WOOL_BLUE, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 1 } },
+            { name: '💚 Green Wool', result: BLOCKS.WOOL_GREEN, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 1 } },
+            { name: '💛 Yellow Wool', result: BLOCKS.WOOL_YELLOW, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 1 } },
+            { name: '🧡 Orange Wool', result: BLOCKS.WOOL_ORANGE, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 1 } },
+
+            // Tools - Wooden
+            { name: '🪓 Wooden Pickaxe', result: BLOCKS.WOODEN_PICKAXE, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🪓 Wooden Axe', result: BLOCKS.WOODEN_AXE, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🗡️ Wooden Shovel', result: BLOCKS.WOODEN_SHOVEL, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 1, [BLOCKS.STICK]: 2 } },
+            { name: '🗡️ Wooden Sword', result: BLOCKS.WOODEN_SWORD, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 2, [BLOCKS.STICK]: 1 } },
+
+            // Tools - Stone
+            { name: '⛏️ Stone Pickaxe', result: BLOCKS.STONE_PICKAXE, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🪓 Stone Axe', result: BLOCKS.STONE_AXE, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🗡️ Stone Shovel', result: BLOCKS.STONE_SHOVEL, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 1, [BLOCKS.STICK]: 2 } },
+            { name: '⚔️ Stone Sword', result: BLOCKS.STONE_SWORD, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 2, [BLOCKS.STICK]: 1 } },
+
+            // Tools - Iron
+            { name: '⛏️ Iron Pickaxe', result: BLOCKS.IRON_PICKAXE, count: 1, ingredients: { [BLOCKS.IRON_INGOT]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🪓 Iron Axe', result: BLOCKS.IRON_AXE, count: 1, ingredients: { [BLOCKS.IRON_INGOT]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🗡️ Iron Shovel', result: BLOCKS.IRON_SHOVEL, count: 1, ingredients: { [BLOCKS.IRON_INGOT]: 1, [BLOCKS.STICK]: 2 } },
+            { name: '⚔️ Iron Sword', result: BLOCKS.IRON_SWORD, count: 1, ingredients: { [BLOCKS.IRON_INGOT]: 2, [BLOCKS.STICK]: 1 } },
+
+            // Tools - Gold
+            { name: '⛏️ Gold Pickaxe', result: BLOCKS.GOLD_PICKAXE, count: 1, ingredients: { [BLOCKS.GOLD_INGOT]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🪓 Gold Axe', result: BLOCKS.GOLD_AXE, count: 1, ingredients: { [BLOCKS.GOLD_INGOT]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🗡️ Gold Shovel', result: BLOCKS.GOLD_SHOVEL, count: 1, ingredients: { [BLOCKS.GOLD_INGOT]: 1, [BLOCKS.STICK]: 2 } },
+            { name: '⚔️ Gold Sword', result: BLOCKS.GOLD_SWORD, count: 1, ingredients: { [BLOCKS.GOLD_INGOT]: 2, [BLOCKS.STICK]: 1 } },
+
+            // Tools - Diamond
+            { name: '⛏️ Diamond Pickaxe', result: BLOCKS.DIAMOND_PICKAXE, count: 1, ingredients: { [BLOCKS.DIAMOND]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🪓 Diamond Axe', result: BLOCKS.DIAMOND_AXE, count: 1, ingredients: { [BLOCKS.DIAMOND]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🗡️ Diamond Shovel', result: BLOCKS.DIAMOND_SHOVEL, count: 1, ingredients: { [BLOCKS.DIAMOND]: 1, [BLOCKS.STICK]: 2 } },
+            { name: '⚔️ Diamond Sword', result: BLOCKS.DIAMOND_SWORD, count: 1, ingredients: { [BLOCKS.DIAMOND]: 2, [BLOCKS.STICK]: 1 } }
         ];
+
+        // Smelting recipes
+        const SMELT_RECIPES = [
+            { name: '⚪ Iron Ingot', input: BLOCKS.IRON_ORE, result: BLOCKS.IRON_INGOT, time: 3000 },
+            { name: '🟡 Gold Ingot', input: BLOCKS.GOLD_ORE, result: BLOCKS.GOLD_INGOT, time: 3000 },
+            { name: '🟧 Copper Ingot', input: BLOCKS.COPPER_ORE, result: BLOCKS.COPPER_BLOCK, time: 3000 },
+            { name: '🪨 Stone', input: BLOCKS.COBBLESTONE, result: BLOCKS.STONE, time: 2000 },
+            { name: '◻️ Glass', input: BLOCKS.SAND, result: BLOCKS.GLASS, time: 2000 },
+            { name: '🧱 Bricks', input: BLOCKS.CLAY, result: BLOCKS.BRICKS, time: 2500 }
+        ];
+
+        const FUEL_ITEMS = {
+            [BLOCKS.COAL]: 8000,
+            [BLOCKS.OAK_LOG]: 1500,
+            [BLOCKS.OAK_PLANKS]: 1500
+        };
+
+        // Tool requirements - defines which tools can mine which blocks
+        const TOOL_TYPES = {
+            PICKAXE: 'pickaxe',
+            AXE: 'axe',
+            SHOVEL: 'shovel',
+            NONE: 'none'
+        };
+
+        const TOOL_TIERS = {
+            [BLOCKS.WOODEN_PICKAXE]: 1, [BLOCKS.WOODEN_AXE]: 1, [BLOCKS.WOODEN_SHOVEL]: 1,
+            [BLOCKS.STONE_PICKAXE]: 2, [BLOCKS.STONE_AXE]: 2, [BLOCKS.STONE_SHOVEL]: 2,
+            [BLOCKS.IRON_PICKAXE]: 3, [BLOCKS.IRON_AXE]: 3, [BLOCKS.IRON_SHOVEL]: 3,
+            [BLOCKS.GOLD_PICKAXE]: 2, [BLOCKS.GOLD_AXE]: 2, [BLOCKS.GOLD_SHOVEL]: 2, // Gold is fast but weak
+            [BLOCKS.DIAMOND_PICKAXE]: 4, [BLOCKS.DIAMOND_AXE]: 4, [BLOCKS.DIAMOND_SHOVEL]: 4
+        };
+
+        const TOOL_CATEGORY = {
+            [BLOCKS.WOODEN_PICKAXE]: TOOL_TYPES.PICKAXE, [BLOCKS.STONE_PICKAXE]: TOOL_TYPES.PICKAXE,
+            [BLOCKS.IRON_PICKAXE]: TOOL_TYPES.PICKAXE, [BLOCKS.GOLD_PICKAXE]: TOOL_TYPES.PICKAXE,
+            [BLOCKS.DIAMOND_PICKAXE]: TOOL_TYPES.PICKAXE,
+
+            [BLOCKS.WOODEN_AXE]: TOOL_TYPES.AXE, [BLOCKS.STONE_AXE]: TOOL_TYPES.AXE,
+            [BLOCKS.IRON_AXE]: TOOL_TYPES.AXE, [BLOCKS.GOLD_AXE]: TOOL_TYPES.AXE,
+            [BLOCKS.DIAMOND_AXE]: TOOL_TYPES.AXE,
+
+            [BLOCKS.WOODEN_SHOVEL]: TOOL_TYPES.SHOVEL, [BLOCKS.STONE_SHOVEL]: TOOL_TYPES.SHOVEL,
+            [BLOCKS.IRON_SHOVEL]: TOOL_TYPES.SHOVEL, [BLOCKS.GOLD_SHOVEL]: TOOL_TYPES.SHOVEL,
+            [BLOCKS.DIAMOND_SHOVEL]: TOOL_TYPES.SHOVEL
+        };
+
+        // Define which blocks require which tools and minimum tier
+        const BLOCK_REQUIREMENTS = {
+            // Stone and ores require pickaxe
+            [BLOCKS.STONE]: { tool: TOOL_TYPES.PICKAXE, minTier: 1 },
+            [BLOCKS.COBBLESTONE]: { tool: TOOL_TYPES.PICKAXE, minTier: 1 },
+            [BLOCKS.COAL_ORE]: { tool: TOOL_TYPES.PICKAXE, minTier: 1 },
+            [BLOCKS.IRON_ORE]: { tool: TOOL_TYPES.PICKAXE, minTier: 2 }, // Stone or better
+            [BLOCKS.GOLD_ORE]: { tool: TOOL_TYPES.PICKAXE, minTier: 3 }, // Iron or better
+            [BLOCKS.DIAMOND_ORE]: { tool: TOOL_TYPES.PICKAXE, minTier: 3 }, // Iron or better
+            [BLOCKS.EMERALD_ORE]: { tool: TOOL_TYPES.PICKAXE, minTier: 3 }, // Iron or better
+            [BLOCKS.LAPIS_ORE]: { tool: TOOL_TYPES.PICKAXE, minTier: 2 },
+            [BLOCKS.REDSTONE_ORE]: { tool: TOOL_TYPES.PICKAXE, minTier: 3 },
+            [BLOCKS.COPPER_ORE]: { tool: TOOL_TYPES.PICKAXE, minTier: 2 },
+            [BLOCKS.OBSIDIAN]: { tool: TOOL_TYPES.PICKAXE, minTier: 4 }, // Diamond only
+            [BLOCKS.STONE_BRICKS]: { tool: TOOL_TYPES.PICKAXE, minTier: 1 },
+            [BLOCKS.BRICKS]: { tool: TOOL_TYPES.PICKAXE, minTier: 1 },
+            [BLOCKS.FURNACE]: { tool: TOOL_TYPES.PICKAXE, minTier: 1 },
+            [BLOCKS.IRON_BLOCK]: { tool: TOOL_TYPES.PICKAXE, minTier: 2 },
+            [BLOCKS.GOLD_BLOCK]: { tool: TOOL_TYPES.PICKAXE, minTier: 3 },
+            [BLOCKS.DIAMOND_BLOCK]: { tool: TOOL_TYPES.PICKAXE, minTier: 3 },
+
+            // Wood requires axe (faster, but can mine without)
+            [BLOCKS.OAK_LOG]: { tool: TOOL_TYPES.AXE, minTier: 0 },
+            [BLOCKS.BIRCH_LOG]: { tool: TOOL_TYPES.AXE, minTier: 0 },
+            [BLOCKS.SPRUCE_LOG]: { tool: TOOL_TYPES.AXE, minTier: 0 },
+            [BLOCKS.JUNGLE_LOG]: { tool: TOOL_TYPES.AXE, minTier: 0 },
+            [BLOCKS.ACACIA_LOG]: { tool: TOOL_TYPES.AXE, minTier: 0 },
+            [BLOCKS.DARK_OAK_LOG]: { tool: TOOL_TYPES.AXE, minTier: 0 },
+            [BLOCKS.OAK_PLANKS]: { tool: TOOL_TYPES.AXE, minTier: 0 },
+
+            // Dirt/sand/gravel require shovel (faster, but can mine without)
+            [BLOCKS.DIRT]: { tool: TOOL_TYPES.SHOVEL, minTier: 0 },
+            [BLOCKS.SAND]: { tool: TOOL_TYPES.SHOVEL, minTier: 0 },
+            [BLOCKS.GRAVEL]: { tool: TOOL_TYPES.SHOVEL, minTier: 0 },
+            [BLOCKS.CLAY]: { tool: TOOL_TYPES.SHOVEL, minTier: 0 },
+            [BLOCKS.RED_SAND]: { tool: TOOL_TYPES.SHOVEL, minTier: 0 },
+            [BLOCKS.SNOW_BLOCK]: { tool: TOOL_TYPES.SHOVEL, minTier: 0 }
+        };
 
         // Game state
         let chunks = {};
@@ -382,20 +797,48 @@
         let camera = { x: 0, y: 0 };
         let inventory = {
             [BLOCKS.DIRT]: 10,
-            [BLOCKS.WOOD]: 3,
-            [BLOCKS.PLANKS]: 0,
+            [BLOCKS.OAK_LOG]: 5,
+            [BLOCKS.OAK_PLANKS]: 0,
             [BLOCKS.STICK]: 0,
             [BLOCKS.STONE]: 0,
+            [BLOCKS.COBBLESTONE]: 0,
+            [BLOCKS.SAND]: 0,
             [BLOCKS.COAL_ORE]: 0,
             [BLOCKS.IRON_ORE]: 0,
+            [BLOCKS.GOLD_ORE]: 0,
             [BLOCKS.DIAMOND_ORE]: 0,
             [BLOCKS.CRAFTING_TABLE]: 0,
-            [BLOCKS.TORCH]: 0
+            [BLOCKS.FURNACE]: 0,
+            [BLOCKS.COAL]: 0,
+            [BLOCKS.IRON_INGOT]: 0,
+            [BLOCKS.GOLD_INGOT]: 0,
+            [BLOCKS.DIAMOND]: 0,
+            [BLOCKS.TORCH]: 0,
+            // Tools
+            [BLOCKS.WOODEN_PICKAXE]: 0,
+            [BLOCKS.WOODEN_AXE]: 0,
+            [BLOCKS.STONE_PICKAXE]: 0,
+            [BLOCKS.IRON_PICKAXE]: 0,
+            [BLOCKS.DIAMOND_PICKAXE]: 0
         };
 
         let selectedSlot = BLOCKS.DIRT;
         let keys = {};
         let mouseDown = false;
+        let activeSmelting = null; // { startTime, recipe, fuelUsed }
+
+        // Mob system
+        const MOB_TYPES = {
+            ZOMBIE: { emoji: '🧟', hostile: true, speed: 2, health: 20, damage: 2 },
+            CREEPER: { emoji: '💥', hostile: true, speed: 1.5, health: 20, damage: 3 },
+            PIG: { emoji: '🐷', hostile: false, speed: 1, health: 10, damage: 0 },
+            COW: { emoji: '🐮', hostile: false, speed: 1, health: 10, damage: 0 },
+            CHICKEN: { emoji: '🐔', hostile: false, speed: 1.5, health: 4, damage: 0 },
+            SHEEP: { emoji: '🐑', hostile: false, speed: 1, health: 8, damage: 0 }
+        };
+
+        let mobs = [];
+        let lastMobSpawn = Date.now();
 
         // Chunk generation
         function getChunkKey(chunkX) {
@@ -414,52 +857,123 @@
                     const surfaceY = Math.floor(SURFACE_LEVEL + Math.sin(worldX * 0.1) * 8 + Math.cos(worldX * 0.07) * 5);
 
                     if (y === WORLD_HEIGHT - 1) {
-                        chunk[x][y] = BLOCKS.STONE; // Bedrock
+                        chunk[x][y] = BLOCKS.BEDROCK;
+                    } else if (y > WORLD_HEIGHT - 5) {
+                        // Near bedrock layer
+                        chunk[x][y] = BLOCKS.BEDROCK;
                     } else if (y > surfaceY + 10) {
-                        // Deep underground
-                        if (y > WORLD_HEIGHT - 20 && Math.random() < 0.005) {
+                        // Deep underground - various ores
+                        if (y > WORLD_HEIGHT - 25 && Math.random() < 0.005) {
                             chunk[x][y] = BLOCKS.DIAMOND_ORE;
-                        } else if (y > surfaceY + 30 && Math.random() < 0.015) {
+                        } else if (y > WORLD_HEIGHT - 30 && Math.random() < 0.003) {
+                            chunk[x][y] = BLOCKS.EMERALD_ORE;
+                        } else if (y > WORLD_HEIGHT - 40 && Math.random() < 0.008) {
+                            chunk[x][y] = BLOCKS.LAVA;
+                        } else if (y > surfaceY + 30 && Math.random() < 0.012) {
                             chunk[x][y] = BLOCKS.IRON_ORE;
-                        } else if (Math.random() < 0.04) {
+                        } else if (y > surfaceY + 30 && Math.random() < 0.008) {
+                            chunk[x][y] = BLOCKS.GOLD_ORE;
+                        } else if (y > surfaceY + 20 && Math.random() < 0.01) {
+                            chunk[x][y] = BLOCKS.REDSTONE_ORE;
+                        } else if (y > surfaceY + 20 && Math.random() < 0.008) {
+                            chunk[x][y] = BLOCKS.LAPIS_ORE;
+                        } else if (y > surfaceY + 15 && Math.random() < 0.015) {
+                            chunk[x][y] = BLOCKS.COPPER_ORE;
+                        } else if (Math.random() < 0.035) {
                             chunk[x][y] = BLOCKS.COAL_ORE;
+                        } else if (Math.random() < 0.02) {
+                            chunk[x][y] = BLOCKS.GRAVEL;
                         } else {
                             chunk[x][y] = BLOCKS.STONE;
                         }
                     } else if (y > surfaceY) {
-                        chunk[x][y] = Math.random() < 0.15 ? BLOCKS.STONE : BLOCKS.DIRT;
+                        // Underground near surface
+                        if (Math.random() < 0.05) {
+                            chunk[x][y] = BLOCKS.GRAVEL;
+                        } else if (Math.random() < 0.03) {
+                            chunk[x][y] = BLOCKS.CLAY;
+                        } else if (Math.random() < 0.15) {
+                            chunk[x][y] = BLOCKS.STONE;
+                        } else {
+                            chunk[x][y] = BLOCKS.DIRT;
+                        }
                     } else if (y === surfaceY) {
-                        chunk[x][y] = BLOCKS.GRASS;
+                        // Surface blocks - vary by biome
+                        const biome = Math.floor((worldX + 1000) / 50) % 5;
+                        if (biome === 0) {
+                            chunk[x][y] = BLOCKS.GRASS; // Normal
+                        } else if (biome === 1) {
+                            chunk[x][y] = BLOCKS.SAND; // Desert
+                        } else if (biome === 2) {
+                            chunk[x][y] = BLOCKS.SNOW_BLOCK; // Snow
+                        } else if (biome === 3) {
+                            chunk[x][y] = BLOCKS.RED_SAND; // Mesa
+                        } else {
+                            chunk[x][y] = BLOCKS.GRASS; // Forest
+                        }
                     } else {
                         chunk[x][y] = BLOCKS.AIR;
                     }
                 }
 
-                // Generate trees
+                // Generate trees based on biome (done after chunk is complete)
+            }
+
+            // Generate trees after all blocks are placed
+            for (let x = 0; x < CHUNK_WIDTH; x++) {
                 const worldXPos = startX + x;
+                const biome = Math.floor((worldXPos + 1000) / 50) % 5;
+
                 if (worldXPos % 7 === 3 && Math.random() < 0.6) {
-                    let treeY = SURFACE_LEVEL;
+                    let treeY = -1;
+                    let surfaceBlock = BLOCKS.AIR;
+
+                    // Find surface
                     for (let y = 0; y < WORLD_HEIGHT; y++) {
-                        if (chunk[x][y] === BLOCKS.GRASS) {
+                        if (chunk[x] && chunk[x][y] && (chunk[x][y] === BLOCKS.GRASS || chunk[x][y] === BLOCKS.SAND || chunk[x][y] === BLOCKS.SNOW_BLOCK || chunk[x][y] === BLOCKS.RED_SAND)) {
                             treeY = y;
+                            surfaceBlock = chunk[x][y];
                             break;
                         }
                     }
 
-                    // Tree trunk
-                    for (let ty = treeY - 1; ty >= treeY - 4 && ty >= 0; ty--) {
-                        chunk[x][ty] = BLOCKS.WOOD;
-                    }
+                    // Only grow trees on grass or snow (not in desert/mesa)
+                    if (treeY >= 0 && (surfaceBlock === BLOCKS.GRASS || surfaceBlock === BLOCKS.SNOW_BLOCK)) {
+                        let logType = BLOCKS.OAK_LOG;
+                        let leafType = BLOCKS.OAK_LEAVES;
 
-                    // Leaves
-                    for (let lx = -2; lx <= 2; lx++) {
-                        for (let ly = -5; ly <= -2; ly++) {
-                            const leafX = x + lx;
-                            const leafY = treeY + ly;
-                            if (leafX >= 0 && leafX < CHUNK_WIDTH && leafY >= 0 && leafY < WORLD_HEIGHT) {
-                                if (chunk[leafX][leafY] === BLOCKS.AIR) {
-                                    if (Math.abs(lx) === 2 && Math.abs(ly + 3.5) > 1.5) continue;
-                                    chunk[leafX][leafY] = BLOCKS.LEAVES;
+                        // Vary tree types by biome
+                        if (biome === 2) { // Snow
+                            logType = BLOCKS.SPRUCE_LOG;
+                            leafType = BLOCKS.SPRUCE_LEAVES;
+                        } else if (biome === 4) { // Forest
+                            const treeVariety = Math.random();
+                            if (treeVariety < 0.3) {
+                                logType = BLOCKS.BIRCH_LOG;
+                                leafType = BLOCKS.BIRCH_LEAVES;
+                            } else if (treeVariety < 0.5) {
+                                logType = BLOCKS.SPRUCE_LOG;
+                                leafType = BLOCKS.SPRUCE_LEAVES;
+                            }
+                        }
+
+                        // Tree trunk
+                        for (let ty = treeY - 1; ty >= treeY - 4 && ty >= 0; ty--) {
+                            if (chunk[x] && chunk[x][ty] !== undefined) {
+                                chunk[x][ty] = logType;
+                            }
+                        }
+
+                        // Leaves
+                        for (let lx = -2; lx <= 2; lx++) {
+                            for (let ly = -5; ly <= -2; ly++) {
+                                const leafX = x + lx;
+                                const leafY = treeY + ly;
+                                if (leafX >= 0 && leafX < CHUNK_WIDTH && leafY >= 0 && leafY < WORLD_HEIGHT) {
+                                    if (chunk[leafX] && chunk[leafX][leafY] !== undefined && chunk[leafX][leafY] === BLOCKS.AIR) {
+                                        if (Math.abs(lx) === 2 && Math.abs(ly + 3.5) > 1.5) continue;
+                                        chunk[leafX][leafY] = leafType;
+                                    }
                                 }
                             }
                         }
@@ -496,6 +1010,202 @@
             }
 
             chunks[chunkKey][localX][y] = blockType;
+        }
+
+        // Mob functions
+        function spawnMob(type, x, y) {
+            const mobType = MOB_TYPES[type];
+            mobs.push({
+                type: type,
+                x: x,
+                y: y,
+                vx: 0,
+                vy: 0,
+                width: 24,
+                height: 24,
+                grounded: false,
+                health: mobType.health,
+                wanderTimer: Math.random() * 3000,
+                wanderDirection: Math.random() < 0.5 ? -1 : 1,
+                lastAttack: 0
+            });
+        }
+
+        function spawnMobs() {
+            const now = Date.now();
+            if (now - lastMobSpawn < 5000) return; // Spawn every 5 seconds
+            lastMobSpawn = now;
+
+            // Don't spawn too many mobs
+            if (mobs.length > 20) return;
+
+            // Spawn near player but not too close
+            const spawnDistance = 300 + Math.random() * 200;
+            const direction = Math.random() < 0.5 ? -1 : 1;
+            const spawnX = player.x + direction * spawnDistance;
+
+            // Find ground level
+            let spawnY = SURFACE_LEVEL * BLOCK_SIZE;
+            const blockX = Math.floor(spawnX / BLOCK_SIZE);
+            for (let y = 0; y < WORLD_HEIGHT; y++) {
+                if (getBlock(blockX, y) !== BLOCKS.AIR && getBlock(blockX, y - 1) === BLOCKS.AIR) {
+                    spawnY = y * BLOCK_SIZE - 24;
+                    break;
+                }
+            }
+
+            // Choose mob type (more passive mobs during day)
+            const mobTypeKeys = Object.keys(MOB_TYPES);
+            const playerDepth = Math.floor(player.y / BLOCK_SIZE) - SURFACE_LEVEL;
+
+            let type;
+            if (playerDepth > 20 || Math.random() < 0.3) {
+                // More hostile mobs underground or 30% chance
+                const hostileMobs = ['ZOMBIE', 'CREEPER'];
+                type = hostileMobs[Math.floor(Math.random() * hostileMobs.length)];
+            } else {
+                // Passive mobs
+                const passiveMobs = ['PIG', 'COW', 'CHICKEN', 'SHEEP'];
+                type = passiveMobs[Math.floor(Math.random() * passiveMobs.length)];
+            }
+
+            spawnMob(type, spawnX, spawnY);
+        }
+
+        function updateMobs() {
+            for (let i = mobs.length - 1; i >= 0; i--) {
+                const mob = mobs[i];
+                const mobType = MOB_TYPES[mob.type];
+
+                // Remove dead mobs
+                if (mob.health <= 0) {
+                    mobs.splice(i, 1);
+                    continue;
+                }
+
+                // Remove mobs too far from player
+                if (Math.abs(mob.x - player.x) > 1000) {
+                    mobs.splice(i, 1);
+                    continue;
+                }
+
+                // AI behavior
+                if (mobType.hostile) {
+                    // Chase player if close enough
+                    const distToPlayer = Math.abs(mob.x - player.x);
+                    if (distToPlayer < 400) {
+                        if (mob.x < player.x) {
+                            mob.vx = mobType.speed;
+                        } else {
+                            mob.vx = -mobType.speed;
+                        }
+
+                        // Jump if blocked
+                        if (mob.grounded && Math.random() < 0.02) {
+                            mob.vy = -8;
+                        }
+                    } else {
+                        mob.vx *= 0.9;
+                    }
+
+                    // Attack player if touching
+                    const now = Date.now();
+                    if (Math.abs(mob.x - player.x) < 40 &&
+                        Math.abs(mob.y - player.y) < 40 &&
+                        now - mob.lastAttack > 1000) {
+                        player.health = Math.max(0, player.health - mobType.damage);
+                        mob.lastAttack = now;
+
+                        // Knockback
+                        if (mob.x < player.x) {
+                            player.vx = 8;
+                        } else {
+                            player.vx = -8;
+                        }
+                    }
+                } else {
+                    // Passive mobs wander randomly
+                    mob.wanderTimer -= 16;
+                    if (mob.wanderTimer <= 0) {
+                        mob.wanderTimer = 2000 + Math.random() * 3000;
+                        mob.wanderDirection = Math.random() < 0.5 ? -1 : 1;
+                    }
+
+                    mob.vx = mob.wanderDirection * mobType.speed * 0.5;
+
+                    // Random jump
+                    if (mob.grounded && Math.random() < 0.005) {
+                        mob.vy = -6;
+                    }
+                }
+
+                // Gravity
+                mob.vy += 0.6;
+                mob.vy = Math.min(mob.vy, 15);
+
+                // Move mob
+                mob.x += mob.vx;
+                mob.y += mob.vy;
+
+                // Collision detection
+                mob.grounded = false;
+
+                const mobLeft = Math.floor(mob.x / BLOCK_SIZE);
+                const mobRight = Math.floor((mob.x + mob.width) / BLOCK_SIZE);
+                const mobTop = Math.floor(mob.y / BLOCK_SIZE);
+                const mobBottom = Math.floor((mob.y + mob.height) / BLOCK_SIZE);
+
+                // Vertical collision
+                for (let x = mobLeft; x <= mobRight; x++) {
+                    if (mobBottom < WORLD_HEIGHT) {
+                        if (getBlock(x, mobBottom) !== BLOCKS.AIR) {
+                            const blockTop = mobBottom * BLOCK_SIZE;
+                            if (mob.y + mob.height > blockTop && mob.vy > 0) {
+                                mob.y = blockTop - mob.height;
+                                mob.vy = 0;
+                                mob.grounded = true;
+                            }
+                        }
+                    }
+
+                    if (mobTop >= 0) {
+                        if (getBlock(x, mobTop) !== BLOCKS.AIR) {
+                            const blockBottom = (mobTop + 1) * BLOCK_SIZE;
+                            if (mob.y < blockBottom && mob.vy < 0) {
+                                mob.y = blockBottom;
+                                mob.vy = 0;
+                            }
+                        }
+                    }
+                }
+
+                // Horizontal collision
+                for (let y = mobTop; y <= mobBottom; y++) {
+                    if (y >= 0 && y < WORLD_HEIGHT) {
+                        if (getBlock(mobRight, y) !== BLOCKS.AIR) {
+                            const blockLeft = mobRight * BLOCK_SIZE;
+                            if (mob.x + mob.width > blockLeft && mob.vx > 0) {
+                                mob.x = blockLeft - mob.width;
+                                mob.vx = -mob.vx; // Bounce
+                            }
+                        }
+
+                        if (getBlock(mobLeft, y) !== BLOCKS.AIR) {
+                            const blockRight = (mobLeft + 1) * BLOCK_SIZE;
+                            if (mob.x < blockRight && mob.vx < 0) {
+                                mob.x = blockRight;
+                                mob.vx = -mob.vx; // Bounce
+                            }
+                        }
+                    }
+                }
+
+                // Slow down
+                mob.vx *= 0.95;
+            }
+
+            // Spawn new mobs
+            spawnMobs();
         }
 
         // Event listeners
@@ -549,12 +1259,78 @@
             const mouseX = (e.clientX - rect.left) * scaleX + camera.x;
             const mouseY = (e.clientY - rect.top) * scaleY + camera.y;
 
+            // Check if clicked on a mob
+            for (let i = mobs.length - 1; i >= 0; i--) {
+                const mob = mobs[i];
+                if (mouseX >= mob.x && mouseX <= mob.x + mob.width &&
+                    mouseY >= mob.y && mouseY <= mob.y + mob.height) {
+                    // Hit the mob
+                    mob.health -= 5;
+
+                    // Knockback
+                    if (mouseX < mob.x + mob.width / 2) {
+                        mob.vx = 5;
+                    } else {
+                        mob.vx = -5;
+                    }
+                    mob.vy = -5;
+                    return;
+                }
+            }
+
+            // Mine blocks
             const blockX = Math.floor(mouseX / BLOCK_SIZE);
             const blockY = Math.floor(mouseY / BLOCK_SIZE);
 
             const block = getBlock(blockX, blockY);
-            if (block !== BLOCKS.AIR && blockY !== WORLD_HEIGHT - 1) {
-                inventory[block] = (inventory[block] || 0) + 1;
+            if (block !== BLOCKS.AIR && block !== BLOCKS.BEDROCK) {
+                // Check if block has tool requirements
+                const requirement = BLOCK_REQUIREMENTS[block];
+
+                if (requirement) {
+                    // Check if player has the right tool equipped
+                    const selectedTool = selectedSlot;
+                    const toolCategory = TOOL_CATEGORY[selectedTool];
+                    const toolTier = TOOL_TIERS[selectedTool] || 0;
+
+                    // If block requires a specific tool type
+                    if (requirement.minTier > 0) {
+                        // Must have the correct tool type
+                        if (toolCategory !== requirement.tool) {
+                            // Show error message briefly
+                            const infoPanel = document.getElementById('position');
+                            const oldText = infoPanel.textContent;
+                            infoPanel.textContent = `Need ${requirement.tool}!`;
+                            setTimeout(() => {
+                                infoPanel.textContent = oldText;
+                            }, 1000);
+                            return;
+                        }
+
+                        // Check if tool tier is sufficient
+                        if (toolTier < requirement.minTier) {
+                            const infoPanel = document.getElementById('position');
+                            const oldText = infoPanel.textContent;
+                            infoPanel.textContent = `Need better ${requirement.tool}!`;
+                            setTimeout(() => {
+                                infoPanel.textContent = oldText;
+                            }, 1000);
+                            return;
+                        }
+                    }
+                    // minTier 0 means preferred tool but not required (wood, dirt, etc.)
+                }
+
+                // Determine what item to drop
+                let dropItem = block;
+
+                // Ores drop coal/materials directly, not the ore block
+                if (block === BLOCKS.COAL_ORE) dropItem = BLOCKS.COAL;
+                else if (block === BLOCKS.DIAMOND_ORE) dropItem = BLOCKS.DIAMOND;
+                else if (block === BLOCKS.EMERALD_ORE) dropItem = BLOCKS.EMERALD;
+                // Iron, gold, copper ores drop themselves and need smelting
+
+                inventory[dropItem] = (inventory[dropItem] || 0) + 1;
                 setBlock(blockX, blockY, BLOCKS.AIR);
                 updateInventoryUI();
             }
@@ -569,8 +1345,15 @@
 
             const blockX = Math.floor(mouseX / BLOCK_SIZE);
             const blockY = Math.floor(mouseY / BLOCK_SIZE);
+            const clickedBlock = getBlock(blockX, blockY);
 
-            if (getBlock(blockX, blockY) === BLOCKS.AIR && inventory[selectedSlot] > 0) {
+            // Check if clicking on a furnace
+            if (clickedBlock === BLOCKS.FURNACE) {
+                openFurnaceMenu();
+                return;
+            }
+
+            if (clickedBlock === BLOCKS.AIR && inventory[selectedSlot] > 0) {
                 const blockWorldX = blockX * BLOCK_SIZE;
                 const blockWorldY = blockY * BLOCK_SIZE;
 
@@ -590,7 +1373,7 @@
             const speed = 4;
             if (keys['a']) player.vx = -speed;
             else if (keys['d']) player.vx = speed;
-            else player.vx *= 0.8;
+            else player.vx *= 0.7;
 
             // Jumping
             if ((keys['w'] || keys[' ']) && player.grounded) {
@@ -672,6 +1455,9 @@
                 `${Math.floor(player.x / BLOCK_SIZE)}, ${playerBlockY}`;
             document.getElementById('health').textContent = '❤️'.repeat(player.health);
             document.getElementById('depth').textContent = `${depth}m`;
+
+            // Update mobs
+            updateMobs();
         }
 
         function draw() {
@@ -711,6 +1497,32 @@
             ctx.fillRect(player.x + 8, player.y + 10, 4, 4);
             ctx.fillRect(player.x + 16, player.y + 10, 4, 4);
 
+            // Draw mobs
+            mobs.forEach(mob => {
+                const mobType = MOB_TYPES[mob.type];
+
+                // Draw mob body
+                if (mobType.hostile) {
+                    ctx.fillStyle = '#8B0000';
+                } else {
+                    ctx.fillStyle = '#90EE90';
+                }
+                ctx.fillRect(mob.x, mob.y, mob.width, mob.height);
+
+                // Draw mob emoji
+                ctx.font = '20px Arial';
+                ctx.fillText(mobType.emoji, mob.x, mob.y + 18);
+
+                // Health bar
+                if (mob.health < mobType.health) {
+                    const healthPercent = mob.health / mobType.health;
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(mob.x, mob.y - 8, mob.width, 4);
+                    ctx.fillStyle = 'lime';
+                    ctx.fillRect(mob.x, mob.y - 8, mob.width * healthPercent, 4);
+                }
+            });
+
             ctx.restore();
 
             requestAnimationFrame(gameLoop);
@@ -718,6 +1530,7 @@
 
         function drawBlock(x, y, type) {
             const color = BLOCK_COLORS[type];
+            if (!color) return;
 
             if (typeof color === 'object') {
                 ctx.fillStyle = color.side;
@@ -729,39 +1542,95 @@
                 ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
             }
 
-            // Textures
-            if (type === BLOCKS.STONE) {
+            // Textures for various block types
+            if (type === BLOCKS.STONE || type === BLOCKS.COBBLESTONE) {
                 ctx.fillStyle = 'rgba(150, 150, 150, 0.3)';
                 ctx.fillRect(x + 4, y + 4, 8, 8);
-            } else if (type === BLOCKS.COAL_ORE || type === BLOCKS.IRON_ORE || type === BLOCKS.DIAMOND_ORE) {
+                ctx.fillRect(x + 20, y + 16, 6, 6);
+            } else if ([BLOCKS.COAL_ORE, BLOCKS.IRON_ORE, BLOCKS.GOLD_ORE, BLOCKS.DIAMOND_ORE,
+                        BLOCKS.EMERALD_ORE, BLOCKS.LAPIS_ORE, BLOCKS.REDSTONE_ORE, BLOCKS.COPPER_ORE].includes(type)) {
+                // Ore blocks
                 ctx.fillStyle = '#808080';
                 ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
 
                 if (type === BLOCKS.COAL_ORE) ctx.fillStyle = '#1a1a1a';
                 else if (type === BLOCKS.IRON_ORE) ctx.fillStyle = '#CD853F';
+                else if (type === BLOCKS.GOLD_ORE) ctx.fillStyle = '#FFD700';
                 else if (type === BLOCKS.DIAMOND_ORE) ctx.fillStyle = '#40E0D0';
+                else if (type === BLOCKS.EMERALD_ORE) ctx.fillStyle = '#50C878';
+                else if (type === BLOCKS.LAPIS_ORE) ctx.fillStyle = '#1E4D8B';
+                else if (type === BLOCKS.REDSTONE_ORE) ctx.fillStyle = '#C00000';
+                else if (type === BLOCKS.COPPER_ORE) ctx.fillStyle = '#E77C56';
 
                 ctx.fillRect(x + 8, y + 8, 6, 6);
                 ctx.fillRect(x + 18, y + 6, 4, 4);
-            } else if (type === BLOCKS.WOOD) {
+                ctx.fillRect(x + 6, y + 20, 5, 5);
+            } else if ([BLOCKS.OAK_LOG, BLOCKS.BIRCH_LOG, BLOCKS.SPRUCE_LOG, BLOCKS.JUNGLE_LOG,
+                        BLOCKS.ACACIA_LOG, BLOCKS.DARK_OAK_LOG].includes(type)) {
+                // Wood logs - vertical lines
                 ctx.fillStyle = 'rgba(101, 67, 33, 0.3)';
                 ctx.fillRect(x + 2, y, 2, BLOCK_SIZE);
                 ctx.fillRect(x + 12, y, 2, BLOCK_SIZE);
                 ctx.fillRect(x + 22, y, 2, BLOCK_SIZE);
-            } else if (type === BLOCKS.PLANKS) {
+            } else if ([BLOCKS.OAK_PLANKS, BLOCKS.BIRCH_PLANKS, BLOCKS.SPRUCE_PLANKS, BLOCKS.JUNGLE_PLANKS,
+                        BLOCKS.ACACIA_PLANKS, BLOCKS.DARK_OAK_PLANKS].includes(type)) {
+                // Planks - horizontal lines
                 ctx.fillStyle = 'rgba(160, 82, 45, 0.3)';
                 for (let i = 0; i < BLOCK_SIZE; i += 8) {
                     ctx.fillRect(x, y + i, BLOCK_SIZE, 2);
                 }
+            } else if (type === BLOCKS.SAND || type === BLOCKS.RED_SAND) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(x + 5, y + 5, 3, 3);
+                ctx.fillRect(x + 18, y + 12, 3, 3);
+                ctx.fillRect(x + 10, y + 20, 3, 3);
             } else if (type === BLOCKS.CRAFTING_TABLE) {
                 ctx.fillStyle = '#654321';
                 ctx.fillRect(x + 4, y + 4, 8, 8);
                 ctx.fillRect(x + 20, y + 16, 8, 8);
+            } else if (type === BLOCKS.FURNACE) {
+                ctx.fillStyle = '#404040';
+                ctx.fillRect(x + 8, y + 12, 16, 12);
+                ctx.fillStyle = '#FF6600';
+                ctx.fillRect(x + 12, y + 16, 8, 4);
+            } else if (type === BLOCKS.CHEST) {
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(x + 12, y + 14, 8, 4);
             } else if (type === BLOCKS.TORCH) {
                 ctx.fillStyle = '#8B4513';
                 ctx.fillRect(x + 14, y + 12, 4, 16);
                 ctx.fillStyle = '#FFA500';
                 ctx.fillRect(x + 12, y + 8, 8, 8);
+            } else if (type === BLOCKS.GLASS) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x + 4, y + 4, 24, 24);
+            } else if (type === BLOCKS.WATER) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(x, y, BLOCK_SIZE, 6);
+            } else if (type === BLOCKS.LAVA) {
+                ctx.fillStyle = 'rgba(255, 100, 0, 0.8)';
+                ctx.fillRect(x + 4, y + 4, 8, 8);
+                ctx.fillRect(x + 18, y + 12, 6, 6);
+            } else if (type === BLOCKS.TNT) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(x + 8, y + 8, 16, 16);
+                ctx.fillStyle = 'black';
+                ctx.font = '20px monospace';
+                ctx.fillText('TNT', x + 4, y + 20);
+            } else if (type === BLOCKS.BOOKSHELF) {
+                ctx.fillStyle = '#8B4513';
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(x + 4 + i * 8, y + 8, 6, 16);
+                }
+            } else if (type === BLOCKS.BRICKS || type === BLOCKS.STONE_BRICKS) {
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.lineWidth = 2;
+                for (let by = 0; by < 2; by++) {
+                    for (let bx = 0; bx < 2; bx++) {
+                        ctx.strokeRect(x + bx * 16, y + by * 16, 16, 16);
+                    }
+                }
             }
 
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
@@ -772,6 +1641,7 @@
         function gameLoop() {
             update();
             draw();
+            updateSmeltingProgress();
         }
 
         function updateInventoryUI() {
@@ -856,6 +1726,98 @@
             inventory[recipe.result] = (inventory[recipe.result] || 0) + recipe.count;
             updateInventoryUI();
             updateCraftMenu();
+        }
+
+        function openFurnaceMenu() {
+            document.getElementById('furnaceMenu').style.display = 'block';
+            updateFurnaceMenu();
+        }
+
+        function closeFurnaceMenu() {
+            document.getElementById('furnaceMenu').style.display = 'none';
+        }
+
+        function updateFurnaceMenu() {
+            const inputSelect = document.getElementById('furnaceInput');
+            const fuelSelect = document.getElementById('furnaceFuel');
+
+            // Populate input items
+            inputSelect.innerHTML = '<option value="">Select item to smelt...</option>';
+            SMELT_RECIPES.forEach(recipe => {
+                if (inventory[recipe.input] > 0) {
+                    const option = document.createElement('option');
+                    option.value = recipe.input;
+                    option.textContent = `${BLOCK_NAMES[recipe.input]} x${inventory[recipe.input]} → ${recipe.name}`;
+                    inputSelect.appendChild(option);
+                }
+            });
+
+            // Populate fuel items
+            fuelSelect.innerHTML = '<option value="">Select fuel...</option>';
+            Object.keys(FUEL_ITEMS).forEach(fuelId => {
+                if (inventory[fuelId] > 0) {
+                    const option = document.createElement('option');
+                    option.value = fuelId;
+                    option.textContent = `${BLOCK_NAMES[fuelId]} x${inventory[fuelId]}`;
+                    fuelSelect.appendChild(option);
+                }
+            });
+        }
+
+        function startSmelting() {
+            const inputSelect = document.getElementById('furnaceInput');
+            const fuelSelect = document.getElementById('furnaceFuel');
+            const inputType = parseInt(inputSelect.value);
+            const fuelType = parseInt(fuelSelect.value);
+
+            if (!inputType || !fuelType) {
+                alert('Please select both an item to smelt and fuel!');
+                return;
+            }
+
+            const recipe = SMELT_RECIPES.find(r => r.input === inputType);
+            if (!recipe) return;
+
+            if (inventory[inputType] < 1 || inventory[fuelType] < 1) {
+                alert('Not enough materials!');
+                return;
+            }
+
+            // Start smelting
+            inventory[inputType]--;
+            inventory[fuelType]--;
+            updateInventoryUI();
+            updateFurnaceMenu();
+
+            activeSmelting = {
+                startTime: Date.now(),
+                recipe: recipe,
+                fuelUsed: fuelType
+            };
+
+            document.getElementById('furnaceProgress').style.display = 'block';
+        }
+
+        function updateSmeltingProgress() {
+            if (!activeSmelting) {
+                document.getElementById('furnaceProgress').style.display = 'none';
+                return;
+            }
+
+            const elapsed = Date.now() - activeSmelting.startTime;
+            const progress = Math.min(elapsed / activeSmelting.recipe.time, 1);
+
+            document.getElementById('furnaceProgressBar').style.width = (progress * 100) + '%';
+
+            if (progress >= 1) {
+                // Smelting complete!
+                inventory[activeSmelting.recipe.result] = (inventory[activeSmelting.recipe.result] || 0) + 1;
+                updateInventoryUI();
+                updateFurnaceMenu();
+                activeSmelting = null;
+                document.getElementById('furnaceProgress').style.display = 'none';
+                document.getElementById('furnaceProgressBar').style.width = '0%';
+            }
         }
 
         // Initialize starting chunks
