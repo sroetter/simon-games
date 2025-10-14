@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Simulator 2D</title>
+    <title>Minecraft Simulator 2D - Infinite</title>
     <style>
         * {
             margin: 0;
@@ -44,7 +44,7 @@
             text-align: center;
             margin-bottom: 15px;
             color: #666;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .game-canvas-container {
@@ -95,11 +95,11 @@
         }
 
         .slot-icon {
-            font-size: 24px;
+            font-size: 22px;
         }
 
         .slot-count {
-            font-size: 11px;
+            font-size: 10px;
             color: white;
             font-weight: bold;
         }
@@ -113,8 +113,8 @@
         }
 
         button {
-            padding: 12px 24px;
-            font-size: 16px;
+            padding: 10px 20px;
+            font-size: 14px;
             font-weight: bold;
             border: none;
             border-radius: 8px;
@@ -124,48 +124,129 @@
             font-family: 'Courier New', monospace;
         }
 
+        .craft-btn {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #333;
+        }
+
         .back-btn {
             background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
             color: #333;
         }
 
-        .back-btn:hover {
+        .craft-btn:hover, .back-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
         }
 
         .info-panel {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 12px;
         }
 
         .info-item {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             text-align: center;
         }
 
         .info-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
         }
 
         .info-value {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
+            color: #333;
+        }
+
+        .craft-menu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            display: none;
+            max-width: 450px;
+            width: 90%;
+            max-height: 70vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .craft-menu.active {
+            display: block;
+        }
+
+        .craft-menu h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 22px;
+        }
+
+        .craft-recipe {
+            background: #f5f5f5;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .craft-recipe:hover {
+            background: #e8e8e8;
+            transform: scale(1.02);
+        }
+
+        .craft-recipe.can-craft {
+            border-color: #2ecc71;
+        }
+
+        .craft-recipe.cannot-craft {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .recipe-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+
+        .recipe-ingredients {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .close-craft {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            line-height: 1;
+        }
+
+        .close-craft:hover {
             color: #333;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>⛏️ Minecraft 2D 🌲</h1>
+        <h1>⛏️ Minecraft Infinite 🌲</h1>
 
         <div class="instructions">
-            Click to mine • Right-click to place • WASD to move • Spacebar to jump • Number keys 1-8 to select blocks
+            Click to mine • Right-click to place • WASD to move • Space to jump • E to craft • Number keys to select
         </div>
 
         <div class="game-canvas-container">
@@ -175,23 +256,30 @@
         <div class="info-panel">
             <div class="info-item">
                 <div class="info-label">Health</div>
-                <div class="info-value" id="health">❤️❤️❤️❤️❤️</div>
+                <div class="info-value" id="health">❤️❤️❤️</div>
             </div>
             <div class="info-item">
                 <div class="info-label">Position</div>
-                <div class="info-value" id="position">X: 0, Y: 0</div>
+                <div class="info-value" id="position">0, 0</div>
             </div>
             <div class="info-item">
-                <div class="info-label">Blocks</div>
-                <div class="info-value" id="blockCount">0</div>
+                <div class="info-label">Depth</div>
+                <div class="info-value" id="depth">0m</div>
             </div>
         </div>
 
         <div class="inventory-bar" id="inventoryBar"></div>
 
         <div class="controls">
-            <button class="back-btn" onclick="window.location.href='index.html'">🏠 Back to Gallery</button>
+            <button class="craft-btn" onclick="toggleCraftMenu()">🔨 Craft (E)</button>
+            <button class="back-btn" onclick="window.location.href='index.html'">🏠 Back</button>
         </div>
+    </div>
+
+    <div class="craft-menu" id="craftMenu">
+        <span class="close-craft" onclick="toggleCraftMenu()">×</span>
+        <h2>Crafting</h2>
+        <div id="craftRecipes"></div>
     </div>
 
     <script>
@@ -199,8 +287,9 @@
         const ctx = canvas.getContext('2d');
 
         const BLOCK_SIZE = 32;
-        const WORLD_WIDTH = 60;
-        const WORLD_HEIGHT = 30;
+        const CHUNK_WIDTH = 16;
+        const WORLD_HEIGHT = 128;
+        const SURFACE_LEVEL = 60;
 
         // Block types
         const BLOCKS = {
@@ -212,7 +301,11 @@
             LEAVES: 5,
             PLANKS: 6,
             COAL_ORE: 7,
-            IRON_ORE: 8
+            IRON_ORE: 8,
+            DIAMOND_ORE: 9,
+            CRAFTING_TABLE: 10,
+            STICK: 11,
+            TORCH: 12
         };
 
         const BLOCK_COLORS = {
@@ -224,126 +317,200 @@
             [BLOCKS.LEAVES]: '#228B22',
             [BLOCKS.PLANKS]: '#DEB887',
             [BLOCKS.COAL_ORE]: '#404040',
-            [BLOCKS.IRON_ORE]: '#D4A373'
+            [BLOCKS.IRON_ORE]: '#D4A373',
+            [BLOCKS.DIAMOND_ORE]: '#00CED1',
+            [BLOCKS.CRAFTING_TABLE]: '#8B7355',
+            [BLOCKS.TORCH]: '#FFA500'
         };
 
         const BLOCK_NAMES = {
-            [BLOCKS.GRASS]: '🌱 Grass',
-            [BLOCKS.DIRT]: '🟫 Dirt',
-            [BLOCKS.STONE]: '🪨 Stone',
-            [BLOCKS.WOOD]: '🪵 Wood',
-            [BLOCKS.LEAVES]: '🍃 Leaves',
-            [BLOCKS.PLANKS]: '📦 Planks',
-            [BLOCKS.COAL_ORE]: '⚫ Coal',
-            [BLOCKS.IRON_ORE]: '⚪ Iron'
+            [BLOCKS.GRASS]: '🌱',
+            [BLOCKS.DIRT]: '🟫',
+            [BLOCKS.STONE]: '🪨',
+            [BLOCKS.WOOD]: '🪵',
+            [BLOCKS.LEAVES]: '🍃',
+            [BLOCKS.PLANKS]: '📦',
+            [BLOCKS.COAL_ORE]: '⚫',
+            [BLOCKS.IRON_ORE]: '⚪',
+            [BLOCKS.DIAMOND_ORE]: '💎',
+            [BLOCKS.CRAFTING_TABLE]: '🔨',
+            [BLOCKS.STICK]: '🦴',
+            [BLOCKS.TORCH]: '🔥'
         };
 
+        // Crafting recipes
+        const RECIPES = [
+            {
+                name: '📦 Planks',
+                result: BLOCKS.PLANKS,
+                count: 4,
+                ingredients: { [BLOCKS.WOOD]: 1 }
+            },
+            {
+                name: '🦴 Sticks',
+                result: BLOCKS.STICK,
+                count: 4,
+                ingredients: { [BLOCKS.PLANKS]: 2 }
+            },
+            {
+                name: '🔨 Crafting Table',
+                result: BLOCKS.CRAFTING_TABLE,
+                count: 1,
+                ingredients: { [BLOCKS.PLANKS]: 4 }
+            },
+            {
+                name: '🔥 Torch',
+                result: BLOCKS.TORCH,
+                count: 4,
+                ingredients: { [BLOCKS.COAL_ORE]: 1, [BLOCKS.STICK]: 1 }
+            }
+        ];
+
         // Game state
-        let world = [];
+        let chunks = {};
         let player = {
-            x: 400,
-            y: 200,
+            x: 0,
+            y: SURFACE_LEVEL * BLOCK_SIZE - 100,
             width: 28,
             height: 56,
             vx: 0,
             vy: 0,
             grounded: false,
-            health: 5
+            health: 3
         };
 
-        let camera = {
-            x: 0,
-            y: 0
-        };
-
+        let camera = { x: 0, y: 0 };
         let inventory = {
-            [BLOCKS.GRASS]: 0,
-            [BLOCKS.DIRT]: 20,
-            [BLOCKS.STONE]: 10,
-            [BLOCKS.WOOD]: 5,
-            [BLOCKS.LEAVES]: 0,
+            [BLOCKS.DIRT]: 10,
+            [BLOCKS.WOOD]: 3,
             [BLOCKS.PLANKS]: 0,
+            [BLOCKS.STICK]: 0,
+            [BLOCKS.STONE]: 0,
             [BLOCKS.COAL_ORE]: 0,
-            [BLOCKS.IRON_ORE]: 0
+            [BLOCKS.IRON_ORE]: 0,
+            [BLOCKS.DIAMOND_ORE]: 0,
+            [BLOCKS.CRAFTING_TABLE]: 0,
+            [BLOCKS.TORCH]: 0
         };
 
         let selectedSlot = BLOCKS.DIRT;
         let keys = {};
         let mouseDown = false;
 
-        // Initialize world
-        function initWorld() {
-            for (let x = 0; x < WORLD_WIDTH; x++) {
-                world[x] = [];
+        // Chunk generation
+        function getChunkKey(chunkX) {
+            return `${chunkX}`;
+        }
+
+        function generateChunk(chunkX) {
+            const chunk = [];
+            const startX = chunkX * CHUNK_WIDTH;
+
+            for (let x = 0; x < CHUNK_WIDTH; x++) {
+                chunk[x] = [];
+                const worldX = startX + x;
+
                 for (let y = 0; y < WORLD_HEIGHT; y++) {
-                    // Generate terrain
-                    const surfaceY = Math.floor(15 + Math.sin(x * 0.3) * 3 + Math.cos(x * 0.5) * 2);
+                    const surfaceY = Math.floor(SURFACE_LEVEL + Math.sin(worldX * 0.1) * 8 + Math.cos(worldX * 0.07) * 5);
 
                     if (y === WORLD_HEIGHT - 1) {
-                        world[x][y] = BLOCKS.STONE; // Bedrock layer
-                    } else if (y > surfaceY + 5) {
-                        // Deep underground - stone with ores
-                        if (Math.random() < 0.03) {
-                            world[x][y] = BLOCKS.IRON_ORE;
-                        } else if (Math.random() < 0.06) {
-                            world[x][y] = BLOCKS.COAL_ORE;
+                        chunk[x][y] = BLOCKS.STONE; // Bedrock
+                    } else if (y > surfaceY + 10) {
+                        // Deep underground
+                        if (y > WORLD_HEIGHT - 20 && Math.random() < 0.005) {
+                            chunk[x][y] = BLOCKS.DIAMOND_ORE;
+                        } else if (y > surfaceY + 30 && Math.random() < 0.015) {
+                            chunk[x][y] = BLOCKS.IRON_ORE;
+                        } else if (Math.random() < 0.04) {
+                            chunk[x][y] = BLOCKS.COAL_ORE;
                         } else {
-                            world[x][y] = BLOCKS.STONE;
+                            chunk[x][y] = BLOCKS.STONE;
                         }
                     } else if (y > surfaceY) {
-                        world[x][y] = Math.random() < 0.1 ? BLOCKS.STONE : BLOCKS.DIRT;
+                        chunk[x][y] = Math.random() < 0.15 ? BLOCKS.STONE : BLOCKS.DIRT;
                     } else if (y === surfaceY) {
-                        world[x][y] = BLOCKS.GRASS;
+                        chunk[x][y] = BLOCKS.GRASS;
                     } else {
-                        world[x][y] = BLOCKS.AIR;
-                    }
-                }
-            }
-
-            // Generate trees
-            for (let i = 0; i < 10; i++) {
-                const treeX = Math.floor(Math.random() * (WORLD_WIDTH - 5)) + 2;
-                let treeY = 0;
-
-                // Find ground level
-                for (let y = 0; y < WORLD_HEIGHT; y++) {
-                    if (world[treeX][y] === BLOCKS.GRASS) {
-                        treeY = y;
-                        break;
+                        chunk[x][y] = BLOCKS.AIR;
                     }
                 }
 
-                if (treeY > 0) {
+                // Generate trees
+                const worldXPos = startX + x;
+                if (worldXPos % 7 === 3 && Math.random() < 0.6) {
+                    let treeY = SURFACE_LEVEL;
+                    for (let y = 0; y < WORLD_HEIGHT; y++) {
+                        if (chunk[x][y] === BLOCKS.GRASS) {
+                            treeY = y;
+                            break;
+                        }
+                    }
+
                     // Tree trunk
-                    for (let ty = treeY - 1; ty >= treeY - 4; ty--) {
-                        if (ty >= 0) world[treeX][ty] = BLOCKS.WOOD;
+                    for (let ty = treeY - 1; ty >= treeY - 4 && ty >= 0; ty--) {
+                        chunk[x][ty] = BLOCKS.WOOD;
                     }
 
-                    // Tree leaves
+                    // Leaves
                     for (let lx = -2; lx <= 2; lx++) {
                         for (let ly = -5; ly <= -2; ly++) {
-                            const x = treeX + lx;
-                            const y = treeY + ly;
-                            if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
-                                if (world[x][y] === BLOCKS.AIR) {
+                            const leafX = x + lx;
+                            const leafY = treeY + ly;
+                            if (leafX >= 0 && leafX < CHUNK_WIDTH && leafY >= 0 && leafY < WORLD_HEIGHT) {
+                                if (chunk[leafX][leafY] === BLOCKS.AIR) {
                                     if (Math.abs(lx) === 2 && Math.abs(ly + 3.5) > 1.5) continue;
-                                    world[x][y] = BLOCKS.LEAVES;
+                                    chunk[leafX][leafY] = BLOCKS.LEAVES;
                                 }
                             }
                         }
                     }
                 }
             }
+
+            chunks[getChunkKey(chunkX)] = chunk;
+        }
+
+        function getBlock(x, y) {
+            if (y < 0 || y >= WORLD_HEIGHT) return BLOCKS.AIR;
+
+            const chunkX = Math.floor(x / CHUNK_WIDTH);
+            const localX = ((x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
+
+            const chunkKey = getChunkKey(chunkX);
+            if (!chunks[chunkKey]) {
+                generateChunk(chunkX);
+            }
+
+            return chunks[chunkKey][localX][y];
+        }
+
+        function setBlock(x, y, blockType) {
+            if (y < 0 || y >= WORLD_HEIGHT) return;
+
+            const chunkX = Math.floor(x / CHUNK_WIDTH);
+            const localX = ((x % CHUNK_WIDTH) + CHUNK_WIDTH) % CHUNK_WIDTH;
+
+            const chunkKey = getChunkKey(chunkX);
+            if (!chunks[chunkKey]) {
+                generateChunk(chunkX);
+            }
+
+            chunks[chunkKey][localX][y] = blockType;
         }
 
         // Event listeners
         document.addEventListener('keydown', (e) => {
             keys[e.key.toLowerCase()] = true;
 
+            // E key for crafting
+            if (e.key.toLowerCase() === 'e') {
+                toggleCraftMenu();
+            }
+
             // Number keys for inventory selection
             const num = parseInt(e.key);
-            if (num >= 1 && num <= 8) {
-                const blockTypes = Object.keys(BLOCK_NAMES).map(Number);
+            if (num >= 1 && num <= 9) {
+                const blockTypes = Object.keys(BLOCK_NAMES).map(Number).filter(b => b !== BLOCKS.AIR);
                 if (num - 1 < blockTypes.length) {
                     selectedSlot = blockTypes[num - 1];
                     updateInventoryUI();
@@ -385,14 +552,11 @@
             const blockX = Math.floor(mouseX / BLOCK_SIZE);
             const blockY = Math.floor(mouseY / BLOCK_SIZE);
 
-            if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
-                const block = world[blockX][blockY];
-                if (block !== BLOCKS.AIR && blockY !== WORLD_HEIGHT - 1) { // Can't mine bedrock
-                    // Mine block
-                    inventory[block] = (inventory[block] || 0) + 1;
-                    world[blockX][blockY] = BLOCKS.AIR;
-                    updateInventoryUI();
-                }
+            const block = getBlock(blockX, blockY);
+            if (block !== BLOCKS.AIR && blockY !== WORLD_HEIGHT - 1) {
+                inventory[block] = (inventory[block] || 0) + 1;
+                setBlock(blockX, blockY, BLOCKS.AIR);
+                updateInventoryUI();
             }
         }
 
@@ -406,24 +570,17 @@
             const blockX = Math.floor(mouseX / BLOCK_SIZE);
             const blockY = Math.floor(mouseY / BLOCK_SIZE);
 
-            placeBlock(blockX, blockY);
-        }
+            if (getBlock(blockX, blockY) === BLOCKS.AIR && inventory[selectedSlot] > 0) {
+                const blockWorldX = blockX * BLOCK_SIZE;
+                const blockWorldY = blockY * BLOCK_SIZE;
 
-        function placeBlock(blockX, blockY) {
-            if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
-                if (world[blockX][blockY] === BLOCKS.AIR && inventory[selectedSlot] > 0) {
-                    // Check if not placing inside player
-                    const blockWorldX = blockX * BLOCK_SIZE;
-                    const blockWorldY = blockY * BLOCK_SIZE;
-
-                    if (!(blockWorldX < player.x + player.width &&
-                          blockWorldX + BLOCK_SIZE > player.x &&
-                          blockWorldY < player.y + player.height &&
-                          blockWorldY + BLOCK_SIZE > player.y)) {
-                        world[blockX][blockY] = selectedSlot;
-                        inventory[selectedSlot]--;
-                        updateInventoryUI();
-                    }
+                if (!(blockWorldX < player.x + player.width &&
+                      blockWorldX + BLOCK_SIZE > player.x &&
+                      blockWorldY < player.y + player.height &&
+                      blockWorldY + BLOCK_SIZE > player.y)) {
+                    setBlock(blockX, blockY, selectedSlot);
+                    inventory[selectedSlot]--;
+                    updateInventoryUI();
                 }
             }
         }
@@ -452,7 +609,6 @@
             // Collision detection
             player.grounded = false;
 
-            // Check collision with blocks
             const playerLeft = Math.floor(player.x / BLOCK_SIZE);
             const playerRight = Math.floor((player.x + player.width) / BLOCK_SIZE);
             const playerTop = Math.floor(player.y / BLOCK_SIZE);
@@ -460,27 +616,23 @@
 
             // Vertical collision
             for (let x = playerLeft; x <= playerRight; x++) {
-                if (x >= 0 && x < WORLD_WIDTH) {
-                    // Check below
-                    if (playerBottom < WORLD_HEIGHT) {
-                        if (world[x][playerBottom] !== BLOCKS.AIR) {
-                            const blockTop = playerBottom * BLOCK_SIZE;
-                            if (player.y + player.height > blockTop && player.vy > 0) {
-                                player.y = blockTop - player.height;
-                                player.vy = 0;
-                                player.grounded = true;
-                            }
+                if (playerBottom < WORLD_HEIGHT) {
+                    if (getBlock(x, playerBottom) !== BLOCKS.AIR) {
+                        const blockTop = playerBottom * BLOCK_SIZE;
+                        if (player.y + player.height > blockTop && player.vy > 0) {
+                            player.y = blockTop - player.height;
+                            player.vy = 0;
+                            player.grounded = true;
                         }
                     }
+                }
 
-                    // Check above
-                    if (playerTop >= 0) {
-                        if (world[x][playerTop] !== BLOCKS.AIR) {
-                            const blockBottom = (playerTop + 1) * BLOCK_SIZE;
-                            if (player.y < blockBottom && player.vy < 0) {
-                                player.y = blockBottom;
-                                player.vy = 0;
-                            }
+                if (playerTop >= 0) {
+                    if (getBlock(x, playerTop) !== BLOCKS.AIR) {
+                        const blockBottom = (playerTop + 1) * BLOCK_SIZE;
+                        if (player.y < blockBottom && player.vy < 0) {
+                            player.y = blockBottom;
+                            player.vy = 0;
                         }
                     }
                 }
@@ -489,67 +641,61 @@
             // Horizontal collision
             for (let y = playerTop; y <= playerBottom; y++) {
                 if (y >= 0 && y < WORLD_HEIGHT) {
-                    // Check right
-                    if (playerRight < WORLD_WIDTH) {
-                        if (world[playerRight][y] !== BLOCKS.AIR) {
-                            const blockLeft = playerRight * BLOCK_SIZE;
-                            if (player.x + player.width > blockLeft && player.vx > 0) {
-                                player.x = blockLeft - player.width;
-                                player.vx = 0;
-                            }
+                    if (getBlock(playerRight, y) !== BLOCKS.AIR) {
+                        const blockLeft = playerRight * BLOCK_SIZE;
+                        if (player.x + player.width > blockLeft && player.vx > 0) {
+                            player.x = blockLeft - player.width;
+                            player.vx = 0;
                         }
                     }
 
-                    // Check left
-                    if (playerLeft >= 0) {
-                        if (world[playerLeft][y] !== BLOCKS.AIR) {
-                            const blockRight = (playerLeft + 1) * BLOCK_SIZE;
-                            if (player.x < blockRight && player.vx < 0) {
-                                player.x = blockRight;
-                                player.vx = 0;
-                            }
+                    if (getBlock(playerLeft, y) !== BLOCKS.AIR) {
+                        const blockRight = (playerLeft + 1) * BLOCK_SIZE;
+                        if (player.x < blockRight && player.vx < 0) {
+                            player.x = blockRight;
+                            player.vx = 0;
                         }
                     }
                 }
             }
 
-            // World bounds
-            player.x = Math.max(0, Math.min(player.x, WORLD_WIDTH * BLOCK_SIZE - player.width));
-
             // Update camera
             camera.x = player.x + player.width / 2 - canvas.width / 2;
             camera.y = player.y + player.height / 2 - canvas.height / 2;
-            camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH * BLOCK_SIZE - canvas.width));
             camera.y = Math.max(0, Math.min(camera.y, WORLD_HEIGHT * BLOCK_SIZE - canvas.height));
 
             // Update UI
+            const playerBlockY = Math.floor(player.y / BLOCK_SIZE);
+            const depth = Math.max(0, playerBlockY - SURFACE_LEVEL);
+
             document.getElementById('position').textContent =
-                `X: ${Math.floor(player.x / BLOCK_SIZE)}, Y: ${Math.floor(player.y / BLOCK_SIZE)}`;
-
-            const hearts = '❤️'.repeat(player.health);
-            document.getElementById('health').textContent = hearts;
-
-            const totalBlocks = Object.values(inventory).reduce((a, b) => a + b, 0);
-            document.getElementById('blockCount').textContent = totalBlocks;
+                `${Math.floor(player.x / BLOCK_SIZE)}, ${playerBlockY}`;
+            document.getElementById('health').textContent = '❤️'.repeat(player.health);
+            document.getElementById('depth').textContent = `${depth}m`;
         }
 
         function draw() {
-            // Sky
-            ctx.fillStyle = '#87CEEB';
+            // Sky gradient based on depth
+            const playerDepth = Math.floor(player.y / BLOCK_SIZE) - SURFACE_LEVEL;
+            const darkness = Math.min(playerDepth / 30, 1);
+            const skyR = Math.floor(135 * (1 - darkness) + 20 * darkness);
+            const skyG = Math.floor(206 * (1 - darkness) + 20 * darkness);
+            const skyB = Math.floor(235 * (1 - darkness) + 30 * darkness);
+            ctx.fillStyle = `rgb(${skyR}, ${skyG}, ${skyB})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
             ctx.translate(-camera.x, -camera.y);
 
             // Draw world
-            const startX = Math.floor(camera.x / BLOCK_SIZE);
-            const endX = Math.ceil((camera.x + canvas.width) / BLOCK_SIZE);
-            const startY = Math.floor(camera.y / BLOCK_SIZE);
-            const endY = Math.ceil((camera.y + canvas.height) / BLOCK_SIZE);
+            const startX = Math.floor(camera.x / BLOCK_SIZE) - 1;
+            const endX = Math.ceil((camera.x + canvas.width) / BLOCK_SIZE) + 1;
+            const startY = Math.floor(camera.y / BLOCK_SIZE) - 1;
+            const endY = Math.ceil((camera.y + canvas.height) / BLOCK_SIZE) + 1;
 
-            for (let x = Math.max(0, startX); x < Math.min(WORLD_WIDTH, endX); x++) {
+            for (let x = startX; x < endX; x++) {
                 for (let y = Math.max(0, startY); y < Math.min(WORLD_HEIGHT, endY); y++) {
-                    const block = world[x][y];
+                    const block = getBlock(x, y);
                     if (block !== BLOCKS.AIR) {
                         drawBlock(x * BLOCK_SIZE, y * BLOCK_SIZE, block);
                     }
@@ -559,12 +705,8 @@
             // Draw player
             ctx.fillStyle = '#4169E1';
             ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            // Player face
             ctx.fillStyle = '#FFE0BD';
             ctx.fillRect(player.x + 4, player.y + 4, 20, 20);
-
-            // Eyes
             ctx.fillStyle = '#000';
             ctx.fillRect(player.x + 8, player.y + 10, 4, 4);
             ctx.fillRect(player.x + 16, player.y + 10, 4, 4);
@@ -578,7 +720,6 @@
             const color = BLOCK_COLORS[type];
 
             if (typeof color === 'object') {
-                // Grass block - special rendering
                 ctx.fillStyle = color.side;
                 ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
                 ctx.fillStyle = color.top;
@@ -588,22 +729,20 @@
                 ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
             }
 
-            // Add texture/highlights based on block type
+            // Textures
             if (type === BLOCKS.STONE) {
                 ctx.fillStyle = 'rgba(150, 150, 150, 0.3)';
                 ctx.fillRect(x + 4, y + 4, 8, 8);
-                ctx.fillRect(x + 20, y + 16, 6, 6);
-            } else if (type === BLOCKS.COAL_ORE || type === BLOCKS.IRON_ORE) {
+            } else if (type === BLOCKS.COAL_ORE || type === BLOCKS.IRON_ORE || type === BLOCKS.DIAMOND_ORE) {
                 ctx.fillStyle = '#808080';
                 ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
 
-                // Ore spots
                 if (type === BLOCKS.COAL_ORE) ctx.fillStyle = '#1a1a1a';
                 else if (type === BLOCKS.IRON_ORE) ctx.fillStyle = '#CD853F';
+                else if (type === BLOCKS.DIAMOND_ORE) ctx.fillStyle = '#40E0D0';
 
                 ctx.fillRect(x + 8, y + 8, 6, 6);
                 ctx.fillRect(x + 18, y + 6, 4, 4);
-                ctx.fillRect(x + 10, y + 20, 8, 5);
             } else if (type === BLOCKS.WOOD) {
                 ctx.fillStyle = 'rgba(101, 67, 33, 0.3)';
                 ctx.fillRect(x + 2, y, 2, BLOCK_SIZE);
@@ -614,9 +753,17 @@
                 for (let i = 0; i < BLOCK_SIZE; i += 8) {
                     ctx.fillRect(x, y + i, BLOCK_SIZE, 2);
                 }
+            } else if (type === BLOCKS.CRAFTING_TABLE) {
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(x + 4, y + 4, 8, 8);
+                ctx.fillRect(x + 20, y + 16, 8, 8);
+            } else if (type === BLOCKS.TORCH) {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(x + 14, y + 12, 4, 16);
+                ctx.fillStyle = '#FFA500';
+                ctx.fillRect(x + 12, y + 8, 8, 8);
             }
 
-            // Block outline
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.lineWidth = 1;
             ctx.strokeRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
@@ -633,15 +780,15 @@
 
             Object.keys(BLOCK_NAMES).forEach((blockType) => {
                 blockType = Number(blockType);
+                if (!inventory.hasOwnProperty(blockType)) return;
+
                 const slot = document.createElement('div');
                 slot.className = 'inventory-slot';
-                if (blockType === selectedSlot) {
-                    slot.classList.add('selected');
-                }
+                if (blockType === selectedSlot) slot.classList.add('selected');
 
                 const icon = document.createElement('div');
                 icon.className = 'slot-icon';
-                icon.textContent = BLOCK_NAMES[blockType].split(' ')[0];
+                icon.textContent = BLOCK_NAMES[blockType];
 
                 const count = document.createElement('div');
                 count.className = 'slot-count';
@@ -649,7 +796,6 @@
 
                 slot.appendChild(icon);
                 slot.appendChild(count);
-
                 slot.onclick = () => {
                     selectedSlot = blockType;
                     updateInventoryUI();
@@ -659,8 +805,64 @@
             });
         }
 
-        // Initialize game
-        initWorld();
+        function toggleCraftMenu() {
+            const menu = document.getElementById('craftMenu');
+            menu.classList.toggle('active');
+            if (menu.classList.contains('active')) {
+                updateCraftMenu();
+            }
+        }
+
+        function updateCraftMenu() {
+            const container = document.getElementById('craftRecipes');
+            container.innerHTML = '';
+
+            RECIPES.forEach((recipe) => {
+                const div = document.createElement('div');
+                div.className = 'craft-recipe';
+
+                const canCraft = Object.entries(recipe.ingredients).every(
+                    ([type, count]) => inventory[type] >= count
+                );
+
+                if (canCraft) {
+                    div.classList.add('can-craft');
+                    div.onclick = () => craftItem(recipe);
+                } else {
+                    div.classList.add('cannot-craft');
+                }
+
+                const name = document.createElement('div');
+                name.className = 'recipe-name';
+                name.textContent = `${recipe.name} (x${recipe.count})`;
+
+                const ingredients = document.createElement('div');
+                ingredients.className = 'recipe-ingredients';
+                ingredients.textContent = 'Requires: ' +
+                    Object.entries(recipe.ingredients)
+                        .map(([type, count]) => `${BLOCK_NAMES[type]} x${count}`)
+                        .join(', ');
+
+                div.appendChild(name);
+                div.appendChild(ingredients);
+                container.appendChild(div);
+            });
+        }
+
+        function craftItem(recipe) {
+            Object.entries(recipe.ingredients).forEach(([type, count]) => {
+                inventory[type] -= count;
+            });
+            inventory[recipe.result] = (inventory[recipe.result] || 0) + recipe.count;
+            updateInventoryUI();
+            updateCraftMenu();
+        }
+
+        // Initialize starting chunks
+        generateChunk(-1);
+        generateChunk(0);
+        generateChunk(1);
+
         updateInventoryUI();
         gameLoop();
     </script>
