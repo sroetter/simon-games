@@ -527,11 +527,6 @@
 
         let selectedTrack = 0;
 
-        // Road curve system
-        let roadCurve = 0;
-        let targetCurve = 0;
-        let curveChangeTimer = 0;
-
         // Traffic
         let traffic = [];
         let roadOffset = 0;
@@ -614,9 +609,6 @@
             sceneryObjects = [];
             snowParticles = [];
             player.x = canvas.width / 2 - 20;
-            roadCurve = 0;
-            targetCurve = 0;
-            curveChangeTimer = 0;
 
             // Apply selected loadout
             fuelDrainRate = fuelUpgrades[selectedLoadout.fuel].drain;
@@ -662,11 +654,9 @@
                 fuel = Math.max(0, fuel);
             }
 
-            // Define road boundaries (accounting for curve at player position)
-            const playerProgress = player.y / canvas.height;
-            const curveAtPlayer = roadCurve * playerProgress;
-            const roadLeftEdge = canvas.width / 2 - 150 + curveAtPlayer;
-            const roadRightEdge = canvas.width / 2 + 150 + curveAtPlayer;
+            // Define road boundaries
+            const roadLeftEdge = canvas.width / 2 - 150;
+            const roadRightEdge = canvas.width / 2 + 150;
 
             // Player movement (allow movement beyond road edges, but will trigger game over)
             if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
@@ -732,19 +722,6 @@
                 snowParticles = [];
             }
 
-            // Update road curve (turns)
-            curveChangeTimer--;
-            if (curveChangeTimer <= 0) {
-                targetCurve = (Math.random() - 0.5) * 100; // Random curve between -50 and 50
-                curveChangeTimer = 200 + Math.random() * 200; // Change curve every 200-400 frames
-            }
-
-            // Smoothly transition to target curve
-            roadCurve += (targetCurve - roadCurve) * 0.01;
-
-            // Push player with the curve
-            player.x += roadCurve * 0.015;
-
             // Spawn scenery objects
             if (Math.random() < 0.03) {
                 const side = Math.random() < 0.5 ? 'left' : 'right';
@@ -780,10 +757,8 @@
 
             // Spawn traffic
             if (Math.random() < 0.01206) {
-                const spawnProgress = -80 / canvas.height;
-                const curveAtSpawn = roadCurve * spawnProgress;
-                const roadLeftEdge = canvas.width / 2 - 150 + curveAtSpawn;
-                const roadRightEdge = canvas.width / 2 + 150 + curveAtSpawn;
+                const roadLeftEdge = canvas.width / 2 - 150;
+                const roadRightEdge = canvas.width / 2 + 150;
                 const carWidth = 40;
                 // Spawn cars randomly across the entire road width
                 const randomX = roadLeftEdge + Math.random() * (roadRightEdge - roadLeftEdge - carWidth);
@@ -812,10 +787,8 @@
 
             // Spawn fuel pickups
             if (Math.random() < 0.00335 && fuel < 80) {
-                const spawnProgress = -30 / canvas.height;
-                const curveAtSpawn = roadCurve * spawnProgress;
-                const roadLeftEdge = canvas.width / 2 - 150 + curveAtSpawn;
-                const roadRightEdge = canvas.width / 2 + 150 + curveAtSpawn;
+                const roadLeftEdge = canvas.width / 2 - 150;
+                const roadRightEdge = canvas.width / 2 + 150;
                 const pickupWidth = 20;
                 // Spawn fuel randomly across the road
                 const randomX = roadLeftEdge + Math.random() * (roadRightEdge - roadLeftEdge - pickupWidth);
@@ -859,52 +832,40 @@
             ctx.fillStyle = track.bg;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw curved road segments
-            for (let i = -1; i < canvas.height / 10 + 1; i++) {
-                const y = i * 10;
-                const progress = y / canvas.height;
-                const curveOffset = roadCurve * progress;
+            // Draw grass
+            ctx.fillStyle = track.grass;
+            ctx.fillRect(0, 0, canvas.width / 2 - 150, canvas.height);
+            ctx.fillRect(canvas.width / 2 + 150, 0, canvas.width / 2 - 150, canvas.height);
 
-                // Draw grass
-                ctx.fillStyle = track.grass;
-                ctx.fillRect(0, y, canvas.width, 10);
+            // Draw road
+            ctx.fillStyle = track.road;
+            ctx.fillRect(canvas.width / 2 - 150, 0, 300, canvas.height);
 
-                // Draw road segment
-                ctx.fillStyle = track.road;
-                ctx.fillRect(canvas.width / 2 - 150 + curveOffset, y, 300, 10);
-            }
-
-            // Draw road edge lines with curves
+            // Draw road edge lines
             ctx.strokeStyle = track.roadLine;
             ctx.lineWidth = 4;
             for (let i = -1; i < canvas.height / 40 + 1; i++) {
                 const y = i * 40 + roadOffset;
-                const progress = y / canvas.height;
-                const curveOffset = roadCurve * progress;
-
                 ctx.beginPath();
-                ctx.moveTo(canvas.width / 2 - 150 + curveOffset, y);
-                ctx.lineTo(canvas.width / 2 - 145 + curveOffset, y + 20);
+                ctx.moveTo(canvas.width / 2 - 150, y);
+                ctx.lineTo(canvas.width / 2 - 145, y + 20);
                 ctx.stroke();
 
                 ctx.beginPath();
-                ctx.moveTo(canvas.width / 2 + 150 + curveOffset, y);
-                ctx.lineTo(canvas.width / 2 + 145 + curveOffset, y + 20);
+                ctx.moveTo(canvas.width / 2 + 150, y);
+                ctx.lineTo(canvas.width / 2 + 145, y + 20);
                 ctx.stroke();
             }
 
-            // Draw center line with curves
+            // Draw center line
             ctx.strokeStyle = track.centerLine;
             ctx.lineWidth = 3;
             ctx.setLineDash([20, 20]);
             for (let i = -1; i < canvas.height / 40 + 1; i++) {
                 const y = i * 40 + roadOffset;
-                const progress = y / canvas.height;
-                const curveOffset = roadCurve * progress;
-
                 ctx.beginPath();
-                ctx.moveTo(canvas.width / 2 + curveOffset, y);
-                ctx.lineTo(canvas.width / 2 + curveOffset, y + 20);
+                ctx.moveTo(canvas.width / 2, y);
+                ctx.lineTo(canvas.width / 2, y + 20);
                 ctx.stroke();
             }
             ctx.setLineDash([]);
