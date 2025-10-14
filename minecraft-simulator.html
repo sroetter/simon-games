@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .game-canvas-container {
+            position: relative;
+            background: #87CEEB;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 4px solid #333;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            image-rendering: pixelated;
+        }
+
+        .inventory-bar {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .inventory-slot {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #666;
+            background: #444;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .inventory-slot.selected {
+            border-color: #fff;
+            background: #555;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .inventory-slot:hover {
+            transform: scale(1.05);
+        }
+
+        .slot-icon {
+            font-size: 24px;
+        }
+
+        .slot-count {
+            font-size: 11px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            font-family: 'Courier New', monospace;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            color: #333;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .craft-menu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            display: none;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .craft-menu.active {
+            display: block;
+        }
+
+        .craft-menu h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .craft-recipe {
+            background: #f5f5f5;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .craft-recipe:hover {
+            background: #e0e0e0;
+            transform: scale(1.02);
+        }
+
+        .recipe-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .recipe-ingredients {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .close-craft {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-craft:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>⛏️ Minecraft Simulator 🌲</h1>
+
+        <div class="instructions">
+            Click blocks to mine • Right-click or hold Shift to place • WASD to move • Number keys to select items
+        </div>
+
+        <div class="game-canvas-container">
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-item">
+                <div class="info-label">Health</div>
+                <div class="info-value" id="health">❤️❤️❤️❤️❤️</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Position</div>
+                <div class="info-value" id="position">X: 0, Y: 0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Time</div>
+                <div class="info-value" id="time">Day</div>
+            </div>
+        </div>
+
+        <div class="inventory-bar" id="inventoryBar"></div>
+
+        <div class="controls">
+            <button onclick="toggleCraftMenu()" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);">
+                🔨 Craft
+            </button>
+            <button class="back-btn" onclick="window.location.href='index.html'">🏠 Back to Gallery</button>
+        </div>
+    </div>
+
+    <div class="craft-menu" id="craftMenu">
+        <span class="close-craft" onclick="toggleCraftMenu()">×</span>
+        <h2>Crafting Table</h2>
+        <div id="craftRecipes"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const BLOCK_SIZE = 32;
+        const WORLD_WIDTH = 50;
+        const WORLD_HEIGHT = 30;
+
+        // Block types
+        const BLOCKS = {
+            AIR: 0,
+            GRASS: 1,
+            DIRT: 2,
+            STONE: 3,
+            WOOD: 4,
+            LEAVES: 5,
+            PLANKS: 6,
+            CRAFTING_TABLE: 7,
+            COAL_ORE: 8,
+            IRON_ORE: 9,
+            DIAMOND_ORE: 10,
+            BEDROCK: 11
+        };
+
+        const BLOCK_COLORS = {
+            [BLOCKS.AIR]: null,
+            [BLOCKS.GRASS]: { top: '#7ec850', side: '#6b9e3e', bottom: '#8B4513' },
+            [BLOCKS.DIRT]: '#8B4513',
+            [BLOCKS.STONE]: '#808080',
+            [BLOCKS.WOOD]: '#8B4513',
+            [BLOCKS.LEAVES]: '#228B22',
+            [BLOCKS.PLANKS]: '#DEB887',
+            [BLOCKS.CRAFTING_TABLE]: '#8B7355',
+            [BLOCKS.COAL_ORE]: '#404040',
+            [BLOCKS.IRON_ORE]: '#D4A373',
+            [BLOCKS.DIAMOND_ORE]: '#00CED1',
+            [BLOCKS.BEDROCK]: '#1a1a1a'
+        };
+
+        const BLOCK_NAMES = {
+            [BLOCKS.GRASS]: '🌱 Grass',
+            [BLOCKS.DIRT]: '🟫 Dirt',
+            [BLOCKS.STONE]: '🪨 Stone',
+            [BLOCKS.WOOD]: '🪵 Wood',
+            [BLOCKS.LEAVES]: '🍃 Leaves',
+            [BLOCKS.PLANKS]: '📦 Planks',
+            [BLOCKS.CRAFTING_TABLE]: '🔨 Table',
+            [BLOCKS.COAL_ORE]: '⚫ Coal',
+            [BLOCKS.IRON_ORE]: '⚪ Iron',
+            [BLOCKS.DIAMOND_ORE]: '💎 Diamond',
+            [BLOCKS.BEDROCK]: '🔲 Bedrock'
+        };
+
+        // Game state
+        let world = [];
+        let player = {
+            x: 400,
+            y: 200,
+            width: 28,
+            height: 56,
+            vx: 0,
+            vy: 0,
+            grounded: false,
+            health: 5
+        };
+
+        let camera = {
+            x: 0,
+            y: 0
+        };
+
+        let inventory = {
+            [BLOCKS.GRASS]: 0,
+            [BLOCKS.DIRT]: 10,
+            [BLOCKS.STONE]: 0,
+            [BLOCKS.WOOD]: 0,
+            [BLOCKS.LEAVES]: 0,
+            [BLOCKS.PLANKS]: 0,
+            [BLOCKS.CRAFTING_TABLE]: 0,
+            [BLOCKS.COAL_ORE]: 0,
+            [BLOCKS.IRON_ORE]: 0,
+            [BLOCKS.DIAMOND_ORE]: 0
+        };
+
+        let selectedSlot = BLOCKS.DIRT;
+        let keys = {};
+        let mouseDown = false;
+        let gameTime = 0;
+
+        // Crafting recipes
+        const RECIPES = [
+            {
+                name: '📦 Planks',
+                result: BLOCKS.PLANKS,
+                count: 4,
+                ingredients: { [BLOCKS.WOOD]: 1 }
+            },
+            {
+                name: '🔨 Crafting Table',
+                result: BLOCKS.CRAFTING_TABLE,
+                count: 1,
+                ingredients: { [BLOCKS.PLANKS]: 4 }
+            }
+        ];
+
+        // Initialize world
+        function initWorld() {
+            for (let x = 0; x < WORLD_WIDTH; x++) {
+                world[x] = [];
+                for (let y = 0; y < WORLD_HEIGHT; y++) {
+                    // Generate terrain
+                    const surfaceY = Math.floor(15 + Math.sin(x * 0.3) * 3 + Math.cos(x * 0.5) * 2);
+
+                    if (y === WORLD_HEIGHT - 1) {
+                        world[x][y] = BLOCKS.BEDROCK;
+                    } else if (y > surfaceY + 5) {
+                        // Deep underground - stone with ores
+                        if (Math.random() < 0.02) {
+                            world[x][y] = BLOCKS.DIAMOND_ORE;
+                        } else if (Math.random() < 0.05) {
+                            world[x][y] = BLOCKS.IRON_ORE;
+                        } else if (Math.random() < 0.08) {
+                            world[x][y] = BLOCKS.COAL_ORE;
+                        } else {
+                            world[x][y] = BLOCKS.STONE;
+                        }
+                    } else if (y > surfaceY) {
+                        world[x][y] = Math.random() < 0.1 ? BLOCKS.STONE : BLOCKS.DIRT;
+                    } else if (y === surfaceY) {
+                        world[x][y] = BLOCKS.GRASS;
+                    } else {
+                        world[x][y] = BLOCKS.AIR;
+                    }
+                }
+            }
+
+            // Generate trees
+            for (let i = 0; i < 8; i++) {
+                const treeX = Math.floor(Math.random() * (WORLD_WIDTH - 5)) + 2;
+                let treeY = 0;
+
+                // Find ground level
+                for (let y = 0; y < WORLD_HEIGHT; y++) {
+                    if (world[treeX][y] === BLOCKS.GRASS) {
+                        treeY = y;
+                        break;
+                    }
+                }
+
+                if (treeY > 0) {
+                    // Tree trunk
+                    for (let ty = treeY - 1; ty >= treeY - 4; ty--) {
+                        if (ty >= 0) world[treeX][ty] = BLOCKS.WOOD;
+                    }
+
+                    // Tree leaves
+                    for (let lx = -2; lx <= 2; lx++) {
+                        for (let ly = -5; ly <= -2; ly++) {
+                            const x = treeX + lx;
+                            const y = treeY + ly;
+                            if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
+                                if (world[x][y] === BLOCKS.AIR) {
+                                    if (Math.abs(lx) === 2 && Math.abs(ly + 3.5) > 1.5) continue;
+                                    world[x][y] = BLOCKS.LEAVES;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+
+            // Number keys for inventory selection
+            const num = parseInt(e.key);
+            if (num >= 1 && num <= 9) {
+                const blockTypes = Object.keys(BLOCK_NAMES).map(Number);
+                if (num - 1 < blockTypes.length) {
+                    selectedSlot = blockTypes[num - 1];
+                    updateInventoryUI();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            handleClick(e);
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (mouseDown) {
+                handleClick(e);
+            }
+        });
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            handleRightClick(e);
+        });
+
+        function handleClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX + camera.x;
+            const mouseY = (e.clientY - rect.top) * scaleY + camera.y;
+
+            const blockX = Math.floor(mouseX / BLOCK_SIZE);
+            const blockY = Math.floor(mouseY / BLOCK_SIZE);
+
+            if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
+                const block = world[blockX][blockY];
+                if (block !== BLOCKS.AIR && block !== BLOCKS.BEDROCK) {
+                    // Mine block
+                    inventory[block] = (inventory[block] || 0) + 1;
+                    world[blockX][blockY] = BLOCKS.AIR;
+                    updateInventoryUI();
+                }
+            }
+        }
+
+        function handleRightClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX + camera.x;
+            const mouseY = (e.clientY - rect.top) * scaleY + camera.y;
+
+            const blockX = Math.floor(mouseX / BLOCK_SIZE);
+            const blockY = Math.floor(mouseY / BLOCK_SIZE);
+
+            placeBlock(blockX, blockY);
+        }
+
+        function placeBlock(blockX, blockY) {
+            if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
+                if (world[blockX][blockY] === BLOCKS.AIR && inventory[selectedSlot] > 0) {
+                    // Check if not placing inside player
+                    const blockWorldX = blockX * BLOCK_SIZE;
+                    const blockWorldY = blockY * BLOCK_SIZE;
+
+                    if (!(blockWorldX < player.x + player.width &&
+                          blockWorldX + BLOCK_SIZE > player.x &&
+                          blockWorldY < player.y + player.height &&
+                          blockWorldY + BLOCK_SIZE > player.y)) {
+                        world[blockX][blockY] = selectedSlot;
+                        inventory[selectedSlot]--;
+                        updateInventoryUI();
+                    }
+                }
+            }
+        }
+
+        function update() {
+            // Player movement
+            const speed = 4;
+            if (keys['a']) player.vx = -speed;
+            else if (keys['d']) player.vx = speed;
+            else player.vx *= 0.8;
+
+            // Jumping
+            if ((keys['w'] || keys[' ']) && player.grounded) {
+                player.vy = -12;
+                player.grounded = false;
+            }
+
+            // Gravity
+            player.vy += 0.6;
+            player.vy = Math.min(player.vy, 15);
+
+            // Move player
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Collision detection
+            player.grounded = false;
+
+            // Check collision with blocks
+            const playerLeft = Math.floor(player.x / BLOCK_SIZE);
+            const playerRight = Math.floor((player.x + player.width) / BLOCK_SIZE);
+            const playerTop = Math.floor(player.y / BLOCK_SIZE);
+            const playerBottom = Math.floor((player.y + player.height) / BLOCK_SIZE);
+
+            // Vertical collision
+            for (let x = playerLeft; x <= playerRight; x++) {
+                if (x >= 0 && x < WORLD_WIDTH) {
+                    // Check below
+                    if (playerBottom < WORLD_HEIGHT) {
+                        if (world[x][playerBottom] !== BLOCKS.AIR) {
+                            const blockTop = playerBottom * BLOCK_SIZE;
+                            if (player.y + player.height > blockTop && player.vy > 0) {
+                                player.y = blockTop - player.height;
+                                player.vy = 0;
+                                player.grounded = true;
+                            }
+                        }
+                    }
+
+                    // Check above
+                    if (playerTop >= 0) {
+                        if (world[x][playerTop] !== BLOCKS.AIR) {
+                            const blockBottom = (playerTop + 1) * BLOCK_SIZE;
+                            if (player.y < blockBottom && player.vy < 0) {
+                                player.y = blockBottom;
+                                player.vy = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Horizontal collision
+            for (let y = playerTop; y <= playerBottom; y++) {
+                if (y >= 0 && y < WORLD_HEIGHT) {
+                    // Check right
+                    if (playerRight < WORLD_WIDTH) {
+                        if (world[playerRight][y] !== BLOCKS.AIR) {
+                            const blockLeft = playerRight * BLOCK_SIZE;
+                            if (player.x + player.width > blockLeft && player.vx > 0) {
+                                player.x = blockLeft - player.width;
+                                player.vx = 0;
+                            }
+                        }
+                    }
+
+                    // Check left
+                    if (playerLeft >= 0) {
+                        if (world[playerLeft][y] !== BLOCKS.AIR) {
+                            const blockRight = (playerLeft + 1) * BLOCK_SIZE;
+                            if (player.x < blockRight && player.vx < 0) {
+                                player.x = blockRight;
+                                player.vx = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // World bounds
+            player.x = Math.max(0, Math.min(player.x, WORLD_WIDTH * BLOCK_SIZE - player.width));
+
+            // Update camera
+            camera.x = player.x + player.width / 2 - canvas.width / 2;
+            camera.y = player.y + player.height / 2 - canvas.height / 2;
+            camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH * BLOCK_SIZE - canvas.width));
+            camera.y = Math.max(0, Math.min(camera.y, WORLD_HEIGHT * BLOCK_SIZE - canvas.height));
+
+            // Update game time
+            gameTime += 0.01;
+
+            // Update UI
+            document.getElementById('position').textContent =
+                `X: ${Math.floor(player.x / BLOCK_SIZE)}, Y: ${Math.floor(player.y / BLOCK_SIZE)}`;
+
+            const hearts = '❤️'.repeat(player.health);
+            document.getElementById('health').textContent = hearts;
+
+            const timeOfDay = (Math.sin(gameTime) + 1) / 2;
+            document.getElementById('time').textContent = timeOfDay > 0.5 ? '☀️ Day' : '🌙 Night';
+
+            // Place block with shift + click
+            if (keys['shift'] && mouseDown) {
+                // This is handled in the click event
+            }
+        }
+
+        function draw() {
+            // Sky color based on time
+            const timeOfDay = (Math.sin(gameTime) + 1) / 2;
+            const skyColor = timeOfDay > 0.5 ? '#87CEEB' : '#191970';
+            ctx.fillStyle = skyColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            // Draw world
+            const startX = Math.floor(camera.x / BLOCK_SIZE);
+            const endX = Math.ceil((camera.x + canvas.width) / BLOCK_SIZE);
+            const startY = Math.floor(camera.y / BLOCK_SIZE);
+            const endY = Math.ceil((camera.y + canvas.height) / BLOCK_SIZE);
+
+            for (let x = Math.max(0, startX); x < Math.min(WORLD_WIDTH, endX); x++) {
+                for (let y = Math.max(0, startY); y < Math.min(WORLD_HEIGHT, endY); y++) {
+                    const block = world[x][y];
+                    if (block !== BLOCKS.AIR) {
+                        drawBlock(x * BLOCK_SIZE, y * BLOCK_SIZE, block);
+                    }
+                }
+            }
+
+            // Draw player
+            ctx.fillStyle = '#4169E1';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Player face
+            ctx.fillStyle = '#FFE0BD';
+            ctx.fillRect(player.x + 4, player.y + 4, 20, 20);
+
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 8, player.y + 10, 4, 4);
+            ctx.fillRect(player.x + 16, player.y + 10, 4, 4);
+
+            ctx.restore();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawBlock(x, y, type) {
+            const color = BLOCK_COLORS[type];
+
+            if (typeof color === 'object') {
+                // Grass block - special rendering
+                ctx.fillStyle = color.side;
+                ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+                ctx.fillStyle = color.top;
+                ctx.fillRect(x, y, BLOCK_SIZE, 8);
+            } else {
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+            }
+
+            // Add texture/highlights based on block type
+            if (type === BLOCKS.STONE) {
+                ctx.fillStyle = 'rgba(150, 150, 150, 0.3)';
+                ctx.fillRect(x + 4, y + 4, 8, 8);
+                ctx.fillRect(x + 20, y + 16, 6, 6);
+            } else if (type === BLOCKS.COAL_ORE || type === BLOCKS.IRON_ORE || type === BLOCKS.DIAMOND_ORE) {
+                ctx.fillStyle = '#808080';
+                ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+
+                // Ore spots
+                if (type === BLOCKS.COAL_ORE) ctx.fillStyle = '#1a1a1a';
+                else if (type === BLOCKS.IRON_ORE) ctx.fillStyle = '#CD853F';
+                else if (type === BLOCKS.DIAMOND_ORE) ctx.fillStyle = '#40E0D0';
+
+                ctx.fillRect(x + 8, y + 8, 6, 6);
+                ctx.fillRect(x + 18, y + 6, 4, 4);
+                ctx.fillRect(x + 10, y + 20, 8, 5);
+            } else if (type === BLOCKS.WOOD) {
+                ctx.fillStyle = 'rgba(101, 67, 33, 0.3)';
+                ctx.fillRect(x + 2, y, 2, BLOCK_SIZE);
+                ctx.fillRect(x + 12, y, 2, BLOCK_SIZE);
+                ctx.fillRect(x + 22, y, 2, BLOCK_SIZE);
+            } else if (type === BLOCKS.PLANKS) {
+                ctx.fillStyle = 'rgba(160, 82, 45, 0.3)';
+                for (let i = 0; i < BLOCK_SIZE; i += 8) {
+                    ctx.fillRect(x, y + i, BLOCK_SIZE, 2);
+                }
+            } else if (type === BLOCKS.CRAFTING_TABLE) {
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(x + 4, y + 4, 8, 8);
+                ctx.fillRect(x + 20, y + 16, 8, 8);
+            }
+
+            // Block outline
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+        }
+
+        function updateInventoryUI() {
+            const container = document.getElementById('inventoryBar');
+            container.innerHTML = '';
+
+            Object.keys(BLOCK_NAMES).forEach((blockType) => {
+                blockType = Number(blockType);
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+                if (blockType === selectedSlot) {
+                    slot.classList.add('selected');
+                }
+
+                const icon = document.createElement('div');
+                icon.className = 'slot-icon';
+                icon.textContent = BLOCK_NAMES[blockType].split(' ')[0];
+
+                const count = document.createElement('div');
+                count.className = 'slot-count';
+                count.textContent = inventory[blockType] || 0;
+
+                slot.appendChild(icon);
+                slot.appendChild(count);
+
+                slot.onclick = () => {
+                    selectedSlot = blockType;
+                    updateInventoryUI();
+                };
+
+                container.appendChild(slot);
+            });
+        }
+
+        function toggleCraftMenu() {
+            const menu = document.getElementById('craftMenu');
+            menu.classList.toggle('active');
+            updateCraftMenu();
+        }
+
+        function updateCraftMenu() {
+            const container = document.getElementById('craftRecipes');
+            container.innerHTML = '';
+
+            RECIPES.forEach((recipe) => {
+                const recipeDiv = document.createElement('div');
+                recipeDiv.className = 'craft-recipe';
+
+                const name = document.createElement('div');
+                name.className = 'recipe-name';
+                name.textContent = recipe.name + ` (x${recipe.count})`;
+
+                const ingredients = document.createElement('div');
+                ingredients.className = 'recipe-ingredients';
+                ingredients.textContent = 'Requires: ' +
+                    Object.entries(recipe.ingredients)
+                        .map(([type, count]) => `${BLOCK_NAMES[type]} x${count}`)
+                        .join(', ');
+
+                // Check if can craft
+                const canCraft = Object.entries(recipe.ingredients).every(
+                    ([type, count]) => inventory[type] >= count
+                );
+
+                if (canCraft) {
+                    recipeDiv.onclick = () => {
+                        // Deduct ingredients
+                        Object.entries(recipe.ingredients).forEach(([type, count]) => {
+                            inventory[type] -= count;
+                        });
+                        // Add result
+                        inventory[recipe.result] = (inventory[recipe.result] || 0) + recipe.count;
+                        updateInventoryUI();
+                        updateCraftMenu();
+                    };
+                } else {
+                    recipeDiv.style.opacity = '0.5';
+                    recipeDiv.style.cursor = 'not-allowed';
+                }
+
+                recipeDiv.appendChild(name);
+                recipeDiv.appendChild(ingredients);
+                container.appendChild(recipeDiv);
+            });
+        }
+
+        // Initialize game
+        initWorld();
+        updateInventoryUI();
+        gameLoop();
+    </script>
+</body>
+</html>
