@@ -545,6 +545,9 @@
         // Scenery objects
         let sceneryObjects = [];
 
+        // Snow particles
+        let snowParticles = [];
+
         // Controls
         let keys = {};
 
@@ -609,6 +612,7 @@
             fuelPickups = [];
             exhaustParticles = [];
             sceneryObjects = [];
+            snowParticles = [];
             player.x = canvas.width / 2 - 20;
             roadCurve = 0;
             targetCurve = 0;
@@ -704,6 +708,30 @@
                 return particle.opacity > 0 && particle.y > -50;
             });
 
+            // Snow particles for snow track
+            if (selectedTrack === 4) {
+                // Spawn snow particles
+                if (Math.random() < 0.5) {
+                    snowParticles.push({
+                        x: Math.random() * canvas.width,
+                        y: -10,
+                        size: 2 + Math.random() * 3,
+                        speedY: 1 + Math.random() * 2,
+                        drift: (Math.random() - 0.5) * 0.5
+                    });
+                }
+
+                // Update snow particles
+                snowParticles = snowParticles.filter(particle => {
+                    particle.y += particle.speedY + speed * 0.5;
+                    particle.x += particle.drift;
+                    return particle.y < canvas.height + 10;
+                });
+            } else {
+                // Clear snow particles when not on snow track
+                snowParticles = [];
+            }
+
             // Update road curve (turns)
             curveChangeTimer--;
             if (curveChangeTimer <= 0) {
@@ -727,9 +755,9 @@
                 let type;
                 if (selectedTrack === 0) type = ['tree', 'sign'][Math.floor(Math.random() * 2)]; // Highway
                 else if (selectedTrack === 1) type = ['cactus', 'rock'][Math.floor(Math.random() * 2)]; // Desert
-                else if (selectedTrack === 2) type = ['tree', 'bush'][Math.floor(Math.random() * 2)]; // Forest
+                else if (selectedTrack === 2) type = ['oak', 'pine', 'birch', 'bush'][Math.floor(Math.random() * 4)]; // Forest
                 else if (selectedTrack === 3) type = ['building', 'lamp'][Math.floor(Math.random() * 2)]; // City
-                else if (selectedTrack === 4) type = ['tree', 'rock'][Math.floor(Math.random() * 2)]; // Snow
+                else if (selectedTrack === 4) type = ['pine', 'snowtree', 'rock'][Math.floor(Math.random() * 3)]; // Snow
                 else type = ['tree', 'palm'][Math.floor(Math.random() * 2)]; // Sunset
 
                 sceneryObjects.push({
@@ -885,6 +913,16 @@
             sceneryObjects.forEach(obj => {
                 drawScenery(obj.type, obj.x, obj.y);
             });
+
+            // Draw snow particles
+            if (selectedTrack === 4) {
+                snowParticles.forEach(particle => {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
 
             // Draw exhaust particles
             exhaustParticles.forEach(particle => {
@@ -1095,6 +1133,97 @@
                 ctx.fillStyle = selectedTrack === 4 ? '#e8f5e9' : '#2d5016'; // White-ish for snow, green for others
                 ctx.beginPath();
                 ctx.arc(x + 20, y + 20, 20, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (type === 'oak') {
+                // Oak tree - large round canopy
+                ctx.fillStyle = '#6B4423';
+                ctx.fillRect(x + 16, y + 28, 8, 22);
+                // Large bushy foliage
+                ctx.fillStyle = '#2d5016';
+                ctx.beginPath();
+                ctx.arc(x + 10, y + 18, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 20, y + 15, 15, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 30, y + 18, 12, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (type === 'pine') {
+                // Pine tree - triangular shape
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(x + 17, y + 35, 6, 15);
+                // Pine needles in layers
+                ctx.fillStyle = '#1e4d2b';
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 5);
+                ctx.lineTo(x + 8, y + 20);
+                ctx.lineTo(x + 32, y + 20);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 12);
+                ctx.lineTo(x + 6, y + 30);
+                ctx.lineTo(x + 34, y + 30);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 20);
+                ctx.lineTo(x + 8, y + 38);
+                ctx.lineTo(x + 32, y + 38);
+                ctx.closePath();
+                ctx.fill();
+            } else if (type === 'birch') {
+                // Birch tree - white bark
+                ctx.fillStyle = '#f5f5f5';
+                ctx.fillRect(x + 16, y + 25, 8, 25);
+                // Black birch marks
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x + 16, y + 30, 8, 2);
+                ctx.fillRect(x + 16, y + 38, 8, 1);
+                ctx.fillRect(x + 16, y + 43, 8, 2);
+                // Light green foliage
+                ctx.fillStyle = '#90ee90';
+                ctx.beginPath();
+                ctx.arc(x + 15, y + 15, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 25, y + 18, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 20, y + 22, 8, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (type === 'snowtree') {
+                // Snow-covered tree
+                ctx.fillStyle = '#4a4a4a';
+                ctx.fillRect(x + 17, y + 35, 6, 15);
+                // Snow-covered pine needles
+                ctx.fillStyle = '#e0f2f7';
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 8);
+                ctx.lineTo(x + 8, y + 22);
+                ctx.lineTo(x + 32, y + 22);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 15);
+                ctx.lineTo(x + 6, y + 32);
+                ctx.lineTo(x + 34, y + 32);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 23);
+                ctx.lineTo(x + 8, y + 40);
+                ctx.lineTo(x + 32, y + 40);
+                ctx.closePath();
+                ctx.fill();
+                // Snow highlights
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 8);
+                ctx.lineTo(x + 10, y + 22);
+                ctx.lineTo(x + 20, y + 20);
+                ctx.closePath();
                 ctx.fill();
             } else if (type === 'cactus') {
                 // Cactus body
