@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Simulator 3D</title>
+    <title>Minecraft Simulator 2D</title>
     <style>
         * {
             margin: 0;
@@ -44,7 +44,7 @@
             text-align: center;
             margin-bottom: 15px;
             color: #666;
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .game-canvas-container {
@@ -58,7 +58,7 @@
         #gameCanvas {
             display: block;
             width: 100%;
-            cursor: crosshair;
+            image-rendering: pixelated;
         }
 
         .inventory-bar {
@@ -95,11 +95,11 @@
         }
 
         .slot-icon {
-            font-size: 22px;
+            font-size: 24px;
         }
 
         .slot-count {
-            font-size: 10px;
+            font-size: 11px;
             color: white;
             font-weight: bold;
         }
@@ -113,8 +113,8 @@
         }
 
         button {
-            padding: 10px 20px;
-            font-size: 14px;
+            padding: 12px 24px;
+            font-size: 16px;
             font-weight: bold;
             border: none;
             border-radius: 8px;
@@ -136,26 +136,25 @@
 
         .info-panel {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 8px;
-            margin-top: 12px;
-            font-size: 13px;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
         }
 
         .info-item {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 8px;
+            padding: 10px;
             border-radius: 8px;
             text-align: center;
         }
 
         .info-label {
-            font-size: 11px;
+            font-size: 12px;
             color: #666;
         }
 
         .info-value {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             color: #333;
         }
@@ -163,24 +162,24 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>⛏️ Minecraft 3D 🌲</h1>
+        <h1>⛏️ Minecraft 2D 🌲</h1>
 
         <div class="instructions">
-            Left-Click to mine • Right-Click to place • Arrow Keys or WASD to rotate view • Spacebar to jump • Number keys to select
+            Click to mine • Right-click to place • WASD to move • Spacebar to jump • Number keys 1-8 to select blocks
         </div>
 
         <div class="game-canvas-container">
-            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
         </div>
 
         <div class="info-panel">
             <div class="info-item">
-                <div class="info-label">Position</div>
-                <div class="info-value" id="position">0, 0, 0</div>
+                <div class="info-label">Health</div>
+                <div class="info-value" id="health">❤️❤️❤️❤️❤️</div>
             </div>
             <div class="info-item">
-                <div class="info-label">Looking</div>
-                <div class="info-value" id="direction">N</div>
+                <div class="info-label">Position</div>
+                <div class="info-value" id="position">X: 0, Y: 0</div>
             </div>
             <div class="info-item">
                 <div class="info-label">Blocks</div>
@@ -199,9 +198,9 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        const WORLD_SIZE = 20;
-        const WORLD_HEIGHT = 16;
-        const BLOCK_SIZE = 30;
+        const BLOCK_SIZE = 32;
+        const WORLD_WIDTH = 60;
+        const WORLD_HEIGHT = 30;
 
         // Block types
         const BLOCKS = {
@@ -212,45 +211,49 @@
             WOOD: 4,
             LEAVES: 5,
             PLANKS: 6,
-            SAND: 7,
-            WATER: 8
+            COAL_ORE: 7,
+            IRON_ORE: 8
         };
 
         const BLOCK_COLORS = {
+            [BLOCKS.AIR]: null,
             [BLOCKS.GRASS]: { top: '#7ec850', side: '#6b9e3e' },
-            [BLOCKS.DIRT]: { top: '#8B4513', side: '#7a3e10' },
-            [BLOCKS.STONE]: { top: '#909090', side: '#707070' },
-            [BLOCKS.WOOD]: { top: '#8B4513', side: '#6B3410' },
-            [BLOCKS.LEAVES]: { top: '#228B22', side: '#1e7a1e' },
-            [BLOCKS.PLANKS]: { top: '#DEB887', side: '#D2A66E' },
-            [BLOCKS.SAND]: { top: '#F4A460', side: '#E09350' },
-            [BLOCKS.WATER]: { top: '#4169E180', side: '#366AB580' }
+            [BLOCKS.DIRT]: '#8B4513',
+            [BLOCKS.STONE]: '#808080',
+            [BLOCKS.WOOD]: '#8B4513',
+            [BLOCKS.LEAVES]: '#228B22',
+            [BLOCKS.PLANKS]: '#DEB887',
+            [BLOCKS.COAL_ORE]: '#404040',
+            [BLOCKS.IRON_ORE]: '#D4A373'
         };
 
         const BLOCK_NAMES = {
-            [BLOCKS.GRASS]: '🌱',
-            [BLOCKS.DIRT]: '🟫',
-            [BLOCKS.STONE]: '🪨',
-            [BLOCKS.WOOD]: '🪵',
-            [BLOCKS.LEAVES]: '🍃',
-            [BLOCKS.PLANKS]: '📦',
-            [BLOCKS.SAND]: '🏖️',
-            [BLOCKS.WATER]: '💧'
+            [BLOCKS.GRASS]: '🌱 Grass',
+            [BLOCKS.DIRT]: '🟫 Dirt',
+            [BLOCKS.STONE]: '🪨 Stone',
+            [BLOCKS.WOOD]: '🪵 Wood',
+            [BLOCKS.LEAVES]: '🍃 Leaves',
+            [BLOCKS.PLANKS]: '📦 Planks',
+            [BLOCKS.COAL_ORE]: '⚫ Coal',
+            [BLOCKS.IRON_ORE]: '⚪ Iron'
         };
 
         // Game state
         let world = [];
-        let camera = {
-            angleX: 0.6,
-            angleY: Math.PI / 4,
-            distance: 400,
-            height: 150
+        let player = {
+            x: 400,
+            y: 200,
+            width: 28,
+            height: 56,
+            vx: 0,
+            vy: 0,
+            grounded: false,
+            health: 5
         };
 
-        let player = {
-            x: 10,
-            y: 12,
-            z: 10
+        let camera = {
+            x: 0,
+            y: 0
         };
 
         let inventory = {
@@ -260,178 +263,77 @@
             [BLOCKS.WOOD]: 5,
             [BLOCKS.LEAVES]: 0,
             [BLOCKS.PLANKS]: 0,
-            [BLOCKS.SAND]: 10,
-            [BLOCKS.WATER]: 0
+            [BLOCKS.COAL_ORE]: 0,
+            [BLOCKS.IRON_ORE]: 0
         };
 
         let selectedSlot = BLOCKS.DIRT;
         let keys = {};
-        let targetBlock = null;
+        let mouseDown = false;
 
-        // Initialize 3D world
+        // Initialize world
         function initWorld() {
-            for (let x = 0; x < WORLD_SIZE; x++) {
+            for (let x = 0; x < WORLD_WIDTH; x++) {
                 world[x] = [];
                 for (let y = 0; y < WORLD_HEIGHT; y++) {
-                    world[x][y] = [];
-                    for (let z = 0; z < WORLD_SIZE; z++) {
-                        // Generate terrain
-                        const surfaceHeight = Math.floor(10 + Math.sin(x * 0.3) * 2 + Math.cos(z * 0.4) * 2);
+                    // Generate terrain
+                    const surfaceY = Math.floor(15 + Math.sin(x * 0.3) * 3 + Math.cos(x * 0.5) * 2);
 
-                        if (y < surfaceHeight - 3) {
-                            world[x][y][z] = BLOCKS.STONE;
-                        } else if (y < surfaceHeight) {
-                            world[x][y][z] = BLOCKS.DIRT;
-                        } else if (y === surfaceHeight) {
-                            world[x][y][z] = BLOCKS.GRASS;
+                    if (y === WORLD_HEIGHT - 1) {
+                        world[x][y] = BLOCKS.STONE; // Bedrock layer
+                    } else if (y > surfaceY + 5) {
+                        // Deep underground - stone with ores
+                        if (Math.random() < 0.03) {
+                            world[x][y] = BLOCKS.IRON_ORE;
+                        } else if (Math.random() < 0.06) {
+                            world[x][y] = BLOCKS.COAL_ORE;
                         } else {
-                            world[x][y][z] = BLOCKS.AIR;
+                            world[x][y] = BLOCKS.STONE;
                         }
+                    } else if (y > surfaceY) {
+                        world[x][y] = Math.random() < 0.1 ? BLOCKS.STONE : BLOCKS.DIRT;
+                    } else if (y === surfaceY) {
+                        world[x][y] = BLOCKS.GRASS;
+                    } else {
+                        world[x][y] = BLOCKS.AIR;
                     }
                 }
             }
 
             // Generate trees
-            for (let i = 0; i < 6; i++) {
-                const treeX = Math.floor(Math.random() * (WORLD_SIZE - 4)) + 2;
-                const treeZ = Math.floor(Math.random() * (WORLD_SIZE - 4)) + 2;
+            for (let i = 0; i < 10; i++) {
+                const treeX = Math.floor(Math.random() * (WORLD_WIDTH - 5)) + 2;
+                let treeY = 0;
 
                 // Find ground level
-                let treeY = WORLD_HEIGHT - 1;
-                for (let y = WORLD_HEIGHT - 1; y >= 0; y--) {
-                    if (world[treeX][y][treeZ] === BLOCKS.GRASS) {
+                for (let y = 0; y < WORLD_HEIGHT; y++) {
+                    if (world[treeX][y] === BLOCKS.GRASS) {
                         treeY = y;
                         break;
                     }
                 }
 
-                // Tree trunk
-                for (let ty = 0; ty < 4; ty++) {
-                    if (treeY + ty + 1 < WORLD_HEIGHT) {
-                        world[treeX][treeY + ty + 1][treeZ] = BLOCKS.WOOD;
+                if (treeY > 0) {
+                    // Tree trunk
+                    for (let ty = treeY - 1; ty >= treeY - 4; ty--) {
+                        if (ty >= 0) world[treeX][ty] = BLOCKS.WOOD;
                     }
-                }
 
-                // Tree leaves
-                for (let lx = -1; lx <= 1; lx++) {
-                    for (let lz = -1; lz <= 1; lz++) {
-                        for (let ly = 4; ly <= 6; ly++) {
+                    // Tree leaves
+                    for (let lx = -2; lx <= 2; lx++) {
+                        for (let ly = -5; ly <= -2; ly++) {
                             const x = treeX + lx;
-                            const z = treeZ + lz;
                             const y = treeY + ly;
-                            if (x >= 0 && x < WORLD_SIZE && z >= 0 && z < WORLD_SIZE && y < WORLD_HEIGHT) {
-                                if (world[x][y][z] === BLOCKS.AIR) {
-                                    world[x][y][z] = BLOCKS.LEAVES;
+                            if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
+                                if (world[x][y] === BLOCKS.AIR) {
+                                    if (Math.abs(lx) === 2 && Math.abs(ly + 3.5) > 1.5) continue;
+                                    world[x][y] = BLOCKS.LEAVES;
                                 }
                             }
                         }
                     }
                 }
             }
-
-            // Place player on ground
-            for (let y = WORLD_HEIGHT - 1; y >= 0; y--) {
-                if (world[player.x][y][player.z] !== BLOCKS.AIR) {
-                    player.y = y + 1;
-                    break;
-                }
-            }
-        }
-
-        // Project 3D point to 2D
-        function project3D(x, y, z) {
-            // Translate to player position
-            x -= player.x;
-            y -= player.y;
-            z -= player.z;
-
-            // Rotate around Y axis
-            const cosY = Math.cos(camera.angleY);
-            const sinY = Math.sin(camera.angleY);
-            const x1 = x * cosY - z * sinY;
-            const z1 = x * sinY + z * cosY;
-
-            // Rotate around X axis
-            const cosX = Math.cos(camera.angleX);
-            const sinX = Math.sin(camera.angleX);
-            const y1 = y * cosX - z1 * sinX;
-            const z2 = y * sinX + z1 * cosX;
-
-            // Apply perspective
-            const scale = camera.distance / (z2 + camera.distance);
-
-            return {
-                x: canvas.width / 2 + x1 * BLOCK_SIZE * scale,
-                y: canvas.height / 2 - y1 * BLOCK_SIZE * scale + camera.height * scale,
-                z: z2,
-                scale: scale
-            };
-        }
-
-        // Draw a 3D cube
-        function drawCube(x, y, z, blockType) {
-            if (blockType === BLOCKS.AIR) return;
-
-            const colors = BLOCK_COLORS[blockType];
-            if (!colors) return;
-
-            // Get 8 vertices of the cube
-            const vertices = [
-                project3D(x, y, z),
-                project3D(x + 1, y, z),
-                project3D(x + 1, y + 1, z),
-                project3D(x, y + 1, z),
-                project3D(x, y, z + 1),
-                project3D(x + 1, y, z + 1),
-                project3D(x + 1, y + 1, z + 1),
-                project3D(x, y + 1, z + 1)
-            ];
-
-            // Check if cube is behind camera
-            if (vertices.every(v => v.z < -camera.distance)) return;
-
-            // Define faces
-            const faces = [
-                { vertices: [0, 1, 2, 3], color: colors.top, name: 'top', normal: [0, 1, 0] },     // top
-                { vertices: [4, 5, 6, 7], color: colors.side, name: 'bottom', normal: [0, -1, 0] }, // bottom
-                { vertices: [0, 1, 5, 4], color: colors.side, name: 'front', normal: [0, 0, -1] },  // front
-                { vertices: [2, 3, 7, 6], color: colors.side, name: 'back', normal: [0, 0, 1] },    // back
-                { vertices: [0, 3, 7, 4], color: colors.side, name: 'left', normal: [-1, 0, 0] },   // left
-                { vertices: [1, 2, 6, 5], color: colors.side, name: 'right', normal: [1, 0, 0] }    // right
-            ];
-
-            // Draw faces (back to front)
-            faces.forEach(face => {
-                const faceVertices = face.vertices.map(i => vertices[i]);
-
-                // Check if adjacent block exists (for face culling)
-                let shouldDraw = true;
-                if (face.name === 'top' && y + 1 < WORLD_HEIGHT && world[x][y + 1][z] !== BLOCKS.AIR && BLOCK_COLORS[world[x][y + 1][z]].top[7] !== '8') shouldDraw = false;
-                if (face.name === 'bottom' && y > 0 && world[x][y - 1][z] !== BLOCKS.AIR) shouldDraw = false;
-                if (face.name === 'front' && z > 0 && world[x][y][z - 1] !== BLOCKS.AIR && BLOCK_COLORS[world[x][y][z - 1]].top[7] !== '8') shouldDraw = false;
-                if (face.name === 'back' && z + 1 < WORLD_SIZE && world[x][y][z + 1] !== BLOCKS.AIR && BLOCK_COLORS[world[x][y][z + 1]].top[7] !== '8') shouldDraw = false;
-                if (face.name === 'left' && x > 0 && world[x - 1][y][z] !== BLOCKS.AIR && BLOCK_COLORS[world[x - 1][y][z]].top[7] !== '8') shouldDraw = false;
-                if (face.name === 'right' && x + 1 < WORLD_SIZE && world[x + 1][y][z] !== BLOCKS.AIR && BLOCK_COLORS[world[x + 1][y][z]].top[7] !== '8') shouldDraw = false;
-
-                if (!shouldDraw) return;
-
-                // Calculate average Z for depth sorting
-                const avgZ = faceVertices.reduce((sum, v) => sum + v.z, 0) / faceVertices.length;
-                if (avgZ < 0) return; // Behind camera
-
-                ctx.fillStyle = face.color;
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-                ctx.lineWidth = 1;
-
-                ctx.beginPath();
-                ctx.moveTo(faceVertices[0].x, faceVertices[0].y);
-                for (let i = 1; i < faceVertices.length; i++) {
-                    ctx.lineTo(faceVertices[i].x, faceVertices[i].y);
-                }
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-            });
         }
 
         // Event listeners
@@ -441,7 +343,7 @@
             // Number keys for inventory selection
             const num = parseInt(e.key);
             if (num >= 1 && num <= 8) {
-                const blockTypes = Object.keys(BLOCK_NAMES).map(Number).filter(b => b !== BLOCKS.AIR);
+                const blockTypes = Object.keys(BLOCK_NAMES).map(Number);
                 if (num - 1 < blockTypes.length) {
                     selectedSlot = blockTypes[num - 1];
                     updateInventoryUI();
@@ -453,171 +355,271 @@
             keys[e.key.toLowerCase()] = false;
         });
 
-        canvas.addEventListener('click', (e) => {
-            // Mine block
-            if (targetBlock) {
-                const { x, y, z } = targetBlock;
-                const blockType = world[x][y][z];
-                if (blockType !== BLOCKS.AIR) {
-                    inventory[blockType] = (inventory[blockType] || 0) + 1;
-                    world[x][y][z] = BLOCKS.AIR;
-                    updateInventoryUI();
-                }
+        canvas.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            handleClick(e);
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (mouseDown) {
+                handleClick(e);
             }
         });
 
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            // Place block
-            if (targetBlock) {
-                const { x, y, z, face } = targetBlock;
-
-                // Calculate placement position based on face
-                let placeX = x, placeY = y, placeZ = z;
-                if (face === 'top') placeY++;
-                else if (face === 'bottom') placeY--;
-                else if (face === 'front') placeZ--;
-                else if (face === 'back') placeZ++;
-                else if (face === 'left') placeX--;
-                else if (face === 'right') placeX++;
-
-                // Check bounds and placement validity
-                if (placeX >= 0 && placeX < WORLD_SIZE &&
-                    placeY >= 0 && placeY < WORLD_HEIGHT &&
-                    placeZ >= 0 && placeZ < WORLD_SIZE) {
-
-                    // Don't place where player is standing
-                    if (!(placeX === player.x && placeY === player.y && placeZ === player.z)) {
-                        if (world[placeX][placeY][placeZ] === BLOCKS.AIR && inventory[selectedSlot] > 0) {
-                            world[placeX][placeY][placeZ] = selectedSlot;
-                            inventory[selectedSlot]--;
-                            updateInventoryUI();
-                        }
-                    }
-                }
-            }
+            handleRightClick(e);
         });
 
-        canvas.addEventListener('mousemove', (e) => {
-            updateTargetBlock(e);
-        });
-
-        function updateTargetBlock(e) {
+        function handleClick(e) {
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX + camera.x;
+            const mouseY = (e.clientY - rect.top) * scaleY + camera.y;
 
-            let closestBlock = null;
-            let closestDistance = Infinity;
+            const blockX = Math.floor(mouseX / BLOCK_SIZE);
+            const blockY = Math.floor(mouseY / BLOCK_SIZE);
 
-            // Check all visible blocks
-            for (let x = 0; x < WORLD_SIZE; x++) {
-                for (let y = 0; y < WORLD_HEIGHT; y++) {
-                    for (let z = 0; z < WORLD_SIZE; z++) {
-                        if (world[x][y][z] === BLOCKS.AIR) continue;
+            if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
+                const block = world[blockX][blockY];
+                if (block !== BLOCKS.AIR && blockY !== WORLD_HEIGHT - 1) { // Can't mine bedrock
+                    // Mine block
+                    inventory[block] = (inventory[block] || 0) + 1;
+                    world[blockX][blockY] = BLOCKS.AIR;
+                    updateInventoryUI();
+                }
+            }
+        }
 
-                        const center = project3D(x + 0.5, y + 0.5, z + 0.5);
-                        const dx = center.x - mouseX * (canvas.width / rect.width);
-                        const dy = center.y - mouseY * (canvas.height / rect.height);
-                        const dist = Math.sqrt(dx * dx + dy * dy);
+        function handleRightClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX + camera.x;
+            const mouseY = (e.clientY - rect.top) * scaleY + camera.y;
 
-                        if (dist < 30 && center.z > 0 && dist < closestDistance) {
-                            closestDistance = dist;
+            const blockX = Math.floor(mouseX / BLOCK_SIZE);
+            const blockY = Math.floor(mouseY / BLOCK_SIZE);
 
-                            // Determine which face is closest
-                            let face = 'top';
-                            const faces = ['top', 'bottom', 'front', 'back', 'left', 'right'];
-                            // Simple face detection based on camera angle
-                            if (camera.angleX > 0.5) face = 'top';
+            placeBlock(blockX, blockY);
+        }
 
-                            closestBlock = { x, y, z, face };
-                        }
+        function placeBlock(blockX, blockY) {
+            if (blockX >= 0 && blockX < WORLD_WIDTH && blockY >= 0 && blockY < WORLD_HEIGHT) {
+                if (world[blockX][blockY] === BLOCKS.AIR && inventory[selectedSlot] > 0) {
+                    // Check if not placing inside player
+                    const blockWorldX = blockX * BLOCK_SIZE;
+                    const blockWorldY = blockY * BLOCK_SIZE;
+
+                    if (!(blockWorldX < player.x + player.width &&
+                          blockWorldX + BLOCK_SIZE > player.x &&
+                          blockWorldY < player.y + player.height &&
+                          blockWorldY + BLOCK_SIZE > player.y)) {
+                        world[blockX][blockY] = selectedSlot;
+                        inventory[selectedSlot]--;
+                        updateInventoryUI();
                     }
                 }
             }
-
-            targetBlock = closestBlock;
         }
 
         function update() {
-            // Rotate camera with arrow keys or AD
-            if (keys['arrowleft'] || keys['a']) camera.angleY -= 0.03;
-            if (keys['arrowright'] || keys['d']) camera.angleY += 0.03;
-            if (keys['arrowup'] || keys['w']) camera.angleX = Math.max(0.1, camera.angleX - 0.03);
-            if (keys['arrowdown'] || keys['s']) camera.angleX = Math.min(1.5, camera.angleX + 0.03);
+            // Player movement
+            const speed = 4;
+            if (keys['a']) player.vx = -speed;
+            else if (keys['d']) player.vx = speed;
+            else player.vx *= 0.8;
+
+            // Jumping
+            if ((keys['w'] || keys[' ']) && player.grounded) {
+                player.vy = -12;
+                player.grounded = false;
+            }
+
+            // Gravity
+            player.vy += 0.6;
+            player.vy = Math.min(player.vy, 15);
+
+            // Move player
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Collision detection
+            player.grounded = false;
+
+            // Check collision with blocks
+            const playerLeft = Math.floor(player.x / BLOCK_SIZE);
+            const playerRight = Math.floor((player.x + player.width) / BLOCK_SIZE);
+            const playerTop = Math.floor(player.y / BLOCK_SIZE);
+            const playerBottom = Math.floor((player.y + player.height) / BLOCK_SIZE);
+
+            // Vertical collision
+            for (let x = playerLeft; x <= playerRight; x++) {
+                if (x >= 0 && x < WORLD_WIDTH) {
+                    // Check below
+                    if (playerBottom < WORLD_HEIGHT) {
+                        if (world[x][playerBottom] !== BLOCKS.AIR) {
+                            const blockTop = playerBottom * BLOCK_SIZE;
+                            if (player.y + player.height > blockTop && player.vy > 0) {
+                                player.y = blockTop - player.height;
+                                player.vy = 0;
+                                player.grounded = true;
+                            }
+                        }
+                    }
+
+                    // Check above
+                    if (playerTop >= 0) {
+                        if (world[x][playerTop] !== BLOCKS.AIR) {
+                            const blockBottom = (playerTop + 1) * BLOCK_SIZE;
+                            if (player.y < blockBottom && player.vy < 0) {
+                                player.y = blockBottom;
+                                player.vy = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Horizontal collision
+            for (let y = playerTop; y <= playerBottom; y++) {
+                if (y >= 0 && y < WORLD_HEIGHT) {
+                    // Check right
+                    if (playerRight < WORLD_WIDTH) {
+                        if (world[playerRight][y] !== BLOCKS.AIR) {
+                            const blockLeft = playerRight * BLOCK_SIZE;
+                            if (player.x + player.width > blockLeft && player.vx > 0) {
+                                player.x = blockLeft - player.width;
+                                player.vx = 0;
+                            }
+                        }
+                    }
+
+                    // Check left
+                    if (playerLeft >= 0) {
+                        if (world[playerLeft][y] !== BLOCKS.AIR) {
+                            const blockRight = (playerLeft + 1) * BLOCK_SIZE;
+                            if (player.x < blockRight && player.vx < 0) {
+                                player.x = blockRight;
+                                player.vx = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // World bounds
+            player.x = Math.max(0, Math.min(player.x, WORLD_WIDTH * BLOCK_SIZE - player.width));
+
+            // Update camera
+            camera.x = player.x + player.width / 2 - canvas.width / 2;
+            camera.y = player.y + player.height / 2 - canvas.height / 2;
+            camera.x = Math.max(0, Math.min(camera.x, WORLD_WIDTH * BLOCK_SIZE - canvas.width));
+            camera.y = Math.max(0, Math.min(camera.y, WORLD_HEIGHT * BLOCK_SIZE - canvas.height));
 
             // Update UI
             document.getElementById('position').textContent =
-                `${player.x}, ${player.y}, ${player.z}`;
+                `X: ${Math.floor(player.x / BLOCK_SIZE)}, Y: ${Math.floor(player.y / BLOCK_SIZE)}`;
 
-            // Direction based on camera angle
-            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-            const dirIndex = Math.floor(((camera.angleY + Math.PI / 8) / (Math.PI / 4)) % 8 + 8) % 8;
-            document.getElementById('direction').textContent = directions[dirIndex];
+            const hearts = '❤️'.repeat(player.health);
+            document.getElementById('health').textContent = hearts;
 
             const totalBlocks = Object.values(inventory).reduce((a, b) => a + b, 0);
             document.getElementById('blockCount').textContent = totalBlocks;
         }
 
         function draw() {
-            // Clear canvas
-            const timeOfDay = 0.8;
-            const skyColor = '#87CEEB';
-            ctx.fillStyle = skyColor;
+            // Sky
+            ctx.fillStyle = '#87CEEB';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Collect all blocks with their distance for sorting
-            const blocks = [];
-            for (let x = 0; x < WORLD_SIZE; x++) {
-                for (let y = 0; y < WORLD_HEIGHT; y++) {
-                    for (let z = 0; z < WORLD_SIZE; z++) {
-                        if (world[x][y][z] !== BLOCKS.AIR) {
-                            const dx = x - player.x;
-                            const dy = y - player.y;
-                            const dz = z - player.z;
-                            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                            blocks.push({ x, y, z, distance, type: world[x][y][z] });
-                        }
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            // Draw world
+            const startX = Math.floor(camera.x / BLOCK_SIZE);
+            const endX = Math.ceil((camera.x + canvas.width) / BLOCK_SIZE);
+            const startY = Math.floor(camera.y / BLOCK_SIZE);
+            const endY = Math.ceil((camera.y + canvas.height) / BLOCK_SIZE);
+
+            for (let x = Math.max(0, startX); x < Math.min(WORLD_WIDTH, endX); x++) {
+                for (let y = Math.max(0, startY); y < Math.min(WORLD_HEIGHT, endY); y++) {
+                    const block = world[x][y];
+                    if (block !== BLOCKS.AIR) {
+                        drawBlock(x * BLOCK_SIZE, y * BLOCK_SIZE, block);
                     }
                 }
             }
 
-            // Sort by distance (furthest first for proper occlusion)
-            blocks.sort((a, b) => b.distance - a.distance);
+            // Draw player
+            ctx.fillStyle = '#4169E1';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
 
-            // Draw blocks
-            blocks.forEach(block => {
-                drawCube(block.x, block.y, block.z, block.type);
-            });
+            // Player face
+            ctx.fillStyle = '#FFE0BD';
+            ctx.fillRect(player.x + 4, player.y + 4, 20, 20);
 
-            // Highlight targeted block
-            if (targetBlock) {
-                const { x, y, z } = targetBlock;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.lineWidth = 3;
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 8, player.y + 10, 4, 4);
+            ctx.fillRect(player.x + 16, player.y + 10, 4, 4);
 
-                const vertices = [
-                    project3D(x, y, z),
-                    project3D(x + 1, y, z),
-                    project3D(x + 1, y + 1, z),
-                    project3D(x, y + 1, z),
-                    project3D(x, y, z + 1),
-                    project3D(x + 1, y, z + 1),
-                    project3D(x + 1, y + 1, z + 1),
-                    project3D(x, y + 1, z + 1)
-                ];
-
-                // Draw outline
-                const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-                edges.forEach(([a, b]) => {
-                    ctx.beginPath();
-                    ctx.moveTo(vertices[a].x, vertices[a].y);
-                    ctx.lineTo(vertices[b].x, vertices[b].y);
-                    ctx.stroke();
-                });
-            }
+            ctx.restore();
 
             requestAnimationFrame(gameLoop);
+        }
+
+        function drawBlock(x, y, type) {
+            const color = BLOCK_COLORS[type];
+
+            if (typeof color === 'object') {
+                // Grass block - special rendering
+                ctx.fillStyle = color.side;
+                ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+                ctx.fillStyle = color.top;
+                ctx.fillRect(x, y, BLOCK_SIZE, 8);
+            } else {
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+            }
+
+            // Add texture/highlights based on block type
+            if (type === BLOCKS.STONE) {
+                ctx.fillStyle = 'rgba(150, 150, 150, 0.3)';
+                ctx.fillRect(x + 4, y + 4, 8, 8);
+                ctx.fillRect(x + 20, y + 16, 6, 6);
+            } else if (type === BLOCKS.COAL_ORE || type === BLOCKS.IRON_ORE) {
+                ctx.fillStyle = '#808080';
+                ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+
+                // Ore spots
+                if (type === BLOCKS.COAL_ORE) ctx.fillStyle = '#1a1a1a';
+                else if (type === BLOCKS.IRON_ORE) ctx.fillStyle = '#CD853F';
+
+                ctx.fillRect(x + 8, y + 8, 6, 6);
+                ctx.fillRect(x + 18, y + 6, 4, 4);
+                ctx.fillRect(x + 10, y + 20, 8, 5);
+            } else if (type === BLOCKS.WOOD) {
+                ctx.fillStyle = 'rgba(101, 67, 33, 0.3)';
+                ctx.fillRect(x + 2, y, 2, BLOCK_SIZE);
+                ctx.fillRect(x + 12, y, 2, BLOCK_SIZE);
+                ctx.fillRect(x + 22, y, 2, BLOCK_SIZE);
+            } else if (type === BLOCKS.PLANKS) {
+                ctx.fillStyle = 'rgba(160, 82, 45, 0.3)';
+                for (let i = 0; i < BLOCK_SIZE; i += 8) {
+                    ctx.fillRect(x, y + i, BLOCK_SIZE, 2);
+                }
+            }
+
+            // Block outline
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
         }
 
         function gameLoop() {
@@ -631,8 +633,6 @@
 
             Object.keys(BLOCK_NAMES).forEach((blockType) => {
                 blockType = Number(blockType);
-                if (blockType === BLOCKS.AIR) return;
-
                 const slot = document.createElement('div');
                 slot.className = 'inventory-slot';
                 if (blockType === selectedSlot) {
@@ -641,7 +641,7 @@
 
                 const icon = document.createElement('div');
                 icon.className = 'slot-icon';
-                icon.textContent = BLOCK_NAMES[blockType];
+                icon.textContent = BLOCK_NAMES[blockType].split(' ')[0];
 
                 const count = document.createElement('div');
                 count.className = 'slot-count';
