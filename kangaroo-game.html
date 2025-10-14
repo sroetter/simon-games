@@ -465,8 +465,8 @@
                 }
             });
 
-            // Spawn new obstacles (farther apart)
-            if (frameCount % 150 === 0 || (obstacles.length === 0 && frameCount > 50)) {
+            // Spawn new obstacles (50% closer)
+            if (frameCount % 75 === 0 || (obstacles.length === 0 && frameCount > 50)) {
                 spawnObstacle();
             }
 
