@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chef's Kitchen - Cooking Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FFE66D 50%, #4ECDC4 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 48px;
+            background: linear-gradient(135deg, #FF6B6B, #FFE66D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-screen,
+        .game-screen,
+        .result-screen {
+            display: none;
+        }
+
+        .menu-screen.active,
+        .game-screen.active,
+        .result-screen.active {
+            display: block;
+        }
+
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .recipe-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .recipe-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .recipe-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .recipe-difficulty {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .cooking-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .ingredients-panel,
+        .cooking-station {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .panel-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ingredient-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .ingredient-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+        }
+
+        .ingredient-item:hover:not(.used) {
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
+
+        .ingredient-item.used {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .ingredient-item.selected {
+            border-color: #4ECDC4;
+            background: #E8FFF8;
+        }
+
+        .ingredient-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+        }
+
+        .cooking-steps {
+            display: grid;
+            gap: 15px;
+        }
+
+        .cooking-step {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 3px solid #ddd;
+            opacity: 0.5;
+            transition: all 0.3s;
+        }
+
+        .cooking-step.active {
+            opacity: 1;
+            border-color: #FF6B6B;
+            box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .cooking-step.completed {
+            opacity: 1;
+            border-color: #4ECDC4;
+            background: #E8FFF8;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .timer-bar {
+            background: #ddd;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .timer-fill {
+            background: linear-gradient(90deg, #4ECDC4, #44A08D);
+            height: 100%;
+            transition: width 0.5s linear;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .result-content {
+            text-align: center;
+        }
+
+        .result-icon {
+            font-size: 120px;
+            margin: 20px 0;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .result-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .result-message {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .result-score {
+            font-size: 36px;
+            font-weight: bold;
+            color: #FF6B6B;
+            margin-bottom: 30px;
+        }
+
+        .btn-large {
+            background: linear-gradient(135deg, #FF6B6B, #FFE66D);
+            color: white;
+            border: none;
+            padding: 18px 48px;
+            border-radius: 12px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-large:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-indicator {
+            text-align: center;
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .dish-preview {
+            text-align: center;
+            font-size: 80px;
+            margin: 20px 0;
+            animation: rotate 3s infinite;
+        }
+
+        @keyframes rotate {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        @media (max-width: 768px) {
+            .cooking-area {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            .recipe-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>👨‍🍳 Chef's Kitchen</h1>
+        <p class="subtitle">Master the art of cooking!</p>
+
+        <!-- Menu Screen -->
+        <div class="menu-screen active">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #333;">Choose Your Recipe</h2>
+            <div class="recipe-grid" id="recipeGrid"></div>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-screen">
+            <div class="stats-bar">
+                <div class="stat">
+                    <span>⭐</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="stat">
+                    <span>🏆</span>
+                    <span id="level">1</span>
+                </div>
+                <div class="stat">
+                    <span>💰</span>
+                    <span id="money">$0</span>
+                </div>
+            </div>
+
+            <div class="timer-bar">
+                <div class="timer-fill" id="timerFill" style="width: 100%;">
+                    <span id="timeLeft">60s</span>
+                </div>
+            </div>
+
+            <div class="progress-indicator" id="progressText">
+                Step 1 of 4
+            </div>
+
+            <div class="dish-preview" id="dishPreview">🍳</div>
+
+            <div class="cooking-area">
+                <div class="ingredients-panel">
+                    <div class="panel-title">🥕 Ingredients</div>
+                    <div class="ingredient-list" id="ingredientList"></div>
+                </div>
+
+                <div class="cooking-station">
+                    <div class="panel-title">🔥 Cooking Steps</div>
+                    <div class="cooking-steps" id="cookingSteps"></div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="action-btn" onclick="quitToMenu()">🏠 Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div class="result-screen">
+            <div class="result-content">
+                <div class="result-icon" id="resultIcon">⭐</div>
+                <div class="result-title" id="resultTitle">Perfect!</div>
+                <div class="result-message" id="resultMessage">You're a master chef!</div>
+                <div class="result-score" id="resultScoreText">Score: 1000</div>
+                <button class="btn-large" onclick="backToMenu()">🏠 Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const recipes = [
+            {
+                id: 'burger',
+                name: 'Classic Burger',
+                icon: '🍔',
+                difficulty: 'Easy',
+                time: 60,
+                points: 100,
+                money: 50,
+                ingredients: [
+                    { id: 'bun', name: 'Burger Bun', icon: '🍞' },
+                    { id: 'patty', name: 'Beef Patty', icon: '🥩' },
+                    { id: 'lettuce', name: 'Lettuce', icon: '🥬' },
+                    { id: 'tomato', name: 'Tomato', icon: '🍅' },
+                    { id: 'cheese', name: 'Cheese', icon: '🧀' }
+                ],
+                steps: [
+                    { id: 'prep', title: 'Prepare Ingredients', action: 'Chop', icon: '🔪', ingredients: ['lettuce', 'tomato'] },
+                    { id: 'cook', title: 'Cook the Patty', action: 'Grill', icon: '🍳', ingredients: ['patty'] },
+                    { id: 'melt', title: 'Melt the Cheese', action: 'Heat', icon: '🔥', ingredients: ['cheese'] },
+                    { id: 'assemble', title: 'Assemble Burger', action: 'Stack', icon: '🍔', ingredients: ['bun', 'patty', 'lettuce', 'tomato', 'cheese'] }
+                ]
+            },
+            {
+                id: 'pizza',
+                name: 'Margherita Pizza',
+                icon: '🍕',
+                difficulty: 'Medium',
+                time: 90,
+                points: 200,
+                money: 100,
+                ingredients: [
+                    { id: 'dough', name: 'Pizza Dough', icon: '🫓' },
+                    { id: 'sauce', name: 'Tomato Sauce', icon: '🍅' },
+                    { id: 'mozzarella', name: 'Mozzarella', icon: '🧀' },
+                    { id: 'basil', name: 'Fresh Basil', icon: '🌿' },
+                    { id: 'olive-oil', name: 'Olive Oil', icon: '🫒' }
+                ],
+                steps: [
+                    { id: 'roll', title: 'Roll the Dough', action: 'Roll', icon: '🎯', ingredients: ['dough'] },
+                    { id: 'sauce', title: 'Spread the Sauce', action: 'Spread', icon: '🍅', ingredients: ['sauce'] },
+                    { id: 'cheese', title: 'Add Cheese', action: 'Sprinkle', icon: '🧀', ingredients: ['mozzarella'] },
+                    { id: 'bake', title: 'Bake Pizza', action: 'Bake', icon: '🔥', ingredients: ['basil', 'olive-oil'] }
+                ]
+            },
+            {
+                id: 'sushi',
+                name: 'Sushi Roll',
+                icon: '🍣',
+                difficulty: 'Hard',
+                time: 120,
+                points: 300,
+                money: 150,
+                ingredients: [
+                    { id: 'rice', name: 'Sushi Rice', icon: '🍚' },
+                    { id: 'nori', name: 'Nori Sheet', icon: '🟩' },
+                    { id: 'salmon', name: 'Fresh Salmon', icon: '🐟' },
+                    { id: 'avocado', name: 'Avocado', icon: '🥑' },
+                    { id: 'cucumber', name: 'Cucumber', icon: '🥒' }
+                ],
+                steps: [
+                    { id: 'rice', title: 'Prepare Sushi Rice', action: 'Cook', icon: '🍚', ingredients: ['rice'] },
+                    { id: 'slice', title: 'Slice the Fish', action: 'Cut', icon: '🔪', ingredients: ['salmon', 'avocado', 'cucumber'] },
+                    { id: 'spread', title: 'Spread Rice on Nori', action: 'Spread', icon: '📋', ingredients: ['rice', 'nori'] },
+                    { id: 'roll', title: 'Roll and Slice', action: 'Roll', icon: '🎯', ingredients: ['salmon', 'avocado', 'cucumber'] }
+                ]
+            },
+            {
+                id: 'pasta',
+                name: 'Spaghetti Carbonara',
+                icon: '🍝',
+                difficulty: 'Medium',
+                time: 75,
+                points: 180,
+                money: 80,
+                ingredients: [
+                    { id: 'pasta', name: 'Spaghetti', icon: '🍝' },
+                    { id: 'bacon', name: 'Bacon', icon: '🥓' },
+                    { id: 'eggs', name: 'Eggs', icon: '🥚' },
+                    { id: 'parmesan', name: 'Parmesan', icon: '🧀' },
+                    { id: 'pepper', name: 'Black Pepper', icon: '⚫' }
+                ],
+                steps: [
+                    { id: 'boil', title: 'Boil the Pasta', action: 'Boil', icon: '💧', ingredients: ['pasta'] },
+                    { id: 'fry', title: 'Fry the Bacon', action: 'Fry', icon: '🍳', ingredients: ['bacon'] },
+                    { id: 'mix', title: 'Mix Eggs and Cheese', action: 'Whisk', icon: '🥄', ingredients: ['eggs', 'parmesan'] },
+                    { id: 'combine', title: 'Combine Everything', action: 'Toss', icon: '🍝', ingredients: ['pasta', 'bacon', 'eggs', 'parmesan', 'pepper'] }
+                ]
+            },
+            {
+                id: 'ramen',
+                name: 'Ramen Bowl',
+                icon: '🍜',
+                difficulty: 'Medium',
+                time: 80,
+                points: 190,
+                money: 90,
+                ingredients: [
+                    { id: 'noodles', name: 'Ramen Noodles', icon: '🍜' },
+                    { id: 'broth', name: 'Broth', icon: '🥣' },
+                    { id: 'pork', name: 'Pork Belly', icon: '🥩' },
+                    { id: 'egg', name: 'Soft Boiled Egg', icon: '🥚' },
+                    { id: 'scallions', name: 'Scallions', icon: '🌿' }
+                ],
+                steps: [
+                    { id: 'broth', title: 'Prepare Broth', action: 'Simmer', icon: '🥣', ingredients: ['broth'] },
+                    { id: 'cook-pork', title: 'Cook Pork Belly', action: 'Braise', icon: '🔥', ingredients: ['pork'] },
+                    { id: 'noodles', title: 'Cook Noodles', action: 'Boil', icon: '💧', ingredients: ['noodles'] },
+                    { id: 'assemble', title: 'Assemble Bowl', action: 'Arrange', icon: '🍜', ingredients: ['noodles', 'broth', 'pork', 'egg', 'scallions'] }
+                ]
+            },
+            {
+                id: 'tacos',
+                name: 'Street Tacos',
+                icon: '🌮',
+                difficulty: 'Easy',
+                time: 55,
+                points: 120,
+                money: 60,
+                ingredients: [
+                    { id: 'tortilla', name: 'Corn Tortillas', icon: '🫓' },
+                    { id: 'beef', name: 'Ground Beef', icon: '🥩' },
+                    { id: 'cilantro', name: 'Cilantro', icon: '🌿' },
+                    { id: 'onion', name: 'Onion', icon: '🧅' },
+                    { id: 'lime', name: 'Lime', icon: '🍋' }
+                ],
+                steps: [
+                    { id: 'season', title: 'Season the Beef', action: 'Mix', icon: '🥄', ingredients: ['beef'] },
+                    { id: 'cook', title: 'Cook the Beef', action: 'Sauté', icon: '🍳', ingredients: ['beef'] },
+                    { id: 'warm', title: 'Warm Tortillas', action: 'Heat', icon: '🔥', ingredients: ['tortilla'] },
+                    { id: 'assemble', title: 'Assemble Tacos', action: 'Fill', icon: '🌮', ingredients: ['tortilla', 'beef', 'cilantro', 'onion', 'lime'] }
+                ]
+            }
+        ];
+
+        let currentRecipe = null;
+        let currentStep = 0;
+        let score = 0;
+        let level = 1;
+        let money = 0;
+        let timeLeft = 60;
+        let timerInterval = null;
+        let selectedIngredients = new Set();
+        let usedIngredients = new Set();
+
+        function init() {
+            loadRecipeGrid();
+        }
+
+        function loadRecipeGrid() {
+            const grid = document.getElementById('recipeGrid');
+            grid.innerHTML = '';
+
+            recipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.onclick = () => startRecipe(recipe.id);
+                card.innerHTML = `
+                    <div class="recipe-icon">${recipe.icon}</div>
+                    <div class="recipe-name">${recipe.name}</div>
+                    <div class="recipe-difficulty">⏱️ ${recipe.time}s | ⭐ ${recipe.points} pts</div>
+                    <div class="recipe-difficulty">${recipe.difficulty}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function startRecipe(recipeId) {
+            currentRecipe = recipes.find(r => r.id === recipeId);
+            currentStep = 0;
+            timeLeft = currentRecipe.time;
+            selectedIngredients.clear();
+            usedIngredients.clear();
+
+            document.querySelector('.menu-screen').classList.remove('active');
+            document.querySelector('.game-screen').classList.add('active');
+
+            loadIngredients();
+            loadSteps();
+            updateProgress();
+            startTimer();
+            updateDishPreview();
+        }
+
+        function loadIngredients() {
+            const list = document.getElementById('ingredientList');
+            list.innerHTML = '';
+
+            currentRecipe.ingredients.forEach(ing => {
+                const item = document.createElement('div');
+                item.className = 'ingredient-item';
+                item.id = `ing-${ing.id}`;
+                item.onclick = () => toggleIngredient(ing.id);
+                item.innerHTML = `
+                    <div class="ingredient-info">
+                        <span style="font-size: 24px;">${ing.icon}</span>
+                        <span>${ing.name}</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function loadSteps() {
+            const stepsContainer = document.getElementById('cookingSteps');
+            stepsContainer.innerHTML = '';
+
+            currentRecipe.steps.forEach((step, index) => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = `cooking-step ${index === 0 ? 'active' : ''}`;
+                stepDiv.id = `step-${index}`;
+                stepDiv.innerHTML = `
+                    <div class="step-header">
+                        <div class="step-title">
+                            <span>${step.icon}</span>
+                            <span>${step.title}</span>
+                        </div>
+                        <span style="opacity: 0.7;">${index + 1}/${currentRecipe.steps.length}</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="performAction(${index})" id="action-btn-${index}">
+                            ${step.action}
+                        </button>
+                    </div>
+                `;
+                stepsContainer.appendChild(stepDiv);
+            });
+        }
+
+        function toggleIngredient(ingId) {
+            if (usedIngredients.has(ingId)) return;
+
+            const element = document.getElementById(`ing-${ingId}`);
+            if (selectedIngredients.has(ingId)) {
+                selectedIngredients.delete(ingId);
+                element.classList.remove('selected');
+            } else {
+                selectedIngredients.add(ingId);
+                element.classList.add('selected');
+            }
+        }
+
+        function performAction(stepIndex) {
+            if (stepIndex !== currentStep) return;
+
+            const step = currentRecipe.steps[stepIndex];
+            const requiredIngredients = new Set(step.ingredients);
+
+            // Check if all required ingredients are selected
+            const hasAllIngredients = [...requiredIngredients].every(ing =>
+                selectedIngredients.has(ing) || usedIngredients.has(ing)
+            );
+
+            if (!hasAllIngredients) {
+                alert(`You need: ${step.ingredients.map(id => {
+                    const ing = currentRecipe.ingredients.find(i => i.id === id);
+                    return ing.name;
+                }).join(', ')}`);
+                return;
+            }
+
+            // Mark ingredients as used
+            step.ingredients.forEach(ingId => {
+                usedIngredients.add(ingId);
+                const element = document.getElementById(`ing-${ingId}`);
+                if (element) {
+                    element.classList.add('used');
+                    element.classList.remove('selected');
+                }
+                selectedIngredients.delete(ingId);
+            });
+
+            // Mark step as completed
+            document.getElementById(`step-${stepIndex}`).classList.remove('active');
+            document.getElementById(`step-${stepIndex}`).classList.add('completed');
+
+            // Add points based on time bonus
+            const timeBonus = Math.floor((timeLeft / currentRecipe.time) * 100);
+            const stepPoints = Math.floor(currentRecipe.points / currentRecipe.steps.length) + timeBonus;
+            score += stepPoints;
+            document.getElementById('score').textContent = score;
+
+            currentStep++;
+
+            if (currentStep < currentRecipe.steps.length) {
+                // Activate next step
+                document.getElementById(`step-${currentStep}`).classList.add('active');
+                updateProgress();
+                updateDishPreview();
+            } else {
+                // Recipe completed!
+                completeRecipe();
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById('progressText').textContent =
+                `Step ${currentStep + 1} of ${currentRecipe.steps.length}`;
+        }
+
+        function updateDishPreview() {
+            const icons = ['🥘', '🍳', '🥣', '🍽️', currentRecipe.icon];
+            const icon = icons[Math.min(currentStep, icons.length - 1)];
+            document.getElementById('dishPreview').textContent = icon;
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const percentage = (timeLeft / currentRecipe.time) * 100;
+                document.getElementById('timerFill').style.width = `${percentage}%`;
+                document.getElementById('timeLeft').textContent = `${timeLeft}s`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    gameOver();
+                }
+            }, 1000);
+        }
+
+        function completeRecipe() {
+            clearInterval(timerInterval);
+
+            // Calculate final score
+            const timeBonus = Math.floor((timeLeft / currentRecipe.time) * currentRecipe.points);
+            score += timeBonus;
+            money += currentRecipe.money;
+            level++;
+
+            // Update stats
+            document.getElementById('score').textContent = score;
+            document.getElementById('money').textContent = `$${money}`;
+            document.getElementById('level').textContent = level;
+
+            // Show result screen
+            showResult(true);
+        }
+
+        function gameOver() {
+            showResult(false);
+        }
+
+        function showResult(success) {
+            document.querySelector('.game-screen').classList.remove('active');
+            document.querySelector('.result-screen').classList.add('active');
+
+            if (success) {
+                document.getElementById('resultIcon').textContent = '⭐';
+                document.getElementById('resultTitle').textContent = 'Perfect!';
+                document.getElementById('resultMessage').textContent = `You completed ${currentRecipe.name}!`;
+                document.getElementById('resultScoreText').textContent = `Score: ${score} | Earned: $${currentRecipe.money}`;
+            } else {
+                document.getElementById('resultIcon').textContent = '⏰';
+                document.getElementById('resultTitle').textContent = 'Time\'s Up!';
+                document.getElementById('resultMessage').textContent = 'Better luck next time!';
+                document.getElementById('resultScoreText').textContent = `Score: ${score}`;
+            }
+        }
+
+        function quitToMenu() {
+            if (timerInterval) clearInterval(timerInterval);
+            backToMenu();
+        }
+
+        function backToMenu() {
+            document.querySelector('.game-screen').classList.remove('active');
+            document.querySelector('.result-screen').classList.remove('active');
+            document.querySelector('.menu-screen').classList.add('active');
+
+            if (timerInterval) clearInterval(timerInterval);
+        }
+
+        // Initialize the game
+        init();
+    </script>
+</body>
+</html>
