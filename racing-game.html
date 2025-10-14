@@ -380,6 +380,13 @@
             </div>
 
             <div class="loadout-selector">
+                <h3>🏁 Select Track</h3>
+
+                <div class="loadout-category">
+                    <div class="loadout-label">Track:</div>
+                    <div class="loadout-options" id="trackOptions"></div>
+                </div>
+
                 <h3>🏎️ Select Your Loadout</h3>
 
                 <div class="loadout-category">
@@ -466,6 +473,65 @@
             { name: 'Turbo Wheels', speed: 9, score: 6000 }
         ];
 
+        // Track themes
+        const tracks = [
+            {
+                name: 'Highway',
+                road: '#34495e',
+                grass: '#27ae60',
+                roadLine: '#f39c12',
+                centerLine: '#fff',
+                bg: '#2c3e50'
+            },
+            {
+                name: 'Desert',
+                road: '#a0826d',
+                grass: '#d4a574',
+                roadLine: '#fff',
+                centerLine: '#f1c40f',
+                bg: '#f39c12'
+            },
+            {
+                name: 'Forest',
+                road: '#5a6069',
+                grass: '#1e7145',
+                roadLine: '#fff',
+                centerLine: '#f1c40f',
+                bg: '#16a085'
+            },
+            {
+                name: 'City',
+                road: '#2c3e50',
+                grass: '#95a5a6',
+                roadLine: '#f39c12',
+                centerLine: '#fff',
+                bg: '#34495e'
+            },
+            {
+                name: 'Snow',
+                road: '#7f8c8d',
+                grass: '#ecf0f1',
+                roadLine: '#3498db',
+                centerLine: '#e74c3c',
+                bg: '#bdc3c7'
+            },
+            {
+                name: 'Sunset',
+                road: '#34495e',
+                grass: '#d35400',
+                roadLine: '#f39c12',
+                centerLine: '#fff',
+                bg: '#e67e22'
+            }
+        ];
+
+        let selectedTrack = 0;
+
+        // Road curve system
+        let roadCurve = 0;
+        let targetCurve = 0;
+        let curveChangeTimer = 0;
+
         // Traffic
         let traffic = [];
         let roadOffset = 0;
@@ -475,6 +541,9 @@
 
         // Exhaust particles
         let exhaustParticles = [];
+
+        // Scenery objects
+        let sceneryObjects = [];
 
         // Controls
         let keys = {};
@@ -516,6 +585,17 @@
             }
         }
 
+        function saveSelectedTrack() {
+            localStorage.setItem('racingGameTrack', selectedTrack.toString());
+        }
+
+        function loadSelectedTrack() {
+            const saved = localStorage.getItem('racingGameTrack');
+            if (saved) {
+                selectedTrack = parseInt(saved) || 0;
+            }
+        }
+
         function startGame() {
             if (gameActive) return;
 
@@ -528,7 +608,11 @@
             traffic = [];
             fuelPickups = [];
             exhaustParticles = [];
+            sceneryObjects = [];
             player.x = canvas.width / 2 - 20;
+            roadCurve = 0;
+            targetCurve = 0;
+            curveChangeTimer = 0;
 
             // Apply selected loadout
             fuelDrainRate = fuelUpgrades[selectedLoadout.fuel].drain;
@@ -574,9 +658,11 @@
                 fuel = Math.max(0, fuel);
             }
 
-            // Define road boundaries
-            const roadLeftEdge = canvas.width / 2 - 150;
-            const roadRightEdge = canvas.width / 2 + 150;
+            // Define road boundaries (accounting for curve at player position)
+            const playerProgress = player.y / canvas.height;
+            const curveAtPlayer = roadCurve * playerProgress;
+            const roadLeftEdge = canvas.width / 2 - 150 + curveAtPlayer;
+            const roadRightEdge = canvas.width / 2 + 150 + curveAtPlayer;
 
             // Player movement (allow movement beyond road edges, but will trigger game over)
             if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
@@ -618,14 +704,58 @@
                 return particle.opacity > 0 && particle.y > -50;
             });
 
+            // Update road curve (turns)
+            curveChangeTimer--;
+            if (curveChangeTimer <= 0) {
+                targetCurve = (Math.random() - 0.5) * 100; // Random curve between -50 and 50
+                curveChangeTimer = 200 + Math.random() * 200; // Change curve every 200-400 frames
+            }
+
+            // Smoothly transition to target curve
+            roadCurve += (targetCurve - roadCurve) * 0.01;
+
+            // Push player with the curve
+            player.x += roadCurve * 0.015;
+
+            // Spawn scenery objects
+            if (Math.random() < 0.03) {
+                const side = Math.random() < 0.5 ? 'left' : 'right';
+                const baseX = side === 'left' ? 50 : canvas.width - 150;
+                const offsetX = Math.random() * 50;
+
+                // Different scenery types based on track
+                let type;
+                if (selectedTrack === 0) type = ['tree', 'sign'][Math.floor(Math.random() * 2)]; // Highway
+                else if (selectedTrack === 1) type = ['cactus', 'rock'][Math.floor(Math.random() * 2)]; // Desert
+                else if (selectedTrack === 2) type = ['tree', 'bush'][Math.floor(Math.random() * 2)]; // Forest
+                else if (selectedTrack === 3) type = ['building', 'lamp'][Math.floor(Math.random() * 2)]; // City
+                else if (selectedTrack === 4) type = ['tree', 'rock'][Math.floor(Math.random() * 2)]; // Snow
+                else type = ['tree', 'palm'][Math.floor(Math.random() * 2)]; // Sunset
+
+                sceneryObjects.push({
+                    type: type,
+                    x: baseX + (side === 'left' ? -offsetX : offsetX),
+                    y: -50,
+                    side: side
+                });
+            }
+
+            // Update scenery
+            sceneryObjects = sceneryObjects.filter(obj => {
+                obj.y += speed * 2;
+                return obj.y < canvas.height + 100;
+            });
+
             // Update road
             roadOffset += speed;
             if (roadOffset > 40) roadOffset = 0;
 
             // Spawn traffic
             if (Math.random() < 0.01206) {
-                const roadLeftEdge = canvas.width / 2 - 150;
-                const roadRightEdge = canvas.width / 2 + 150;
+                const spawnProgress = -80 / canvas.height;
+                const curveAtSpawn = roadCurve * spawnProgress;
+                const roadLeftEdge = canvas.width / 2 - 150 + curveAtSpawn;
+                const roadRightEdge = canvas.width / 2 + 150 + curveAtSpawn;
                 const carWidth = 40;
                 // Spawn cars randomly across the entire road width
                 const randomX = roadLeftEdge + Math.random() * (roadRightEdge - roadLeftEdge - carWidth);
@@ -635,7 +765,8 @@
                     width: carWidth,
                     height: 70,
                     speed: 2 + Math.random() * 2,
-                    color: ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'][Math.floor(Math.random() * 4)]
+                    color: ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'][Math.floor(Math.random() * 4)],
+                    carType: Math.floor(Math.random() * 4) // Random car type 0-3
                 });
             }
 
@@ -653,8 +784,10 @@
 
             // Spawn fuel pickups
             if (Math.random() < 0.00335 && fuel < 80) {
-                const roadLeftEdge = canvas.width / 2 - 150;
-                const roadRightEdge = canvas.width / 2 + 150;
+                const spawnProgress = -30 / canvas.height;
+                const curveAtSpawn = roadCurve * spawnProgress;
+                const roadLeftEdge = canvas.width / 2 - 150 + curveAtSpawn;
+                const roadRightEdge = canvas.width / 2 + 150 + curveAtSpawn;
                 const pickupWidth = 20;
                 // Spawn fuel randomly across the road
                 const randomX = roadLeftEdge + Math.random() * (roadRightEdge - roadLeftEdge - pickupWidth);
@@ -672,8 +805,8 @@
 
                 // Check if player collected it
                 if (checkCollision(player, pickup)) {
-                    fuel = Math.min(maxFuel, fuel + 30);
-                    showNotification('+30 Fuel! ⛽');
+                    fuel = Math.min(maxFuel, fuel + 12);
+                    showNotification('+12 Fuel! ⛽');
                     return false;
                 }
 
@@ -692,47 +825,66 @@
         }
 
         function draw() {
-            // Clear canvas
-            ctx.fillStyle = '#2c3e50';
+            const track = tracks[selectedTrack];
+
+            // Clear canvas with background
+            ctx.fillStyle = track.bg;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw grass
-            ctx.fillStyle = '#27ae60';
-            ctx.fillRect(0, 0, canvas.width / 2 - 150, canvas.height);
-            ctx.fillRect(canvas.width / 2 + 150, 0, canvas.width / 2 - 150, canvas.height);
+            // Draw curved road segments
+            for (let i = -1; i < canvas.height / 10 + 1; i++) {
+                const y = i * 10;
+                const progress = y / canvas.height;
+                const curveOffset = roadCurve * progress;
 
-            // Draw road
-            ctx.fillStyle = '#34495e';
-            ctx.fillRect(canvas.width / 2 - 150, 0, 300, canvas.height);
+                // Draw grass
+                ctx.fillStyle = track.grass;
+                ctx.fillRect(0, y, canvas.width, 10);
 
-            // Draw road lines
-            ctx.strokeStyle = '#f39c12';
+                // Draw road segment
+                ctx.fillStyle = track.road;
+                ctx.fillRect(canvas.width / 2 - 150 + curveOffset, y, 300, 10);
+            }
+
+            // Draw road edge lines with curves
+            ctx.strokeStyle = track.roadLine;
             ctx.lineWidth = 4;
             for (let i = -1; i < canvas.height / 40 + 1; i++) {
                 const y = i * 40 + roadOffset;
+                const progress = y / canvas.height;
+                const curveOffset = roadCurve * progress;
+
                 ctx.beginPath();
-                ctx.moveTo(canvas.width / 2 - 150, y);
-                ctx.lineTo(canvas.width / 2 - 145, y + 20);
+                ctx.moveTo(canvas.width / 2 - 150 + curveOffset, y);
+                ctx.lineTo(canvas.width / 2 - 145 + curveOffset, y + 20);
                 ctx.stroke();
 
                 ctx.beginPath();
-                ctx.moveTo(canvas.width / 2 + 150, y);
-                ctx.lineTo(canvas.width / 2 + 145, y + 20);
+                ctx.moveTo(canvas.width / 2 + 150 + curveOffset, y);
+                ctx.lineTo(canvas.width / 2 + 145 + curveOffset, y + 20);
                 ctx.stroke();
             }
 
-            // Draw center line
-            ctx.strokeStyle = '#fff';
+            // Draw center line with curves
+            ctx.strokeStyle = track.centerLine;
             ctx.lineWidth = 3;
             ctx.setLineDash([20, 20]);
             for (let i = -1; i < canvas.height / 40 + 1; i++) {
                 const y = i * 40 + roadOffset;
+                const progress = y / canvas.height;
+                const curveOffset = roadCurve * progress;
+
                 ctx.beginPath();
-                ctx.moveTo(canvas.width / 2, y);
-                ctx.lineTo(canvas.width / 2, y + 20);
+                ctx.moveTo(canvas.width / 2 + curveOffset, y);
+                ctx.lineTo(canvas.width / 2 + curveOffset, y + 20);
                 ctx.stroke();
             }
             ctx.setLineDash([]);
+
+            // Draw scenery objects
+            sceneryObjects.forEach(obj => {
+                drawScenery(obj.type, obj.x, obj.y);
+            });
 
             // Draw exhaust particles
             exhaustParticles.forEach(particle => {
@@ -753,7 +905,7 @@
 
             // Draw traffic
             traffic.forEach(car => {
-                drawCar(car.x, car.y, car.width, car.height, car.color, 0);
+                drawCar(car.x, car.y, car.width, car.height, car.color, car.carType);
             });
 
             // Draw player
@@ -934,6 +1086,94 @@
             }
         }
 
+        function drawScenery(type, x, y) {
+            if (type === 'tree') {
+                // Tree trunk
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(x + 15, y + 30, 10, 20);
+                // Tree foliage
+                ctx.fillStyle = selectedTrack === 4 ? '#e8f5e9' : '#2d5016'; // White-ish for snow, green for others
+                ctx.beginPath();
+                ctx.arc(x + 20, y + 20, 20, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (type === 'cactus') {
+                // Cactus body
+                ctx.fillStyle = '#6b8e23';
+                ctx.fillRect(x + 15, y + 10, 12, 35);
+                // Cactus arms
+                ctx.fillRect(x + 5, y + 20, 10, 3);
+                ctx.fillRect(x + 5, y + 20, 3, 15);
+                ctx.fillRect(x + 27, y + 25, 10, 3);
+                ctx.fillRect(x + 34, y + 25, 3, 12);
+            } else if (type === 'rock') {
+                // Rock
+                ctx.fillStyle = selectedTrack === 1 ? '#a0826d' : '#7f8c8d';
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 15);
+                ctx.lineTo(x + 35, y + 30);
+                ctx.lineTo(x + 30, y + 40);
+                ctx.lineTo(x + 10, y + 40);
+                ctx.lineTo(x + 5, y + 30);
+                ctx.closePath();
+                ctx.fill();
+            } else if (type === 'building') {
+                // Building
+                const height = 60 + Math.random() * 40;
+                ctx.fillStyle = '#95a5a6';
+                ctx.fillRect(x, y + (50 - height), 40, height);
+                // Windows
+                ctx.fillStyle = '#f39c12';
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < Math.floor(height / 15); j++) {
+                        ctx.fillRect(x + 5 + i * 12, y + (50 - height) + 5 + j * 15, 8, 10);
+                    }
+                }
+            } else if (type === 'lamp') {
+                // Street lamp
+                ctx.fillStyle = '#34495e';
+                ctx.fillRect(x + 18, y + 10, 4, 40);
+                // Lamp head
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath();
+                ctx.arc(x + 20, y + 8, 8, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (type === 'bush') {
+                // Bush
+                ctx.fillStyle = '#1e7145';
+                ctx.beginPath();
+                ctx.arc(x + 15, y + 35, 15, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 25, y + 38, 12, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (type === 'palm') {
+                // Palm tree trunk
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(x + 17, y + 20, 6, 30);
+                // Palm leaves
+                ctx.fillStyle = '#228B22';
+                ctx.strokeStyle = '#228B22';
+                ctx.lineWidth = 4;
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x + 20, y + 20);
+                    ctx.lineTo(x + 20 + Math.cos(angle) * 20, y + 20 + Math.sin(angle) * 15);
+                    ctx.stroke();
+                }
+            } else if (type === 'sign') {
+                // Road sign post
+                ctx.fillStyle = '#7f8c8d';
+                ctx.fillRect(x + 18, y + 20, 4, 30);
+                // Sign board
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(x + 5, y + 15, 30, 20);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x + 5, y + 15, 30, 20);
+            }
+        }
+
         function checkCollision(rect1, rect2) {
             return rect1.x < rect2.x + rect2.width &&
                    rect1.x + rect1.width > rect2.x &&
@@ -1032,6 +1272,22 @@
         }
 
         function populateLoadoutSelector() {
+            // Populate track options
+            const trackOptions = document.getElementById('trackOptions');
+            trackOptions.innerHTML = '';
+            for (let i = 0; i < tracks.length; i++) {
+                const option = document.createElement('div');
+                option.className = 'loadout-option';
+                option.textContent = tracks[i].name;
+                option.onclick = () => selectTrack(i);
+
+                if (i === selectedTrack) {
+                    option.classList.add('selected');
+                }
+
+                trackOptions.appendChild(option);
+            }
+
             // Populate car options
             const carOptions = document.getElementById('carOptions');
             carOptions.innerHTML = '';
@@ -1105,6 +1361,12 @@
             populateLoadoutSelector();
         }
 
+        function selectTrack(index) {
+            selectedTrack = index;
+            saveSelectedTrack();
+            populateLoadoutSelector();
+        }
+
         function gameOver() {
             gameActive = false;
             document.getElementById('startBtn').textContent = '🏁 START RACE';
@@ -1125,6 +1387,7 @@
         // Initialize on page load
         loadUnlockedUpgrades();
         loadSelectedLoadout();
+        loadSelectedTrack();
         updateUpgradeUI();
     </script>
 </body>
