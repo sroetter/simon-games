@@ -164,6 +164,17 @@
             color: #333;
         }
 
+        .selected-item {
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            border-radius: 8px;
+            font-weight: bold;
+            color: #333;
+            min-height: 20px;
+        }
+
         .craft-menu {
             position: fixed;
             top: 50%;
@@ -226,6 +237,21 @@
             color: #666;
         }
 
+        .search-bar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
         .close-craft {
             position: absolute;
             top: 10px;
@@ -239,6 +265,154 @@
         .close-craft:hover {
             color: #333;
         }
+
+        .recipe-book-btn {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            color: #333;
+        }
+
+        .recipe-book-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .recipe-book {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            display: none;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .recipe-book.active {
+            display: block;
+        }
+
+        .recipe-book h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .recipe-book h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #2ecc71;
+            font-size: 18px;
+            border-bottom: 2px solid #2ecc71;
+            padding-bottom: 5px;
+        }
+
+        .recipe-item {
+            background: #f5f5f5;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        .recipe-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+
+        .recipe-details {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .recipe-arrow {
+            display: inline-block;
+            margin: 0 8px;
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .death-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(139, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .death-screen.active {
+            display: flex;
+        }
+
+        .death-content {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .death-content h2 {
+            font-size: 48px;
+            color: #d63031;
+            margin-bottom: 20px;
+        }
+
+        .death-content p {
+            font-size: 18px;
+            margin: 20px 0;
+            color: #666;
+        }
+
+        .respawn-btn {
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        .respawn-keep {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #333;
+        }
+
+        .respawn-lose {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .respawn-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .time-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -251,6 +425,7 @@
 
         <div class="game-canvas-container">
             <canvas id="gameCanvas" width="800" height="500"></canvas>
+            <div class="time-indicator" id="timeIndicator">☀️ Day</div>
         </div>
 
         <div class="info-panel">
@@ -270,8 +445,13 @@
 
         <div class="inventory-bar" id="inventoryBar"></div>
 
+        <div class="selected-item" id="selectedItem">Click an item to see its name</div>
+
         <div class="controls">
             <button class="craft-btn" onclick="toggleCraftMenu()">🔨 Craft (E)</button>
+            <button class="recipe-book-btn" onclick="toggleRecipeBook()">📖 Recipe Book</button>
+            <button class="craft-btn" onclick="saveWorld(); alert('World saved!')">💾 Save</button>
+            <button class="back-btn" onclick="clearWorld()">🔄 Reset World</button>
             <button class="back-btn" onclick="window.location.href='index.html'">🏠 Back</button>
         </div>
     </div>
@@ -279,6 +459,7 @@
     <div class="craft-menu" id="craftMenu">
         <span class="close-craft" onclick="toggleCraftMenu()">×</span>
         <h2>Crafting</h2>
+        <input type="text" class="search-bar" id="craftSearch" placeholder="🔍 Search recipes..." oninput="updateCraftMenu()">
         <div id="craftRecipes"></div>
     </div>
 
@@ -307,6 +488,25 @@
             <button onclick="startSmelting()" style="width: 100%; padding: 12px; font-size: 16px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
                 Start Smelting
             </button>
+        </div>
+    </div>
+
+    <div class="recipe-book" id="recipeBook">
+        <span class="close-craft" onclick="toggleRecipeBook()">×</span>
+        <h2>📖 Recipe Book</h2>
+        <input type="text" class="search-bar" id="recipeSearch" placeholder="🔍 Search recipes..." oninput="updateRecipeBook()">
+        <div id="recipeBookContent"></div>
+    </div>
+
+    <div class="death-screen" id="deathScreen">
+        <div class="death-content">
+            <h2>💀 You Died!</h2>
+            <p id="deathMessage">You were slain by a monster</p>
+            <p>Would you like to keep your items?</p>
+            <div>
+                <button class="respawn-btn respawn-keep" onclick="respawn(true)">✅ Keep Items</button>
+                <button class="respawn-btn respawn-lose" onclick="respawn(false)">❌ Lose Items</button>
+            </div>
         </div>
     </div>
 
@@ -429,7 +629,16 @@
             DIAMOND_PICKAXE: 123,
             DIAMOND_AXE: 124,
             DIAMOND_SHOVEL: 125,
-            DIAMOND_SWORD: 126
+            DIAMOND_SWORD: 126,
+            // Food items
+            RAW_BEEF: 127,
+            RAW_PORKCHOP: 128,
+            RAW_CHICKEN: 129,
+            RAW_MUTTON: 130,
+            COOKED_BEEF: 131,
+            COOKED_PORKCHOP: 132,
+            COOKED_CHICKEN: 133,
+            COOKED_MUTTON: 134
         };
 
         const BLOCK_COLORS = {
@@ -510,7 +719,136 @@
             [BLOCKS.WOOL_ORANGE]: '#FF8C00',
             [BLOCKS.TERRACOTTA]: '#CD853F',
             // Items
-            [BLOCKS.TORCH]: '#FFA500'
+            [BLOCKS.TORCH]: '#FFA500',
+            // Food items
+            [BLOCKS.RAW_BEEF]: '#8B0000',
+            [BLOCKS.RAW_PORKCHOP]: '#FFB6C1',
+            [BLOCKS.RAW_CHICKEN]: '#FFE4B5',
+            [BLOCKS.RAW_MUTTON]: '#CD5C5C',
+            [BLOCKS.COOKED_BEEF]: '#A0522D',
+            [BLOCKS.COOKED_PORKCHOP]: '#D2691E',
+            [BLOCKS.COOKED_CHICKEN]: '#CD853F',
+            [BLOCKS.COOKED_MUTTON]: '#8B4513'
+        };
+
+        const BLOCK_TEXT_NAMES = {
+            // Terrain
+            [BLOCKS.GRASS]: 'Grass Block',
+            [BLOCKS.DIRT]: 'Dirt',
+            [BLOCKS.STONE]: 'Stone',
+            [BLOCKS.COBBLESTONE]: 'Cobblestone',
+            [BLOCKS.SAND]: 'Sand',
+            [BLOCKS.GRAVEL]: 'Gravel',
+            [BLOCKS.SANDSTONE]: 'Sandstone',
+            [BLOCKS.RED_SAND]: 'Red Sand',
+            [BLOCKS.RED_SANDSTONE]: 'Red Sandstone',
+            [BLOCKS.SNOW_BLOCK]: 'Snow Block',
+            [BLOCKS.ICE]: 'Ice',
+            [BLOCKS.CLAY]: 'Clay',
+            // Wood Logs
+            [BLOCKS.OAK_LOG]: 'Oak Log',
+            [BLOCKS.BIRCH_LOG]: 'Birch Log',
+            [BLOCKS.SPRUCE_LOG]: 'Spruce Log',
+            [BLOCKS.JUNGLE_LOG]: 'Jungle Log',
+            [BLOCKS.ACACIA_LOG]: 'Acacia Log',
+            [BLOCKS.DARK_OAK_LOG]: 'Dark Oak Log',
+            // Wood Planks
+            [BLOCKS.OAK_PLANKS]: 'Oak Planks',
+            [BLOCKS.BIRCH_PLANKS]: 'Birch Planks',
+            [BLOCKS.SPRUCE_PLANKS]: 'Spruce Planks',
+            [BLOCKS.JUNGLE_PLANKS]: 'Jungle Planks',
+            [BLOCKS.ACACIA_PLANKS]: 'Acacia Planks',
+            [BLOCKS.DARK_OAK_PLANKS]: 'Dark Oak Planks',
+            // Leaves
+            [BLOCKS.OAK_LEAVES]: 'Oak Leaves',
+            [BLOCKS.BIRCH_LEAVES]: 'Birch Leaves',
+            [BLOCKS.SPRUCE_LEAVES]: 'Spruce Leaves',
+            [BLOCKS.JUNGLE_LEAVES]: 'Jungle Leaves',
+            // Ores
+            [BLOCKS.COAL_ORE]: 'Coal Ore',
+            [BLOCKS.IRON_ORE]: 'Iron Ore',
+            [BLOCKS.GOLD_ORE]: 'Gold Ore',
+            [BLOCKS.DIAMOND_ORE]: 'Diamond Ore',
+            [BLOCKS.EMERALD_ORE]: 'Emerald Ore',
+            [BLOCKS.LAPIS_ORE]: 'Lapis Lazuli Ore',
+            [BLOCKS.REDSTONE_ORE]: 'Redstone Ore',
+            [BLOCKS.COPPER_ORE]: 'Copper Ore',
+            // Processed Materials
+            [BLOCKS.IRON_BLOCK]: 'Block of Iron',
+            [BLOCKS.GOLD_BLOCK]: 'Block of Gold',
+            [BLOCKS.DIAMOND_BLOCK]: 'Block of Diamond',
+            [BLOCKS.EMERALD_BLOCK]: 'Block of Emerald',
+            [BLOCKS.COAL_BLOCK]: 'Block of Coal',
+            [BLOCKS.COPPER_BLOCK]: 'Block of Copper',
+            // Building Blocks
+            [BLOCKS.BRICKS]: 'Bricks',
+            [BLOCKS.STONE_BRICKS]: 'Stone Bricks',
+            [BLOCKS.MOSSY_COBBLESTONE]: 'Mossy Cobblestone',
+            [BLOCKS.MOSSY_STONE_BRICKS]: 'Mossy Stone Bricks',
+            [BLOCKS.GLASS]: 'Glass',
+            [BLOCKS.OBSIDIAN]: 'Obsidian',
+            // Functional Blocks
+            [BLOCKS.CRAFTING_TABLE]: 'Crafting Table',
+            [BLOCKS.FURNACE]: 'Furnace',
+            [BLOCKS.CHEST]: 'Chest',
+            [BLOCKS.LADDER]: 'Ladder',
+            [BLOCKS.TNT]: 'TNT',
+            [BLOCKS.BOOKSHELF]: 'Bookshelf',
+            // Liquids
+            [BLOCKS.WATER]: 'Water',
+            [BLOCKS.LAVA]: 'Lava',
+            // Other
+            [BLOCKS.BEDROCK]: 'Bedrock',
+            [BLOCKS.SPONGE]: 'Sponge',
+            [BLOCKS.WOOL_WHITE]: 'White Wool',
+            [BLOCKS.WOOL_RED]: 'Red Wool',
+            [BLOCKS.WOOL_BLUE]: 'Blue Wool',
+            [BLOCKS.WOOL_GREEN]: 'Green Wool',
+            [BLOCKS.WOOL_YELLOW]: 'Yellow Wool',
+            [BLOCKS.WOOL_ORANGE]: 'Orange Wool',
+            [BLOCKS.TERRACOTTA]: 'Terracotta',
+            // Items
+            [BLOCKS.STICK]: 'Stick',
+            [BLOCKS.COAL]: 'Coal',
+            [BLOCKS.IRON_INGOT]: 'Iron Ingot',
+            [BLOCKS.GOLD_INGOT]: 'Gold Ingot',
+            [BLOCKS.DIAMOND]: 'Diamond',
+            [BLOCKS.EMERALD]: 'Emerald',
+            [BLOCKS.TORCH]: 'Torch',
+            // Tools - Wooden
+            [BLOCKS.WOODEN_PICKAXE]: 'Wooden Pickaxe',
+            [BLOCKS.WOODEN_AXE]: 'Wooden Axe',
+            [BLOCKS.WOODEN_SHOVEL]: 'Wooden Shovel',
+            [BLOCKS.WOODEN_SWORD]: 'Wooden Sword',
+            // Tools - Stone
+            [BLOCKS.STONE_PICKAXE]: 'Stone Pickaxe',
+            [BLOCKS.STONE_AXE]: 'Stone Axe',
+            [BLOCKS.STONE_SHOVEL]: 'Stone Shovel',
+            [BLOCKS.STONE_SWORD]: 'Stone Sword',
+            // Tools - Iron
+            [BLOCKS.IRON_PICKAXE]: 'Iron Pickaxe',
+            [BLOCKS.IRON_AXE]: 'Iron Axe',
+            [BLOCKS.IRON_SHOVEL]: 'Iron Shovel',
+            [BLOCKS.IRON_SWORD]: 'Iron Sword',
+            // Tools - Gold
+            [BLOCKS.GOLD_PICKAXE]: 'Gold Pickaxe',
+            [BLOCKS.GOLD_AXE]: 'Gold Axe',
+            [BLOCKS.GOLD_SHOVEL]: 'Gold Shovel',
+            [BLOCKS.GOLD_SWORD]: 'Gold Sword',
+            // Tools - Diamond
+            [BLOCKS.DIAMOND_PICKAXE]: 'Diamond Pickaxe',
+            [BLOCKS.DIAMOND_AXE]: 'Diamond Axe',
+            [BLOCKS.DIAMOND_SHOVEL]: 'Diamond Shovel',
+            [BLOCKS.DIAMOND_SWORD]: 'Diamond Sword',
+            // Food items
+            [BLOCKS.RAW_BEEF]: 'Raw Beef',
+            [BLOCKS.RAW_PORKCHOP]: 'Raw Porkchop',
+            [BLOCKS.RAW_CHICKEN]: 'Raw Chicken',
+            [BLOCKS.RAW_MUTTON]: 'Raw Mutton',
+            [BLOCKS.COOKED_BEEF]: 'Cooked Beef',
+            [BLOCKS.COOKED_PORKCHOP]: 'Cooked Porkchop',
+            [BLOCKS.COOKED_CHICKEN]: 'Cooked Chicken',
+            [BLOCKS.COOKED_MUTTON]: 'Cooked Mutton'
         };
 
         const BLOCK_NAMES = {
@@ -621,7 +959,16 @@
             [BLOCKS.DIAMOND_PICKAXE]: '⛏️',
             [BLOCKS.DIAMOND_AXE]: '🪓',
             [BLOCKS.DIAMOND_SHOVEL]: '🗡️',
-            [BLOCKS.DIAMOND_SWORD]: '⚔️'
+            [BLOCKS.DIAMOND_SWORD]: '⚔️',
+            // Food items
+            [BLOCKS.RAW_BEEF]: '🥩',
+            [BLOCKS.RAW_PORKCHOP]: '🥩',
+            [BLOCKS.RAW_CHICKEN]: '🍗',
+            [BLOCKS.RAW_MUTTON]: '🥩',
+            [BLOCKS.COOKED_BEEF]: '🍖',
+            [BLOCKS.COOKED_PORKCHOP]: '🍖',
+            [BLOCKS.COOKED_CHICKEN]: '🍗',
+            [BLOCKS.COOKED_MUTTON]: '🍖'
         };
 
         // Crafting recipes
@@ -672,10 +1019,10 @@
             { name: '🗡️ Wooden Sword', result: BLOCKS.WOODEN_SWORD, count: 1, ingredients: { [BLOCKS.OAK_PLANKS]: 2, [BLOCKS.STICK]: 1 } },
 
             // Tools - Stone
-            { name: '⛏️ Stone Pickaxe', result: BLOCKS.STONE_PICKAXE, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 3, [BLOCKS.STICK]: 2 } },
-            { name: '🪓 Stone Axe', result: BLOCKS.STONE_AXE, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 3, [BLOCKS.STICK]: 2 } },
-            { name: '🗡️ Stone Shovel', result: BLOCKS.STONE_SHOVEL, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 1, [BLOCKS.STICK]: 2 } },
-            { name: '⚔️ Stone Sword', result: BLOCKS.STONE_SWORD, count: 1, ingredients: { [BLOCKS.COBBLESTONE]: 2, [BLOCKS.STICK]: 1 } },
+            { name: '⛏️ Stone Pickaxe', result: BLOCKS.STONE_PICKAXE, count: 1, ingredients: { [BLOCKS.STONE]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🪓 Stone Axe', result: BLOCKS.STONE_AXE, count: 1, ingredients: { [BLOCKS.STONE]: 3, [BLOCKS.STICK]: 2 } },
+            { name: '🗡️ Stone Shovel', result: BLOCKS.STONE_SHOVEL, count: 1, ingredients: { [BLOCKS.STONE]: 1, [BLOCKS.STICK]: 2 } },
+            { name: '⚔️ Stone Sword', result: BLOCKS.STONE_SWORD, count: 1, ingredients: { [BLOCKS.STONE]: 2, [BLOCKS.STICK]: 1 } },
 
             // Tools - Iron
             { name: '⛏️ Iron Pickaxe', result: BLOCKS.IRON_PICKAXE, count: 1, ingredients: { [BLOCKS.IRON_INGOT]: 3, [BLOCKS.STICK]: 2 } },
@@ -703,7 +1050,12 @@
             { name: '🟧 Copper Ingot', input: BLOCKS.COPPER_ORE, result: BLOCKS.COPPER_BLOCK, time: 3000 },
             { name: '🪨 Stone', input: BLOCKS.COBBLESTONE, result: BLOCKS.STONE, time: 2000 },
             { name: '◻️ Glass', input: BLOCKS.SAND, result: BLOCKS.GLASS, time: 2000 },
-            { name: '🧱 Bricks', input: BLOCKS.CLAY, result: BLOCKS.BRICKS, time: 2500 }
+            { name: '🧱 Bricks', input: BLOCKS.CLAY, result: BLOCKS.BRICKS, time: 2500 },
+            // Food cooking
+            { name: '🍖 Cooked Beef', input: BLOCKS.RAW_BEEF, result: BLOCKS.COOKED_BEEF, time: 1500 },
+            { name: '🍖 Cooked Porkchop', input: BLOCKS.RAW_PORKCHOP, result: BLOCKS.COOKED_PORKCHOP, time: 1500 },
+            { name: '🍗 Cooked Chicken', input: BLOCKS.RAW_CHICKEN, result: BLOCKS.COOKED_CHICKEN, time: 1500 },
+            { name: '🍖 Cooked Mutton', input: BLOCKS.RAW_MUTTON, result: BLOCKS.COOKED_MUTTON, time: 1500 }
         ];
 
         const FUEL_ITEMS = {
@@ -786,12 +1138,12 @@
         let player = {
             x: 0,
             y: SURFACE_LEVEL * BLOCK_SIZE - 100,
-            width: 28,
-            height: 56,
+            width: 24,
+            height: 46,
             vx: 0,
             vy: 0,
             grounded: false,
-            health: 3
+            health: 20
         };
 
         let camera = { x: 0, y: 0 };
@@ -827,6 +1179,58 @@
         let mouseDown = false;
         let activeSmelting = null; // { startTime, recipe, fuelUsed }
 
+        // Mining state
+        let miningBlock = null; // { x, y, progress, startTime }
+        const BLOCK_HARDNESS = {
+            // Soft blocks (fast)
+            [BLOCKS.DIRT]: 0.5,
+            [BLOCKS.GRASS]: 0.6,
+            [BLOCKS.SAND]: 0.5,
+            [BLOCKS.GRAVEL]: 0.6,
+            [BLOCKS.CLAY]: 0.6,
+            [BLOCKS.SNOW_BLOCK]: 0.2,
+            // Wood (medium-soft)
+            [BLOCKS.OAK_LOG]: 2,
+            [BLOCKS.BIRCH_LOG]: 2,
+            [BLOCKS.SPRUCE_LOG]: 2,
+            [BLOCKS.JUNGLE_LOG]: 2,
+            [BLOCKS.OAK_PLANKS]: 2,
+            [BLOCKS.BIRCH_PLANKS]: 2,
+            [BLOCKS.SPRUCE_PLANKS]: 2,
+            [BLOCKS.OAK_LEAVES]: 0.2,
+            [BLOCKS.BIRCH_LEAVES]: 0.2,
+            [BLOCKS.SPRUCE_LEAVES]: 0.2,
+            [BLOCKS.JUNGLE_LEAVES]: 0.2,
+            // Stone (medium)
+            [BLOCKS.STONE]: 1.5,
+            [BLOCKS.COBBLESTONE]: 2,
+            [BLOCKS.SANDSTONE]: 0.8,
+            [BLOCKS.RED_SANDSTONE]: 0.8,
+            // Ores (harder)
+            [BLOCKS.COAL_ORE]: 3,
+            [BLOCKS.IRON_ORE]: 3,
+            [BLOCKS.GOLD_ORE]: 3,
+            [BLOCKS.DIAMOND_ORE]: 3,
+            [BLOCKS.EMERALD_ORE]: 3,
+            [BLOCKS.LAPIS_ORE]: 3,
+            [BLOCKS.REDSTONE_ORE]: 3,
+            [BLOCKS.COPPER_ORE]: 3,
+            // Very hard blocks
+            [BLOCKS.OBSIDIAN]: 50,
+            [BLOCKS.BEDROCK]: 999,
+            // Building blocks
+            [BLOCKS.BRICKS]: 2,
+            [BLOCKS.STONE_BRICKS]: 1.5,
+            [BLOCKS.GLASS]: 0.3,
+            [BLOCKS.WOOL_WHITE]: 0.8,
+            [BLOCKS.WOOL_RED]: 0.8,
+            [BLOCKS.WOOL_BLUE]: 0.8,
+            // Functional blocks
+            [BLOCKS.CRAFTING_TABLE]: 2.5,
+            [BLOCKS.FURNACE]: 3.5,
+            [BLOCKS.CHEST]: 2.5
+        };
+
         // Mob system
         const MOB_TYPES = {
             ZOMBIE: { emoji: '🧟', hostile: true, speed: 2, health: 20, damage: 2 },
@@ -839,6 +1243,14 @@
 
         let mobs = [];
         let lastMobSpawn = Date.now();
+
+        // Day/Night cycle (in milliseconds)
+        let gameTime = 0; // 0 to DAY_CYCLE_LENGTH
+        const DAY_CYCLE_LENGTH = 120000; // 2 minutes per full cycle
+        const DAY_LENGTH = 60000; // 1 minute of day
+        const NIGHT_LENGTH = 60000; // 1 minute of night
+        let isDaytime = true;
+        let spawnLocation = { x: 0, y: SURFACE_LEVEL * BLOCK_SIZE - 100 };
 
         // Chunk generation
         function getChunkKey(chunkX) {
@@ -1054,17 +1466,20 @@
                 }
             }
 
-            // Choose mob type (more passive mobs during day)
-            const mobTypeKeys = Object.keys(MOB_TYPES);
+            // Choose mob type based on time of day
             const playerDepth = Math.floor(player.y / BLOCK_SIZE) - SURFACE_LEVEL;
 
             let type;
-            if (playerDepth > 20 || Math.random() < 0.3) {
-                // More hostile mobs underground or 30% chance
+            if (playerDepth > 20) {
+                // Always spawn hostile mobs deep underground
+                const hostileMobs = ['ZOMBIE', 'CREEPER'];
+                type = hostileMobs[Math.floor(Math.random() * hostileMobs.length)];
+            } else if (!isDaytime) {
+                // Spawn hostile mobs at night on surface
                 const hostileMobs = ['ZOMBIE', 'CREEPER'];
                 type = hostileMobs[Math.floor(Math.random() * hostileMobs.length)];
             } else {
-                // Passive mobs
+                // Spawn passive mobs during day on surface
                 const passiveMobs = ['PIG', 'COW', 'CHICKEN', 'SHEEP'];
                 type = passiveMobs[Math.floor(Math.random() * passiveMobs.length)];
             }
@@ -1079,8 +1494,41 @@
 
                 // Remove dead mobs
                 if (mob.health <= 0) {
+                    // Drop meat from peaceful mobs
+                    if (!mobType.hostile) {
+                        let meatType;
+                        switch (mob.type) {
+                            case 'COW':
+                                meatType = BLOCKS.RAW_BEEF;
+                                break;
+                            case 'PIG':
+                                meatType = BLOCKS.RAW_PORKCHOP;
+                                break;
+                            case 'CHICKEN':
+                                meatType = BLOCKS.RAW_CHICKEN;
+                                break;
+                            case 'SHEEP':
+                                meatType = BLOCKS.RAW_MUTTON;
+                                break;
+                        }
+                        if (meatType) {
+                            const dropAmount = 1 + Math.floor(Math.random() * 2); // 1-2 meat
+                            inventory[meatType] = (inventory[meatType] || 0) + dropAmount;
+                            updateInventoryUI();
+                        }
+                    }
                     mobs.splice(i, 1);
                     continue;
+                }
+
+                // Kill hostile mobs during daytime (if on surface)
+                const mobDepth = Math.floor(mob.y / BLOCK_SIZE) - SURFACE_LEVEL;
+                if (isDaytime && mobType.hostile && mobDepth < 10) {
+                    mob.health -= 1; // Burn in sunlight
+                    if (mob.health <= 0) {
+                        mobs.splice(i, 1);
+                        continue;
+                    }
                 }
 
                 // Remove mobs too far from player
@@ -1115,6 +1563,11 @@
                         now - mob.lastAttack > 1000) {
                         player.health = Math.max(0, player.health - mobType.damage);
                         mob.lastAttack = now;
+
+                        // Check if player died
+                        if (player.health <= 0) {
+                            showDeathScreen(mobType.emoji + ' ' + mob.type);
+                        }
 
                         // Knockback
                         if (mob.x < player.x) {
@@ -1239,6 +1692,7 @@
 
         canvas.addEventListener('mouseup', () => {
             mouseDown = false;
+            miningBlock = null; // Reset mining progress
         });
 
         canvas.addEventListener('mousemove', (e) => {
@@ -1274,6 +1728,7 @@
                         mob.vx = -5;
                     }
                     mob.vy = -5;
+                    miningBlock = null; // Reset mining if attacking mob
                     return;
                 }
             }
@@ -1284,6 +1739,16 @@
 
             const block = getBlock(blockX, blockY);
             if (block !== BLOCKS.AIR && block !== BLOCKS.BEDROCK) {
+                // Check if we're mining a different block - reset progress
+                if (!miningBlock || miningBlock.x !== blockX || miningBlock.y !== blockY) {
+                    miningBlock = {
+                        x: blockX,
+                        y: blockY,
+                        progress: 0,
+                        startTime: Date.now()
+                    };
+                }
+
                 // Check if block has tool requirements
                 const requirement = BLOCK_REQUIREMENTS[block];
 
@@ -1304,6 +1769,7 @@
                             setTimeout(() => {
                                 infoPanel.textContent = oldText;
                             }, 1000);
+                            miningBlock = null;
                             return;
                         }
 
@@ -1315,24 +1781,43 @@
                             setTimeout(() => {
                                 infoPanel.textContent = oldText;
                             }, 1000);
+                            miningBlock = null;
                             return;
                         }
                     }
                     // minTier 0 means preferred tool but not required (wood, dirt, etc.)
                 }
 
-                // Determine what item to drop
-                let dropItem = block;
+                // Calculate mining speed based on tool
+                const selectedTool = selectedSlot;
+                const toolTier = TOOL_TIERS[selectedTool] || 0;
+                const baseSpeed = 1 + (toolTier * 0.5); // Better tools mine faster
 
-                // Ores drop coal/materials directly, not the ore block
-                if (block === BLOCKS.COAL_ORE) dropItem = BLOCKS.COAL;
-                else if (block === BLOCKS.DIAMOND_ORE) dropItem = BLOCKS.DIAMOND;
-                else if (block === BLOCKS.EMERALD_ORE) dropItem = BLOCKS.EMERALD;
-                // Iron, gold, copper ores drop themselves and need smelting
+                // Get block hardness (default to 1 if not specified)
+                const hardness = BLOCK_HARDNESS[block] || 1;
 
-                inventory[dropItem] = (inventory[dropItem] || 0) + 1;
-                setBlock(blockX, blockY, BLOCKS.AIR);
-                updateInventoryUI();
+                // Accumulate mining progress (16ms per frame at 60fps)
+                const progressIncrement = (baseSpeed / hardness) * 1.6;
+                miningBlock.progress += progressIncrement;
+
+                // Check if block is fully mined
+                if (miningBlock.progress >= 100) {
+                    // Determine what item to drop
+                    let dropItem = block;
+
+                    // Ores drop coal/materials directly, not the ore block
+                    if (block === BLOCKS.COAL_ORE) dropItem = BLOCKS.COAL;
+                    else if (block === BLOCKS.DIAMOND_ORE) dropItem = BLOCKS.DIAMOND;
+                    else if (block === BLOCKS.EMERALD_ORE) dropItem = BLOCKS.EMERALD;
+                    // Iron, gold, copper ores drop themselves and need smelting
+
+                    inventory[dropItem] = (inventory[dropItem] || 0) + 1;
+                    setBlock(blockX, blockY, BLOCKS.AIR);
+                    updateInventoryUI();
+
+                    // Reset mining for next block
+                    miningBlock = null;
+                }
             }
         }
 
@@ -1369,14 +1854,31 @@
         }
 
         function update() {
+            // Update day/night cycle
+            gameTime += 16; // Assuming 60fps, ~16ms per frame
+            if (gameTime >= DAY_CYCLE_LENGTH) {
+                gameTime = 0;
+            }
+
+            // Determine if it's day or night
+            const wasDay = isDaytime;
+            isDaytime = gameTime < DAY_LENGTH;
+
+            // Update time indicator
+            if (isDaytime) {
+                document.getElementById('timeIndicator').textContent = '☀️ Day';
+            } else {
+                document.getElementById('timeIndicator').textContent = '🌙 Night';
+            }
+
             // Player movement
             const speed = 4;
             if (keys['a']) player.vx = -speed;
             else if (keys['d']) player.vx = speed;
             else player.vx *= 0.7;
 
-            // Jumping
-            if ((keys['w'] || keys[' ']) && player.grounded) {
+            // Jumping - only when grounded (prevents spam jumping)
+            if ((keys['w'] || keys[' ']) && player.grounded && player.vy === 0) {
                 player.vy = -12;
                 player.grounded = false;
             }
@@ -1421,22 +1923,47 @@
                 }
             }
 
-            // Horizontal collision
+            // Horizontal collision with step-up mechanic (like Minecraft)
+            const stepHeight = BLOCK_SIZE; // Can step up one block
+            let canStepUp = false;
+
             for (let y = playerTop; y <= playerBottom; y++) {
                 if (y >= 0 && y < WORLD_HEIGHT) {
+                    // Check right collision
                     if (getBlock(playerRight, y) !== BLOCKS.AIR) {
                         const blockLeft = playerRight * BLOCK_SIZE;
                         if (player.x + player.width > blockLeft && player.vx > 0) {
-                            player.x = blockLeft - player.width;
-                            player.vx = 0;
+                            // Check if we can step up
+                            const stepUpY = playerBottom - 1;
+                            if (player.grounded && y === playerBottom &&
+                                getBlock(playerRight, stepUpY) === BLOCKS.AIR &&
+                                getBlock(playerRight, stepUpY - 1) === BLOCKS.AIR) {
+                                // Step up
+                                player.y -= stepHeight;
+                                canStepUp = true;
+                            } else {
+                                player.x = blockLeft - player.width;
+                                player.vx = 0;
+                            }
                         }
                     }
 
+                    // Check left collision
                     if (getBlock(playerLeft, y) !== BLOCKS.AIR) {
                         const blockRight = (playerLeft + 1) * BLOCK_SIZE;
                         if (player.x < blockRight && player.vx < 0) {
-                            player.x = blockRight;
-                            player.vx = 0;
+                            // Check if we can step up
+                            const stepUpY = playerBottom - 1;
+                            if (player.grounded && y === playerBottom &&
+                                getBlock(playerLeft, stepUpY) === BLOCKS.AIR &&
+                                getBlock(playerLeft, stepUpY - 1) === BLOCKS.AIR) {
+                                // Step up
+                                player.y -= stepHeight;
+                                canStepUp = true;
+                            } else {
+                                player.x = blockRight;
+                                player.vx = 0;
+                            }
                         }
                     }
                 }
@@ -1453,7 +1980,10 @@
 
             document.getElementById('position').textContent =
                 `${Math.floor(player.x / BLOCK_SIZE)}, ${playerBlockY}`;
-            document.getElementById('health').textContent = '❤️'.repeat(player.health);
+            // Display hearts (each heart = 2 HP)
+            const fullHearts = Math.floor(player.health / 2);
+            const hasHalfHeart = player.health % 2 === 1;
+            document.getElementById('health').textContent = '❤️'.repeat(fullHearts) + (hasHalfHeart ? '🧡' : '');
             document.getElementById('depth').textContent = `${depth}m`;
 
             // Update mobs
@@ -1461,12 +1991,21 @@
         }
 
         function draw() {
-            // Sky gradient based on depth
+            // Sky gradient based on depth and time of day
             const playerDepth = Math.floor(player.y / BLOCK_SIZE) - SURFACE_LEVEL;
-            const darkness = Math.min(playerDepth / 30, 1);
-            const skyR = Math.floor(135 * (1 - darkness) + 20 * darkness);
-            const skyG = Math.floor(206 * (1 - darkness) + 20 * darkness);
-            const skyB = Math.floor(235 * (1 - darkness) + 30 * darkness);
+            const depthDarkness = Math.min(playerDepth / 30, 1);
+
+            // Day/night lighting
+            let timeDarkness = 0;
+            if (!isDaytime) {
+                // Night time - make it darker
+                timeDarkness = 0.6;
+            }
+
+            const totalDarkness = Math.max(depthDarkness, timeDarkness);
+            const skyR = Math.floor(135 * (1 - totalDarkness) + 20 * totalDarkness);
+            const skyG = Math.floor(206 * (1 - totalDarkness) + 20 * totalDarkness);
+            const skyB = Math.floor(235 * (1 - totalDarkness) + 30 * totalDarkness);
             ctx.fillStyle = `rgb(${skyR}, ${skyG}, ${skyB})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1488,32 +2027,301 @@
                 }
             }
 
-            // Draw player
-            ctx.fillStyle = '#4169E1';
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            ctx.fillStyle = '#FFE0BD';
-            ctx.fillRect(player.x + 4, player.y + 4, 20, 20);
+            // Draw mining progress overlay
+            if (miningBlock) {
+                const miningX = (miningBlock.x * BLOCK_SIZE) - camera.x;
+                const miningY = (miningBlock.y * BLOCK_SIZE) - camera.y;
+
+                // Draw crack overlay based on progress
+                const crackStage = Math.floor((miningBlock.progress / 100) * 10);
+                ctx.save();
+                ctx.globalAlpha = 0.7;
+
+                // Draw cracks based on stage (0-9)
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+
+                if (crackStage >= 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(miningX + 5, miningY);
+                    ctx.lineTo(miningX + 10, miningY + 10);
+                    ctx.stroke();
+                }
+                if (crackStage >= 3) {
+                    ctx.beginPath();
+                    ctx.moveTo(miningX + 20, miningY);
+                    ctx.lineTo(miningX + 15, miningY + 12);
+                    ctx.stroke();
+                }
+                if (crackStage >= 5) {
+                    ctx.beginPath();
+                    ctx.moveTo(miningX, miningY + 10);
+                    ctx.lineTo(miningX + 10, miningY + 15);
+                    ctx.stroke();
+                }
+                if (crackStage >= 7) {
+                    ctx.beginPath();
+                    ctx.moveTo(miningX + 25, miningY + 10);
+                    ctx.lineTo(miningX + 15, miningY + 18);
+                    ctx.stroke();
+                }
+                if (crackStage >= 9) {
+                    ctx.beginPath();
+                    ctx.moveTo(miningX + 5, miningY + 25);
+                    ctx.lineTo(miningX + 20, miningY + 25);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+
+            // Draw Steve (Minecraft player)
+            const pX = player.x;
+            const pY = player.y;
+
+            // Head (8x8 pixels)
+            ctx.fillStyle = '#FFE0BD'; // Skin color
+            ctx.fillRect(pX + 8, pY, 12, 12);
+
+            // Hair/top of head
+            ctx.fillStyle = '#4B3621'; // Brown hair
+            ctx.fillRect(pX + 8, pY, 12, 4);
+
+            // Eyes
+            ctx.fillStyle = '#4A90E2'; // Blue eyes
+            ctx.fillRect(pX + 10, pY + 5, 2, 2);
+            ctx.fillRect(pX + 16, pY + 5, 2, 2);
+
+            // Mouth
             ctx.fillStyle = '#000';
-            ctx.fillRect(player.x + 8, player.y + 10, 4, 4);
-            ctx.fillRect(player.x + 16, player.y + 10, 4, 4);
+            ctx.fillRect(pX + 12, pY + 9, 4, 1);
+
+            // Body (8x12 pixels) - Blue shirt
+            ctx.fillStyle = '#4169E1'; // Blue shirt
+            ctx.fillRect(pX + 8, pY + 12, 12, 16);
+
+            // Arms
+            ctx.fillStyle = '#4169E1'; // Blue sleeves
+            ctx.fillRect(pX + 4, pY + 12, 4, 12); // Left arm
+            ctx.fillRect(pX + 20, pY + 12, 4, 12); // Right arm
+
+            // Hands
+            ctx.fillStyle = '#FFE0BD';
+            ctx.fillRect(pX + 4, pY + 24, 4, 4);
+            ctx.fillRect(pX + 20, pY + 24, 4, 4);
+
+            // Legs (Blue pants)
+            ctx.fillStyle = '#2C4F7C'; // Dark blue pants
+            ctx.fillRect(pX + 10, pY + 28, 4, 14); // Left leg
+            ctx.fillRect(pX + 14, pY + 28, 4, 14); // Right leg
+
+            // Shoes
+            ctx.fillStyle = '#3D3D3D'; // Dark gray shoes
+            ctx.fillRect(pX + 10, pY + 42, 4, 4);
+            ctx.fillRect(pX + 14, pY + 42, 4, 4);
 
             // Draw mobs
             mobs.forEach(mob => {
                 const mobType = MOB_TYPES[mob.type];
+                const mX = mob.x;
+                const mY = mob.y;
 
-                // Draw mob body
-                if (mobType.hostile) {
-                    ctx.fillStyle = '#8B0000';
-                } else {
-                    ctx.fillStyle = '#90EE90';
+                // Draw different Minecraft-style mobs
+                if (mob.type === 'ZOMBIE') {
+                    // Zombie - green body with blue clothes
+                    // Head
+                    ctx.fillStyle = '#5F9E4D'; // Green skin
+                    ctx.fillRect(mX + 6, mY, 12, 12);
+
+                    // Eyes
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(mX + 8, mY + 4, 2, 3);
+                    ctx.fillRect(mX + 14, mY + 4, 2, 3);
+
+                    // Mouth
+                    ctx.fillRect(mX + 10, mY + 9, 4, 1);
+
+                    // Body
+                    ctx.fillStyle = '#4A90E2'; // Blue shirt
+                    ctx.fillRect(mX + 4, mY + 12, 16, 12);
+
+                    // Arms
+                    ctx.fillStyle = '#5F9E4D'; // Green arms
+                    ctx.fillRect(mX + 0, mY + 12, 4, 10);
+                    ctx.fillRect(mX + 20, mY + 12, 4, 10);
+
+                    // Legs
+                    ctx.fillStyle = '#2E5CB8'; // Blue pants
+                    ctx.fillRect(mX + 6, mY + 24, 6, 8);
+                    ctx.fillRect(mX + 12, mY + 24, 6, 8);
+
+                } else if (mob.type === 'CREEPER') {
+                    // Creeper - green with black face pattern
+                    // Head
+                    ctx.fillStyle = '#0DA70D'; // Bright green
+                    ctx.fillRect(mX + 6, mY, 12, 12);
+
+                    // Face pattern (black pixels forming creeper face)
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(mX + 8, mY + 3, 2, 3); // Left eye
+                    ctx.fillRect(mX + 14, mY + 3, 2, 3); // Right eye
+                    ctx.fillRect(mX + 11, mY + 7, 2, 2); // Nose
+                    ctx.fillRect(mX + 9, mY + 9, 2, 2); // Mouth left
+                    ctx.fillRect(mX + 13, mY + 9, 2, 2); // Mouth right
+
+                    // Body
+                    ctx.fillStyle = '#0DA70D';
+                    ctx.fillRect(mX + 6, mY + 12, 12, 12);
+
+                    // Legs
+                    ctx.fillRect(mX + 6, mY + 24, 5, 8);
+                    ctx.fillRect(mX + 13, mY + 24, 5, 8);
+
+                } else if (mob.type === 'PIG') {
+                    // Pig - pink body with snout
+                    // Head
+                    ctx.fillStyle = '#FFC0CB'; // Pink
+                    ctx.fillRect(mX + 6, mY + 2, 12, 10);
+
+                    // Ears
+                    ctx.fillRect(mX + 5, mY + 2, 2, 3);
+                    ctx.fillRect(mX + 17, mY + 2, 2, 3);
+
+                    // Snout
+                    ctx.fillStyle = '#FF9AA2'; // Darker pink
+                    ctx.fillRect(mX + 9, mY + 8, 6, 4);
+
+                    // Nostrils
+                    ctx.fillStyle = '#D4698B';
+                    ctx.fillRect(mX + 10, mY + 10, 1, 1);
+                    ctx.fillRect(mX + 13, mY + 10, 1, 1);
+
+                    // Body
+                    ctx.fillStyle = '#FFC0CB';
+                    ctx.fillRect(mX + 4, mY + 12, 16, 12);
+
+                    // Legs
+                    ctx.fillRect(mX + 5, mY + 24, 3, 8);
+                    ctx.fillRect(mX + 10, mY + 24, 3, 8);
+                    ctx.fillRect(mX + 16, mY + 24, 3, 8);
+
+                } else if (mob.type === 'COW') {
+                    // Cow - brown and white patches
+                    // Head
+                    ctx.fillStyle = '#FFFFFF'; // White
+                    ctx.fillRect(mX + 6, mY + 2, 12, 10);
+
+                    // Brown patches on head
+                    ctx.fillStyle = '#8B4513'; // Brown
+                    ctx.fillRect(mX + 7, mY + 2, 4, 4);
+                    ctx.fillRect(mX + 13, mY + 2, 4, 4);
+
+                    // Horns
+                    ctx.fillStyle = '#D2B48C';
+                    ctx.fillRect(mX + 5, mY + 1, 2, 2);
+                    ctx.fillRect(mX + 17, mY + 1, 2, 2);
+
+                    // Eyes
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(mX + 9, mY + 6, 2, 2);
+                    ctx.fillRect(mX + 13, mY + 6, 2, 2);
+
+                    // Snout
+                    ctx.fillStyle = '#FFC0CB';
+                    ctx.fillRect(mX + 10, mY + 9, 4, 3);
+
+                    // Body
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(mX + 4, mY + 12, 16, 12);
+
+                    // Brown patches on body
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(mX + 5, mY + 13, 6, 6);
+                    ctx.fillRect(mX + 14, mY + 16, 5, 6);
+
+                    // Legs
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(mX + 5, mY + 24, 3, 8);
+                    ctx.fillRect(mX + 10, mY + 24, 3, 8);
+                    ctx.fillRect(mX + 16, mY + 24, 3, 8);
+
+                    // Hooves
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(mX + 5, mY + 30, 3, 2);
+                    ctx.fillRect(mX + 10, mY + 30, 3, 2);
+                    ctx.fillRect(mX + 16, mY + 30, 3, 2);
+
+                } else if (mob.type === 'CHICKEN') {
+                    // Chicken - white with red comb and yellow beak
+                    // Head
+                    ctx.fillStyle = '#FFFFFF'; // White
+                    ctx.fillRect(mX + 8, mY + 2, 8, 8);
+
+                    // Red comb on top
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(mX + 10, mY, 4, 2);
+                    ctx.fillRect(mX + 9, mY + 1, 2, 2);
+                    ctx.fillRect(mX + 13, mY + 1, 2, 2);
+
+                    // Yellow beak
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(mX + 11, mY + 7, 2, 2);
+
+                    // Eyes
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(mX + 10, mY + 4, 1, 1);
+                    ctx.fillRect(mX + 13, mY + 4, 1, 1);
+
+                    // Body
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(mX + 6, mY + 10, 12, 14);
+
+                    // Wings (slightly darker)
+                    ctx.fillStyle = '#F0F0F0';
+                    ctx.fillRect(mX + 4, mY + 12, 3, 8);
+                    ctx.fillRect(mX + 17, mY + 12, 3, 8);
+
+                    // Legs
+                    ctx.fillStyle = '#FFD700'; // Yellow legs
+                    ctx.fillRect(mX + 9, mY + 24, 2, 8);
+                    ctx.fillRect(mX + 13, mY + 24, 2, 8);
+
+                } else if (mob.type === 'SHEEP') {
+                    // Sheep - white fluffy body
+                    // Head
+                    ctx.fillStyle = '#FFFFFF'; // White
+                    ctx.fillRect(mX + 6, mY + 4, 10, 8);
+
+                    // Ears
+                    ctx.fillStyle = '#FFE4E1';
+                    ctx.fillRect(mX + 5, mY + 5, 2, 3);
+                    ctx.fillRect(mX + 15, mY + 5, 2, 3);
+
+                    // Eyes
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(mX + 8, mY + 7, 2, 2);
+                    ctx.fillRect(mX + 12, mY + 7, 2, 2);
+
+                    // Fluffy body (multiple rectangles for fluffy effect)
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(mX + 3, mY + 12, 18, 12);
+
+                    // Add fluff details
+                    ctx.fillStyle = '#F5F5F5';
+                    ctx.fillRect(mX + 3, mY + 12, 3, 3);
+                    ctx.fillRect(mX + 9, mY + 13, 3, 3);
+                    ctx.fillRect(mX + 15, mY + 14, 3, 3);
+                    ctx.fillRect(mX + 6, mY + 18, 3, 3);
+                    ctx.fillRect(mX + 13, mY + 19, 3, 3);
+
+                    // Legs (darker)
+                    ctx.fillStyle = '#F0F0F0';
+                    ctx.fillRect(mX + 5, mY + 24, 3, 8);
+                    ctx.fillRect(mX + 10, mY + 24, 3, 8);
+                    ctx.fillRect(mX + 16, mY + 24, 3, 8);
                 }
-                ctx.fillRect(mob.x, mob.y, mob.width, mob.height);
 
-                // Draw mob emoji
-                ctx.font = '20px Arial';
-                ctx.fillText(mobType.emoji, mob.x, mob.y + 18);
-
-                // Health bar
+                // Health bar (for all mobs)
                 if (mob.health < mobType.health) {
                     const healthPercent = mob.health / mobType.health;
                     ctx.fillStyle = 'red';
@@ -1532,107 +2340,78 @@
             const color = BLOCK_COLORS[type];
             if (!color) return;
 
-            if (typeof color === 'object') {
-                ctx.fillStyle = color.side;
-                ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
-                ctx.fillStyle = color.top;
-                ctx.fillRect(x, y, BLOCK_SIZE, 8);
-            } else {
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
-            }
+            // Check if this is an ore block
+            const isOre = [BLOCKS.COAL_ORE, BLOCKS.IRON_ORE, BLOCKS.GOLD_ORE, BLOCKS.DIAMOND_ORE,
+                           BLOCKS.EMERALD_ORE, BLOCKS.LAPIS_ORE, BLOCKS.REDSTONE_ORE, BLOCKS.COPPER_ORE].includes(type);
 
-            // Textures for various block types
-            if (type === BLOCKS.STONE || type === BLOCKS.COBBLESTONE) {
-                ctx.fillStyle = 'rgba(150, 150, 150, 0.3)';
-                ctx.fillRect(x + 4, y + 4, 8, 8);
-                ctx.fillRect(x + 20, y + 16, 6, 6);
-            } else if ([BLOCKS.COAL_ORE, BLOCKS.IRON_ORE, BLOCKS.GOLD_ORE, BLOCKS.DIAMOND_ORE,
-                        BLOCKS.EMERALD_ORE, BLOCKS.LAPIS_ORE, BLOCKS.REDSTONE_ORE, BLOCKS.COPPER_ORE].includes(type)) {
-                // Ore blocks
+            if (isOre) {
+                // Draw stone base
                 ctx.fillStyle = '#808080';
                 ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
 
-                if (type === BLOCKS.COAL_ORE) ctx.fillStyle = '#1a1a1a';
-                else if (type === BLOCKS.IRON_ORE) ctx.fillStyle = '#CD853F';
-                else if (type === BLOCKS.GOLD_ORE) ctx.fillStyle = '#FFD700';
-                else if (type === BLOCKS.DIAMOND_ORE) ctx.fillStyle = '#40E0D0';
-                else if (type === BLOCKS.EMERALD_ORE) ctx.fillStyle = '#50C878';
-                else if (type === BLOCKS.LAPIS_ORE) ctx.fillStyle = '#1E4D8B';
-                else if (type === BLOCKS.REDSTONE_ORE) ctx.fillStyle = '#C00000';
-                else if (type === BLOCKS.COPPER_ORE) ctx.fillStyle = '#E77C56';
+                // Add stone texture with darker pixels
+                ctx.fillStyle = '#6B6B6B';
+                ctx.fillRect(x + 2, y + 2, 4, 4);
+                ctx.fillRect(x + 10, y + 4, 3, 3);
+                ctx.fillRect(x + 6, y + 10, 4, 4);
+                ctx.fillRect(x + 14, y + 12, 3, 3);
+                ctx.fillRect(x + 4, y + 18, 5, 4);
+                ctx.fillRect(x + 16, y + 20, 4, 4);
 
-                ctx.fillRect(x + 8, y + 8, 6, 6);
-                ctx.fillRect(x + 18, y + 6, 4, 4);
-                ctx.fillRect(x + 6, y + 20, 5, 5);
-            } else if ([BLOCKS.OAK_LOG, BLOCKS.BIRCH_LOG, BLOCKS.SPRUCE_LOG, BLOCKS.JUNGLE_LOG,
-                        BLOCKS.ACACIA_LOG, BLOCKS.DARK_OAK_LOG].includes(type)) {
-                // Wood logs - vertical lines
-                ctx.fillStyle = 'rgba(101, 67, 33, 0.3)';
-                ctx.fillRect(x + 2, y, 2, BLOCK_SIZE);
-                ctx.fillRect(x + 12, y, 2, BLOCK_SIZE);
-                ctx.fillRect(x + 22, y, 2, BLOCK_SIZE);
-            } else if ([BLOCKS.OAK_PLANKS, BLOCKS.BIRCH_PLANKS, BLOCKS.SPRUCE_PLANKS, BLOCKS.JUNGLE_PLANKS,
-                        BLOCKS.ACACIA_PLANKS, BLOCKS.DARK_OAK_PLANKS].includes(type)) {
-                // Planks - horizontal lines
-                ctx.fillStyle = 'rgba(160, 82, 45, 0.3)';
-                for (let i = 0; i < BLOCK_SIZE; i += 8) {
-                    ctx.fillRect(x, y + i, BLOCK_SIZE, 2);
+                // Draw ore veins/spots based on ore type
+                let oreColor;
+                switch(type) {
+                    case BLOCKS.COAL_ORE:
+                        oreColor = '#1A1A1A'; // Black
+                        break;
+                    case BLOCKS.IRON_ORE:
+                        oreColor = '#D4A373'; // Beige/tan
+                        break;
+                    case BLOCKS.GOLD_ORE:
+                        oreColor = '#FFD700'; // Gold
+                        break;
+                    case BLOCKS.DIAMOND_ORE:
+                        oreColor = '#00CED1'; // Cyan
+                        break;
+                    case BLOCKS.EMERALD_ORE:
+                        oreColor = '#50C878'; // Emerald green
+                        break;
+                    case BLOCKS.LAPIS_ORE:
+                        oreColor = '#1E4D8B'; // Lapis blue
+                        break;
+                    case BLOCKS.REDSTONE_ORE:
+                        oreColor = '#C00000'; // Red
+                        break;
+                    case BLOCKS.COPPER_ORE:
+                        oreColor = '#D26E4B'; // Copper orange
+                        break;
                 }
-            } else if (type === BLOCKS.SAND || type === BLOCKS.RED_SAND) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.fillRect(x + 5, y + 5, 3, 3);
-                ctx.fillRect(x + 18, y + 12, 3, 3);
-                ctx.fillRect(x + 10, y + 20, 3, 3);
-            } else if (type === BLOCKS.CRAFTING_TABLE) {
-                ctx.fillStyle = '#654321';
-                ctx.fillRect(x + 4, y + 4, 8, 8);
-                ctx.fillRect(x + 20, y + 16, 8, 8);
-            } else if (type === BLOCKS.FURNACE) {
-                ctx.fillStyle = '#404040';
-                ctx.fillRect(x + 8, y + 12, 16, 12);
-                ctx.fillStyle = '#FF6600';
-                ctx.fillRect(x + 12, y + 16, 8, 4);
-            } else if (type === BLOCKS.CHEST) {
-                ctx.fillStyle = '#654321';
-                ctx.fillRect(x + 12, y + 14, 8, 4);
-            } else if (type === BLOCKS.TORCH) {
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(x + 14, y + 12, 4, 16);
-                ctx.fillStyle = '#FFA500';
-                ctx.fillRect(x + 12, y + 8, 8, 8);
-            } else if (type === BLOCKS.GLASS) {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x + 4, y + 4, 24, 24);
-            } else if (type === BLOCKS.WATER) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.fillRect(x, y, BLOCK_SIZE, 6);
-            } else if (type === BLOCKS.LAVA) {
-                ctx.fillStyle = 'rgba(255, 100, 0, 0.8)';
-                ctx.fillRect(x + 4, y + 4, 8, 8);
-                ctx.fillRect(x + 18, y + 12, 6, 6);
-            } else if (type === BLOCKS.TNT) {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(x + 8, y + 8, 16, 16);
-                ctx.fillStyle = 'black';
-                ctx.font = '20px monospace';
-                ctx.fillText('TNT', x + 4, y + 20);
-            } else if (type === BLOCKS.BOOKSHELF) {
-                ctx.fillStyle = '#8B4513';
-                for (let i = 0; i < 3; i++) {
-                    ctx.fillRect(x + 4 + i * 8, y + 8, 6, 16);
-                }
-            } else if (type === BLOCKS.BRICKS || type === BLOCKS.STONE_BRICKS) {
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-                ctx.lineWidth = 2;
-                for (let by = 0; by < 2; by++) {
-                    for (let bx = 0; bx < 2; bx++) {
-                        ctx.strokeRect(x + bx * 16, y + by * 16, 16, 16);
-                    }
+
+                // Draw ore spots (pixelated pattern)
+                ctx.fillStyle = oreColor;
+                ctx.fillRect(x + 4, y + 4, 3, 2);
+                ctx.fillRect(x + 12, y + 6, 4, 3);
+                ctx.fillRect(x + 8, y + 12, 2, 3);
+                ctx.fillRect(x + 16, y + 10, 3, 2);
+                ctx.fillRect(x + 6, y + 16, 4, 3);
+                ctx.fillRect(x + 14, y + 18, 3, 3);
+                ctx.fillRect(x + 2, y + 22, 3, 2);
+                ctx.fillRect(x + 18, y + 22, 3, 3);
+
+            } else {
+                // Draw simple solid color for non-ore blocks
+                if (typeof color === 'object') {
+                    ctx.fillStyle = color.side;
+                    ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+                    ctx.fillStyle = color.top;
+                    ctx.fillRect(x, y, BLOCK_SIZE, 8);
+                } else {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
                 }
             }
 
+            // Simple border
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.lineWidth = 1;
             ctx.strokeRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
@@ -1669,6 +2448,10 @@
                 slot.onclick = () => {
                     selectedSlot = blockType;
                     updateInventoryUI();
+                    // Show the item name
+                    const itemName = BLOCK_TEXT_NAMES[blockType] || 'Unknown Item';
+                    const itemCount = inventory[blockType] || 0;
+                    document.getElementById('selectedItem').textContent = `${BLOCK_NAMES[blockType]} ${itemName} (x${itemCount})`;
                 };
 
                 container.appendChild(slot);
@@ -1687,7 +2470,15 @@
             const container = document.getElementById('craftRecipes');
             container.innerHTML = '';
 
-            RECIPES.forEach((recipe) => {
+            // Get search term
+            const searchTerm = document.getElementById('craftSearch')?.value.toLowerCase() || '';
+
+            // Filter recipes based on search
+            const filteredRecipes = RECIPES.filter(recipe =>
+                recipe.name.toLowerCase().includes(searchTerm)
+            );
+
+            filteredRecipes.forEach((recipe) => {
                 const div = document.createElement('div');
                 div.className = 'craft-recipe';
 
@@ -1820,13 +2611,288 @@
             }
         }
 
-        // Initialize starting chunks
-        generateChunk(-1);
-        generateChunk(0);
-        generateChunk(1);
+        function toggleRecipeBook() {
+            const book = document.getElementById('recipeBook');
+            book.classList.toggle('active');
+            if (book.classList.contains('active')) {
+                updateRecipeBook();
+            }
+        }
+
+        // Death and respawn functions
+        function showDeathScreen(killerName) {
+            const deathScreen = document.getElementById('deathScreen');
+            const deathMessage = document.getElementById('deathMessage');
+
+            // Format the killer name
+            const formattedKiller = killerName.replace(/_/g, ' ').toLowerCase();
+            deathMessage.textContent = `You were slain by ${formattedKiller}`;
+
+            deathScreen.classList.add('active');
+        }
+
+        function respawn(keepItems) {
+            // Hide death screen
+            document.getElementById('deathScreen').classList.remove('active');
+
+            // Reset player health
+            player.health = 20;
+
+            // Respawn at spawn location
+            player.x = spawnLocation.x;
+            player.y = spawnLocation.y;
+            player.vx = 0;
+            player.vy = 0;
+
+            // Clear items if chosen
+            if (!keepItems) {
+                // Reset inventory to starting items
+                Object.keys(inventory).forEach(key => {
+                    inventory[key] = 0;
+                });
+                inventory[BLOCKS.DIRT] = 10;
+                inventory[BLOCKS.OAK_LOG] = 5;
+                updateInventoryUI();
+            }
+
+            // Clear nearby hostile mobs
+            mobs = mobs.filter(mob => {
+                const mobType = MOB_TYPES[mob.type];
+                return !mobType.hostile || Math.abs(mob.x - player.x) > 400;
+            });
+        }
+
+        // World saving and loading functions
+        function saveWorld() {
+            try {
+                // Save chunks
+                const chunksData = {};
+                Object.keys(chunks).forEach(key => {
+                    chunksData[key] = chunks[key];
+                });
+                localStorage.setItem('minecraftWorld', JSON.stringify(chunksData));
+
+                // Save player data
+                const playerData = {
+                    x: player.x,
+                    y: player.y,
+                    health: player.health
+                };
+                localStorage.setItem('minecraftPlayer', JSON.stringify(playerData));
+
+                // Save inventory
+                localStorage.setItem('minecraftInventory', JSON.stringify(inventory));
+
+                // Save mobs
+                const mobsData = mobs.map(mob => ({
+                    type: mob.type,
+                    x: mob.x,
+                    y: mob.y,
+                    health: mob.health
+                }));
+                localStorage.setItem('minecraftMobs', JSON.stringify(mobsData));
+
+                console.log('World saved!');
+            } catch (e) {
+                console.error('Failed to save world:', e);
+            }
+        }
+
+        function loadWorld() {
+            try {
+                // Load chunks
+                const chunksData = localStorage.getItem('minecraftWorld');
+                if (chunksData) {
+                    const loadedChunks = JSON.parse(chunksData);
+                    Object.keys(loadedChunks).forEach(key => {
+                        chunks[key] = loadedChunks[key];
+                    });
+                    console.log('World loaded!');
+                }
+
+                // Load player data
+                const playerData = localStorage.getItem('minecraftPlayer');
+                if (playerData) {
+                    const loaded = JSON.parse(playerData);
+                    player.x = loaded.x;
+                    player.y = loaded.y;
+                    player.health = loaded.health;
+                }
+
+                // Load inventory
+                const inventoryData = localStorage.getItem('minecraftInventory');
+                if (inventoryData) {
+                    const loadedInventory = JSON.parse(inventoryData);
+                    Object.keys(loadedInventory).forEach(key => {
+                        inventory[key] = loadedInventory[key];
+                    });
+                }
+
+                // Load mobs
+                const mobsData = localStorage.getItem('minecraftMobs');
+                if (mobsData) {
+                    const loadedMobs = JSON.parse(mobsData);
+                    mobs = loadedMobs.map(mobData => {
+                        const mobType = MOB_TYPES[mobData.type];
+                        return {
+                            type: mobData.type,
+                            x: mobData.x,
+                            y: mobData.y,
+                            vx: 0,
+                            vy: 0,
+                            width: 24,
+                            height: 24,
+                            grounded: false,
+                            health: mobData.health,
+                            wanderTimer: Math.random() * 3000,
+                            wanderDirection: Math.random() < 0.5 ? -1 : 1,
+                            lastAttack: 0
+                        };
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load world:', e);
+            }
+        }
+
+        function clearWorld() {
+            if (confirm('Are you sure you want to reset the world? This cannot be undone!')) {
+                localStorage.removeItem('minecraftWorld');
+                localStorage.removeItem('minecraftPlayer');
+                localStorage.removeItem('minecraftInventory');
+                localStorage.removeItem('minecraftMobs');
+                location.reload();
+            }
+        }
+
+        function updateRecipeBook() {
+            const container = document.getElementById('recipeBookContent');
+            const searchTerm = document.getElementById('recipeSearch')?.value.toLowerCase() || '';
+
+            container.innerHTML = '';
+
+            // Crafting Recipes Section
+            const craftingHeader = document.createElement('h3');
+            craftingHeader.textContent = '🔨 Crafting Recipes';
+            container.appendChild(craftingHeader);
+
+            const filteredCraftingRecipes = RECIPES.filter(recipe =>
+                recipe.name.toLowerCase().includes(searchTerm)
+            );
+
+            if (filteredCraftingRecipes.length === 0 && searchTerm) {
+                const noResults = document.createElement('p');
+                noResults.textContent = 'No crafting recipes found.';
+                noResults.style.color = '#999';
+                noResults.style.fontStyle = 'italic';
+                container.appendChild(noResults);
+            } else {
+                filteredCraftingRecipes.forEach(recipe => {
+                    const item = document.createElement('div');
+                    item.className = 'recipe-item';
+
+                    const header = document.createElement('div');
+                    header.className = 'recipe-header';
+                    header.textContent = recipe.name + (recipe.count > 1 ? ` (x${recipe.count})` : '');
+
+                    const details = document.createElement('div');
+                    details.className = 'recipe-details';
+
+                    const ingredients = Object.entries(recipe.ingredients)
+                        .map(([type, count]) => `${BLOCK_NAMES[type]} ${BLOCK_TEXT_NAMES[type]} x${count}`)
+                        .join(' + ');
+
+                    details.innerHTML = ingredients +
+                        '<span class="recipe-arrow">→</span>' +
+                        `${BLOCK_NAMES[recipe.result]} ${BLOCK_TEXT_NAMES[recipe.result]}`;
+
+                    item.appendChild(header);
+                    item.appendChild(details);
+                    container.appendChild(item);
+                });
+            }
+
+            // Smelting Recipes Section
+            const smeltingHeader = document.createElement('h3');
+            smeltingHeader.textContent = '🔥 Smelting Recipes';
+            container.appendChild(smeltingHeader);
+
+            const filteredSmeltingRecipes = SMELT_RECIPES.filter(recipe =>
+                recipe.name.toLowerCase().includes(searchTerm)
+            );
+
+            if (filteredSmeltingRecipes.length === 0 && searchTerm) {
+                const noResults = document.createElement('p');
+                noResults.textContent = 'No smelting recipes found.';
+                noResults.style.color = '#999';
+                noResults.style.fontStyle = 'italic';
+                container.appendChild(noResults);
+            } else {
+                filteredSmeltingRecipes.forEach(recipe => {
+                    const item = document.createElement('div');
+                    item.className = 'recipe-item';
+
+                    const header = document.createElement('div');
+                    header.className = 'recipe-header';
+                    header.textContent = recipe.name;
+
+                    const details = document.createElement('div');
+                    details.className = 'recipe-details';
+                    details.innerHTML = `${BLOCK_NAMES[recipe.input]} ${BLOCK_TEXT_NAMES[recipe.input]}` +
+                        ' + 🔥 Fuel' +
+                        '<span class="recipe-arrow">→</span>' +
+                        `${BLOCK_NAMES[recipe.result]} ${BLOCK_TEXT_NAMES[recipe.result]}` +
+                        ` (${recipe.time / 1000}s)`;
+
+                    item.appendChild(header);
+                    item.appendChild(details);
+                    container.appendChild(item);
+                });
+            }
+
+            // Fuel Items Section
+            const fuelHeader = document.createElement('h3');
+            fuelHeader.textContent = '⛽ Fuel Items';
+            container.appendChild(fuelHeader);
+
+            Object.entries(FUEL_ITEMS).forEach(([fuelId, burnTime]) => {
+                const item = document.createElement('div');
+                item.className = 'recipe-item';
+
+                const header = document.createElement('div');
+                header.className = 'recipe-header';
+                header.textContent = `${BLOCK_NAMES[fuelId]} ${BLOCK_TEXT_NAMES[fuelId]}`;
+
+                const details = document.createElement('div');
+                details.className = 'recipe-details';
+                details.textContent = `Burns for ${burnTime / 1000} seconds`;
+
+                item.appendChild(header);
+                item.appendChild(details);
+                container.appendChild(item);
+            });
+        }
+
+        // Load saved world first
+        loadWorld();
+
+        // Generate starting chunks if they don't exist
+        if (!chunks[getChunkKey(-1)]) generateChunk(-1);
+        if (!chunks[getChunkKey(0)]) generateChunk(0);
+        if (!chunks[getChunkKey(1)]) generateChunk(1);
 
         updateInventoryUI();
         gameLoop();
+
+        // Auto-save every 10 seconds
+        setInterval(() => {
+            saveWorld();
+        }, 10000);
+
+        // Save when leaving the page
+        window.addEventListener('beforeunload', () => {
+            saveWorld();
+        });
     </script>
 </body>
 </html>
