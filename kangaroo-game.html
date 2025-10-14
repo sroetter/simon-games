@@ -180,7 +180,7 @@
 
         const GRAVITY = 0.36;  // 40% smaller (0.6 * 0.6)
         const JUMP_FORCE = -15.552;  // 80% farther jump (-8.64 * 1.8)
-        const GROUND_Y = 320;
+        const GROUND_Y = 331;  // Adjusted so kangaroo feet touch ground
 
         let gameRunning = false;
         let gameStarted = false;
@@ -369,22 +369,22 @@
         function drawGround() {
             // Ground
             ctx.fillStyle = '#D2B48C';
-            ctx.fillRect(0, GROUND_Y + 60, canvas.width, 40);
+            ctx.fillRect(0, GROUND_Y + 49, canvas.width, 40);
 
             // Ground line
             ctx.strokeStyle = '#8B7355';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(0, GROUND_Y + 60);
-            ctx.lineTo(canvas.width, GROUND_Y + 60);
+            ctx.moveTo(0, GROUND_Y + 49);
+            ctx.lineTo(canvas.width, GROUND_Y + 49);
             ctx.stroke();
 
             // Ground pattern (moving)
             ctx.fillStyle = '#A0826D';
             for (let i = 0; i < 20; i++) {
                 const x = (i * 50 - groundOffset) % canvas.width;
-                ctx.fillRect(x, GROUND_Y + 65, 30, 5);
-                ctx.fillRect(x + 10, GROUND_Y + 75, 20, 5);
+                ctx.fillRect(x, GROUND_Y + 54, 30, 5);
+                ctx.fillRect(x + 10, GROUND_Y + 64, 20, 5);
             }
         }
 
@@ -401,11 +401,11 @@
             if (type === 'rock') {
                 obstacle.width = (30 + Math.random() * 20) * 0.6;  // 40% smaller
                 obstacle.height = (30 + Math.random() * 20) * 0.6;  // 40% smaller
-                obstacle.y = GROUND_Y + 60 - obstacle.height;
+                obstacle.y = GROUND_Y + 49 - obstacle.height;
             } else if (type === 'cactus') {
                 obstacle.width = 50 * 0.6;  // 30
                 obstacle.height = (60 + Math.random() * 20) * 0.6;  // 40% smaller
-                obstacle.y = GROUND_Y + 60 - obstacle.height;
+                obstacle.y = GROUND_Y + 49 - obstacle.height;
             } else if (type === 'bird') {
                 obstacle.width = 50 * 0.6;  // 30
                 obstacle.height = 30 * 0.6;  // 18
