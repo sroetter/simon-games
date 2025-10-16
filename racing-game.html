@@ -461,6 +461,7 @@
         <div class="game-over-content">
             <h2>🏁 Race Over!</h2>
             <div class="final-stats">
+                <div style="font-size: 24px; color: #e74c3c; margin-bottom: 15px;" id="deathReason"></div>
                 <div>Distance: <strong id="finalDistance">0</strong>m</div>
                 <div>Score: <strong id="finalScore">0</strong></div>
             </div>
@@ -515,6 +516,7 @@
         let fuel = 100;
         let maxFuel = 100;
         let fuelDrainRate = 0.0425;
+        let deathReason = '';
 
         // Player car
         let player = {
@@ -747,6 +749,7 @@
                 targetSpeed = 0;
                 speed *= 0.95;
                 if (speed < 0.1) {
+                    deathReason = '⛽ Ran out of fuel';
                     gameOver();
                 }
             }
@@ -783,6 +786,7 @@
 
             // Check if player is off the road (on grass)
             if (player.x < roadLeftEdge || player.x + player.width > roadRightEdge) {
+                deathReason = '🌿 Drove off the road';
                 gameOver();
                 return;
             }
@@ -902,6 +906,7 @@
 
                 // Collision detection
                 if (checkCollision(player, car)) {
+                    deathReason = '🚗 Crashed into traffic';
                     gameOver();
                 }
 
@@ -1587,6 +1592,7 @@
             document.getElementById('startBtn').textContent = '🏁 START RACE';
             document.getElementById('startBtn').disabled = false;
 
+            document.getElementById('deathReason').textContent = deathReason || '💥 Game Over';
             document.getElementById('finalDistance').textContent = Math.floor(distance) + 'm';
             document.getElementById('finalScore').textContent = score;
 
