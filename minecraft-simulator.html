@@ -1878,7 +1878,7 @@
             else player.vx *= 0.7;
 
             // Jumping - only when grounded (prevents spam jumping)
-            if ((keys['w'] || keys[' ']) && player.grounded && player.vy === 0) {
+            if ((keys['w'] || keys[' ']) && player.grounded) {
                 player.vy = -12;
                 player.grounded = false;
             }

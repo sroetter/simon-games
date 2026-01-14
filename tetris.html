@@ -204,7 +204,7 @@
         <h1>🎮 Tetris</h1>
 
         <div class="instructions">
-            <strong>Arrow Keys:</strong> Move & Rotate • <strong>Down:</strong> Soft Drop • <strong>Space:</strong> Hard Drop • Clear lines to score!
+            <strong>Arrow Keys:</strong> Move & Rotate • <strong>Space:</strong> Hard Drop • <strong>P/ESC:</strong> Pause • Clear lines to score!
         </div>
 
         <div class="game-area">
@@ -219,12 +219,20 @@
                         <div class="stat-value" id="score">0</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-label">Lines</div>
-                        <div class="stat-value" id="lines">0</div>
+                        <div class="stat-label">Target</div>
+                        <div class="stat-value" id="target" style="font-size: 20px;">500</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-label">Level</div>
                         <div class="stat-value" id="level">1</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Lines</div>
+                        <div class="stat-value" id="lines">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Pieces/Level</div>
+                        <div class="stat-value" id="piecesPerLevel" style="font-size: 20px;">1</div>
                     </div>
                 </div>
 
@@ -266,7 +274,7 @@
         const COLS = 10;
         const ROWS = 20;
 
-        // Tetromino shapes
+        // Tetromino shapes - Standard pieces
         const SHAPES = {
             I: [[1, 1, 1, 1]],
             O: [[1, 1], [1, 1]],
@@ -277,14 +285,106 @@
             L: [[0, 0, 1], [1, 1, 1]]
         };
 
+        // Hard to fit pieces for level 2+
+        const HARD_SHAPES = {
+            // Cross/Plus shape
+            PLUS: [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
+            // Big L
+            BIG_L: [[1, 0, 0], [1, 0, 0], [1, 1, 1]],
+            // Zigzag
+            ZIGZAG: [[1, 1, 0], [0, 1, 1], [0, 0, 1]],
+            // T with extra block
+            BIG_T: [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
+            // Awkward L
+            WEIRD_L: [[1, 1, 0], [0, 1, 0], [0, 1, 1]]
+        };
+
+        // Level 3-4: More complex shapes
+        const HARDER_SHAPES = {
+            // Stairs
+            STAIRS: [[1, 0, 0, 0], [1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1]],
+            // Wide T
+            WIDE_T: [[0, 0, 1, 0, 0], [1, 1, 1, 1, 1]],
+            // Snake
+            SNAKE: [[1, 1, 0], [0, 1, 0], [0, 1, 1]],
+            // Block plus
+            BLOCK_PLUS: [[0, 1, 1], [1, 1, 1], [0, 1, 0]]
+        };
+
+        // Level 5-6: Very difficult shapes
+        const VERY_HARD_SHAPES = {
+            // Long snake
+            LONG_SNAKE: [[1, 0, 0, 0], [1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1]],
+            // Claw
+            CLAW: [[1, 0, 1], [1, 1, 1], [1, 0, 1]],
+            // Diamond
+            DIAMOND: [[0, 1, 0], [1, 1, 1], [1, 0, 1]],
+            // Tower
+            TOWER: [[1, 1], [1, 1], [1, 1]]
+        };
+
+        // Level 7-8: Extremely difficult shapes
+        const EXTREME_SHAPES = {
+            // Big cross
+            BIG_CROSS: [[0, 1, 1, 1, 0], [1, 1, 1, 1, 1], [0, 1, 1, 1, 0]],
+            // H shape
+            H_SHAPE: [[1, 0, 1], [1, 1, 1], [1, 0, 1], [1, 0, 1]],
+            // Tetris nightmare
+            NIGHTMARE: [[1, 0, 1, 0], [1, 1, 1, 1], [0, 1, 0, 1]],
+            // Scattered
+            SCATTERED: [[1, 0, 0, 1], [0, 1, 1, 0], [0, 1, 1, 0], [1, 0, 0, 1]]
+        };
+
+        // Level 9-10: INSANE shapes
+        const INSANE_SHAPES = {
+            // Giant I
+            GIANT_I: [[1, 1, 1, 1, 1, 1]],
+            // Massive block
+            MASSIVE: [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]],
+            // Checkerboard
+            CHECKER: [[1, 0, 1, 0], [0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1]],
+            // Chaos
+            CHAOS: [[1, 0, 1, 1, 0], [0, 1, 1, 0, 1], [1, 1, 0, 1, 1]],
+            // The beast
+            BEAST: [[1, 0, 1, 0, 1], [1, 1, 1, 1, 1], [1, 0, 1, 0, 1], [1, 1, 1, 1, 1]]
+        };
+
         const COLORS = {
+            // Standard shapes
             I: '#00f0f0',
             O: '#f0f000',
             T: '#a000f0',
             S: '#00f000',
             Z: '#f00000',
             J: '#0000f0',
-            L: '#f0a000'
+            L: '#f0a000',
+            // Hard shapes (Level 2)
+            PLUS: '#ff00ff',
+            BIG_L: '#ff6600',
+            ZIGZAG: '#00ffff',
+            BIG_T: '#ffff00',
+            WEIRD_L: '#ff0099',
+            // Harder shapes (Level 3-4)
+            STAIRS: '#9900ff',
+            WIDE_T: '#ff3300',
+            SNAKE: '#00ff99',
+            BLOCK_PLUS: '#ff66cc',
+            // Very hard shapes (Level 5-6)
+            LONG_SNAKE: '#cc00ff',
+            CLAW: '#ff9900',
+            DIAMOND: '#00ccff',
+            TOWER: '#ffcc00',
+            // Extreme shapes (Level 7-8)
+            BIG_CROSS: '#ff0066',
+            H_SHAPE: '#00ff66',
+            NIGHTMARE: '#6600ff',
+            SCATTERED: '#ff6600',
+            // Insane shapes (Level 9-10)
+            GIANT_I: '#ff0000',
+            MASSIVE: '#00ff00',
+            CHECKER: '#0000ff',
+            CHAOS: '#ffff00',
+            BEAST: '#ff00ff'
         };
 
         // Game state
@@ -293,12 +393,16 @@
         let lines = 0;
         let level = 1;
         let gameActive = false;
+        let gamePaused = false; // Track if game is paused
         let currentPiece = null;
         let nextPiece = null;
         let dropCounter = 0;
         let dropInterval = 1000;
         let lastTime = 0;
         let pieceCount = 0; // Track number of pieces spawned
+        let stageScoreThreshold = 500; // Score needed to advance to next stage (500 for first stage)
+        let previousStageScore = 0; // Score from the previous stage
+        let piecesPerLevel = 1; // Number of pieces to spawn simultaneously
 
         // Audio context for music
         let audioContext = null;
@@ -433,35 +537,35 @@
             const now = audioContext.currentTime;
 
             // Create a powerful boom with multiple oscillators
-            // Low frequency explosion
+            // Low frequency explosion - LOUDER AND LONGER
             const boom1 = audioContext.createOscillator();
             const boom1Gain = audioContext.createGain();
             boom1.connect(boom1Gain);
             boom1Gain.connect(audioContext.destination);
 
             boom1.frequency.setValueAtTime(150, now);
-            boom1.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+            boom1.frequency.exponentialRampToValueAtTime(35, now + 0.6);
             boom1.type = 'sine';
-            boom1Gain.gain.setValueAtTime(0.5, now);
-            boom1Gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            boom1Gain.gain.setValueAtTime(0.8, now);
+            boom1Gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
             boom1.start(now);
-            boom1.stop(now + 0.3);
+            boom1.stop(now + 0.6);
 
-            // Mid frequency punch
+            // Mid frequency punch - LOUDER AND LONGER
             const boom2 = audioContext.createOscillator();
             const boom2Gain = audioContext.createGain();
             boom2.connect(boom2Gain);
             boom2Gain.connect(audioContext.destination);
 
             boom2.frequency.setValueAtTime(300, now);
-            boom2.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+            boom2.frequency.exponentialRampToValueAtTime(70, now + 0.5);
             boom2.type = 'triangle';
-            boom2Gain.gain.setValueAtTime(0.3, now);
-            boom2Gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            boom2Gain.gain.setValueAtTime(0.6, now);
+            boom2Gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
             boom2.start(now);
-            boom2.stop(now + 0.2);
+            boom2.stop(now + 0.5);
 
-            // High frequency crack
+            // High frequency crack - LOUDER AND LONGER
             const crack = audioContext.createOscillator();
             const crackGain = audioContext.createGain();
             const crackFilter = audioContext.createBiquadFilter();
@@ -475,11 +579,25 @@
             crackFilter.type = 'highpass';
             crackFilter.frequency.value = 5000;
 
-            crackGain.gain.setValueAtTime(0.15, now);
-            crackGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            crackGain.gain.setValueAtTime(0.3, now);
+            crackGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
 
             crack.start(now);
-            crack.stop(now + 0.1);
+            crack.stop(now + 0.3);
+
+            // Add extra rumble
+            const rumble = audioContext.createOscillator();
+            const rumbleGain = audioContext.createGain();
+            rumble.connect(rumbleGain);
+            rumbleGain.connect(audioContext.destination);
+
+            rumble.frequency.setValueAtTime(80, now);
+            rumble.frequency.exponentialRampToValueAtTime(30, now + 0.7);
+            rumble.type = 'sawtooth';
+            rumbleGain.gain.setValueAtTime(0.5, now);
+            rumbleGain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+            rumble.start(now);
+            rumble.stop(now + 0.7);
         }
 
         // Initialize board
@@ -491,7 +609,9 @@
         class Piece {
             constructor(type) {
                 this.type = type;
-                this.shape = SHAPES[type];
+                // Check all shape sets
+                this.shape = SHAPES[type] || HARD_SHAPES[type] || HARDER_SHAPES[type] ||
+                            VERY_HARD_SHAPES[type] || EXTREME_SHAPES[type] || INSANE_SHAPES[type];
                 this.color = COLORS[type];
                 this.x = Math.floor(COLS / 2) - Math.floor(this.shape[0].length / 2);
                 this.y = 0;
@@ -551,8 +671,148 @@
         }
 
         function getRandomPiece() {
-            const types = Object.keys(SHAPES);
-            const type = types[Math.floor(Math.random() * types.length)];
+            let type;
+            const standardTypes = Object.keys(SHAPES);
+            const hardTypes = Object.keys(HARD_SHAPES);
+            const harderTypes = Object.keys(HARDER_SHAPES);
+            const veryHardTypes = Object.keys(VERY_HARD_SHAPES);
+            const extremeTypes = Object.keys(EXTREME_SHAPES);
+            const insaneTypes = Object.keys(INSANE_SHAPES);
+
+            const rand = Math.random();
+
+            switch(level) {
+                case 1:
+                    // Level 1: Only standard pieces
+                    type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    break;
+
+                case 2:
+                    // Level 2: 50% standard, 50% hard
+                    if (rand < 0.5) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    }
+                    break;
+
+                case 3:
+                    // Level 3: 30% standard, 40% hard, 30% harder
+                    if (rand < 0.3) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else if (rand < 0.7) {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    } else {
+                        type = harderTypes[Math.floor(Math.random() * harderTypes.length)];
+                    }
+                    break;
+
+                case 4:
+                    // Level 4: 20% standard, 30% hard, 50% harder
+                    if (rand < 0.2) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else if (rand < 0.5) {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    } else {
+                        type = harderTypes[Math.floor(Math.random() * harderTypes.length)];
+                    }
+                    break;
+
+                case 5:
+                    // Level 5: 20% standard, 20% hard, 30% harder, 30% very hard
+                    if (rand < 0.2) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else if (rand < 0.4) {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    } else if (rand < 0.7) {
+                        type = harderTypes[Math.floor(Math.random() * harderTypes.length)];
+                    } else {
+                        type = veryHardTypes[Math.floor(Math.random() * veryHardTypes.length)];
+                    }
+                    break;
+
+                case 6:
+                    // Level 6: 10% standard, 20% hard, 30% harder, 40% very hard
+                    if (rand < 0.1) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else if (rand < 0.3) {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    } else if (rand < 0.6) {
+                        type = harderTypes[Math.floor(Math.random() * harderTypes.length)];
+                    } else {
+                        type = veryHardTypes[Math.floor(Math.random() * veryHardTypes.length)];
+                    }
+                    break;
+
+                case 7:
+                    // Level 7: 10% standard, 15% hard, 25% harder, 25% very hard, 25% extreme
+                    if (rand < 0.1) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else if (rand < 0.25) {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    } else if (rand < 0.5) {
+                        type = harderTypes[Math.floor(Math.random() * harderTypes.length)];
+                    } else if (rand < 0.75) {
+                        type = veryHardTypes[Math.floor(Math.random() * veryHardTypes.length)];
+                    } else {
+                        type = extremeTypes[Math.floor(Math.random() * extremeTypes.length)];
+                    }
+                    break;
+
+                case 8:
+                    // Level 8: 5% standard, 10% hard, 20% harder, 25% very hard, 40% extreme
+                    if (rand < 0.05) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else if (rand < 0.15) {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    } else if (rand < 0.35) {
+                        type = harderTypes[Math.floor(Math.random() * harderTypes.length)];
+                    } else if (rand < 0.6) {
+                        type = veryHardTypes[Math.floor(Math.random() * veryHardTypes.length)];
+                    } else {
+                        type = extremeTypes[Math.floor(Math.random() * extremeTypes.length)];
+                    }
+                    break;
+
+                case 9:
+                    // Level 9: 5% standard, 10% hard, 15% harder, 20% very hard, 30% extreme, 20% insane
+                    if (rand < 0.05) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else if (rand < 0.15) {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    } else if (rand < 0.3) {
+                        type = harderTypes[Math.floor(Math.random() * harderTypes.length)];
+                    } else if (rand < 0.5) {
+                        type = veryHardTypes[Math.floor(Math.random() * veryHardTypes.length)];
+                    } else if (rand < 0.8) {
+                        type = extremeTypes[Math.floor(Math.random() * extremeTypes.length)];
+                    } else {
+                        type = insaneTypes[Math.floor(Math.random() * insaneTypes.length)];
+                    }
+                    break;
+
+                case 10:
+                    // Level 10: CRAZY HARD - 5% standard, 5% hard, 10% harder, 15% very hard, 30% extreme, 35% insane
+                    if (rand < 0.05) {
+                        type = standardTypes[Math.floor(Math.random() * standardTypes.length)];
+                    } else if (rand < 0.1) {
+                        type = hardTypes[Math.floor(Math.random() * hardTypes.length)];
+                    } else if (rand < 0.2) {
+                        type = harderTypes[Math.floor(Math.random() * harderTypes.length)];
+                    } else if (rand < 0.35) {
+                        type = veryHardTypes[Math.floor(Math.random() * veryHardTypes.length)];
+                    } else if (rand < 0.65) {
+                        type = extremeTypes[Math.floor(Math.random() * extremeTypes.length)];
+                    } else {
+                        type = insaneTypes[Math.floor(Math.random() * insaneTypes.length)];
+                    }
+                    break;
+
+                default:
+                    // Fallback for any level beyond 10
+                    type = insaneTypes[Math.floor(Math.random() * insaneTypes.length)];
+            }
+
             return new Piece(type);
         }
 
@@ -593,9 +853,6 @@
                 // Scoring: 1 line=100, 2=300, 3=500, 4=800
                 const points = [0, 100, 300, 500, 800];
                 score += points[linesCleared] * level;
-
-                // Level up every 10 lines (for display and scoring only)
-                level = Math.floor(lines / 10) + 1;
 
                 // Play boom sound when lines are cleared
                 playBoomSound();
@@ -692,10 +949,83 @@
             document.getElementById('score').textContent = score;
             document.getElementById('lines').textContent = lines;
             document.getElementById('level').textContent = level;
+            document.getElementById('piecesPerLevel').textContent = piecesPerLevel;
+            // Update target score display
+            if (level < 10) {
+                document.getElementById('target').textContent = stageScoreThreshold;
+            } else {
+                document.getElementById('target').textContent = stageScoreThreshold + ' (Final!)';
+            }
+        }
+
+        function togglePause() {
+            if (!gameActive) return;
+
+            gamePaused = !gamePaused;
+
+            if (gamePaused) {
+                // Pause the music
+                if (musicPlaying) {
+                    stopMusic();
+                }
+                document.getElementById('startBtn').textContent = '▶️ RESUME';
+                document.getElementById('startBtn').disabled = false;
+            } else {
+                // Resume the music
+                playMusic();
+                document.getElementById('startBtn').textContent = '⏸️ PLAYING';
+                document.getElementById('startBtn').disabled = true;
+                // Continue the game loop
+                lastTime = performance.now();
+                requestAnimationFrame(update);
+            }
+        }
+
+        function advanceLevel(newLevel) {
+            level = newLevel;
+
+            // Calculate new threshold: current score + 550
+            stageScoreThreshold = score + 550;
+
+            // DON'T reset score - keep it accumulating
+            // Reset lines for visual tracking
+            lines = 0;
+
+            // Increase pieces per level (1 piece at level 1, 2 at level 2, etc., max 4)
+            piecesPerLevel = Math.min(newLevel, 4);
+
+            // Clear the board
+            createBoard();
+            // Reset piece count for progressive difficulty
+            pieceCount = 0;
+            // Speed increases with level: Level 1 = 1000ms, Level 2 = 850ms, etc.
+            dropInterval = Math.max(200, 1000 - (newLevel - 1) * 150);
+            dropCounter = 0;
+
+            // Spawn new pieces for the new level
+            currentPiece = getRandomPiece();
+            nextPiece = getRandomPiece();
+            drawNextPiece();
+            updateUI();
+
+            // Show level-specific message with score requirement
+            const messages = {
+                2: `🎉 Level 2 Unlocked! Current Score: ${score}\nHarder pieces incoming! 2 pieces per drop! Need ${stageScoreThreshold} to advance!`,
+                3: `🔥 Level 3! Current Score: ${score}\nMore complex shapes! 3 pieces per drop! Need ${stageScoreThreshold} to advance!`,
+                4: `💪 Level 4! Current Score: ${score}\nEven harder challenges! 4 pieces per drop! Need ${stageScoreThreshold} to advance!`,
+                5: `⚡ Level 5! Current Score: ${score}\nVery difficult pieces! 4 pieces per drop! Need ${stageScoreThreshold} to advance!`,
+                6: `🌟 Level 6! Current Score: ${score}\nExtreme difficulty! 4 pieces per drop! Need ${stageScoreThreshold} to advance!`,
+                7: `💥 Level 7! Current Score: ${score}\nExtremely challenging! 4 pieces per drop! Need ${stageScoreThreshold} to advance!`,
+                8: `🚀 Level 8! Current Score: ${score}\nUltra extreme! 4 pieces per drop! Need ${stageScoreThreshold} to advance!`,
+                9: `👹 Level 9! Current Score: ${score}\nINSANE pieces! 4 pieces per drop! Need ${stageScoreThreshold} to advance!`,
+                10: `💀 LEVEL 10: CRAZY HARD! Current Score: ${score}\nFINAL CHALLENGE! 4 pieces per drop! Need ${stageScoreThreshold} to win!`
+            };
+
+            alert(messages[newLevel] || `Level ${newLevel} reached!`);
         }
 
         function update(time = 0) {
-            if (!gameActive) return;
+            if (!gameActive || gamePaused) return;
 
             const deltaTime = time - lastTime;
             lastTime = time;
@@ -710,13 +1040,23 @@
                     merge();
                     clearLines();
 
+                    // Check for level progression
+                    // Advance when score reaches the threshold (previous level score + 550)
+                    if (score >= stageScoreThreshold && level < 10) {
+                        advanceLevel(level + 1);
+                        draw();
+                        requestAnimationFrame(update);
+                        return;
+                    }
+
                     currentPiece = nextPiece;
                     nextPiece = getRandomPiece();
 
-                    // Increment piece count and make each piece fall faster
+                    // Increment piece count and make each piece fall slightly faster within the level
                     pieceCount++;
-                    // Reduce drop interval by 15ms per piece, minimum of 50ms
-                    dropInterval = Math.max(50, 1000 - (pieceCount * 15));
+                    // Speed increases slightly with each piece in the level
+                    const baseSpeed = Math.max(200, 1000 - (level - 1) * 150);
+                    dropInterval = Math.max(50, baseSpeed - (pieceCount * 10));
 
                     if (currentPiece.collides()) {
                         gameOver();
@@ -734,17 +1074,27 @@
         }
 
         function startGame() {
-            if (gameActive) return;
+            if (gameActive && !gamePaused) return;
+
+            // If resuming from pause
+            if (gamePaused) {
+                togglePause();
+                return;
+            }
 
             gameActive = true;
+            gamePaused = false;
             createBoard();
             score = 0;
             lines = 0;
             level = 1;
+            piecesPerLevel = 1; // Start with 1 piece per level
             dropInterval = 1000;
             dropCounter = 0;
             lastTime = 0;
             pieceCount = 0; // Reset piece counter
+            stageScoreThreshold = 500; // Reset to initial threshold (500 for first level)
+            previousStageScore = 0; // Reset previous stage score
 
             currentPiece = getRandomPiece();
             nextPiece = getRandomPiece();
@@ -782,7 +1132,14 @@
 
         // Controls
         document.addEventListener('keydown', (e) => {
-            if (!gameActive || !currentPiece) return;
+            // Pause controls work even when game is active
+            if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+                e.preventDefault();
+                togglePause();
+                return;
+            }
+
+            if (!gameActive || !currentPiece || gamePaused) return;
 
             switch(e.key) {
                 case 'ArrowLeft':

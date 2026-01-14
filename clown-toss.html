@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clown Toss - Carnival Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 42px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .game-canvas-container {
+            position: relative;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.2);
+            border: 5px solid #d63031;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 600px;
+            cursor: crosshair;
+        }
+
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            margin: 5px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #333;
+            font-size: 24px;
+            padding: 20px 50px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            color: #333;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .instructions {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .instructions strong {
+            color: #d63031;
+        }
+
+        .game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .game-over-content h2 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .final-stats {
+            font-size: 24px;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .ammo-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .ball-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: #e74c3c;
+            border-radius: 50%;
+            margin: 0 3px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎪 Clown Toss</h1>
+
+        <div class="instructions">
+            <strong>Click to throw red balls at the clowns!</strong> • Smaller clowns = More points • You have 15 balls per round!
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">High Score</div>
+                <div class="stat-value" id="highScore">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Balls Left</div>
+                <div class="stat-value" id="ballsLeft">15</div>
+            </div>
+        </div>
+
+        <div class="game-canvas-container">
+            <canvas id="gameCanvas"></canvas>
+            <div class="ammo-indicator" id="ammoIndicator"></div>
+        </div>
+
+        <div class="controls">
+            <button class="start-btn" id="startBtn" onclick="startGame()">🎯 START GAME</button>
+            <button class="back-btn" onclick="window.location.href='index.html'">🏠 Back to Gallery</button>
+        </div>
+    </div>
+
+    <div class="game-over-screen" id="gameOverScreen">
+        <div class="game-over-content">
+            <h2>🎪 Game Over!</h2>
+            <div class="final-stats">
+                <div>Final Score: <strong id="finalScore">0</strong></div>
+                <div style="margin-top: 10px;">High Score: <strong id="finalHighScore">0</strong></div>
+            </div>
+            <div style="margin-top: 30px;">
+                <button class="start-btn" onclick="restartGame()">🎯 Play Again</button>
+                <button class="back-btn" onclick="window.location.href='index.html'">🏠 Back to Gallery</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = 800;
+        canvas.height = 600;
+
+        // Game state
+        let gameActive = false;
+        let score = 0;
+        let highScore = 0;
+        let ballsRemaining = 15;
+        let clowns = [];
+        let balls = [];
+
+        // Clown types (points: {size, count})
+        const clownTypes = [
+            { points: 10, size: 80, count: 8, color: '#ff6b6b', speed: 1 },
+            { points: 20, size: 60, count: 5, color: '#feca57', speed: 1.5 },
+            { points: 30, size: 45, count: 4, color: '#48dbfb', speed: 2 },
+            { points: 50, size: 35, count: 2, color: '#ff9ff3', speed: 2.5 },
+            { points: 100, size: 25, count: 1, color: '#54a0ff', speed: 3 }
+        ];
+
+        // Load high score
+        function loadHighScore() {
+            const saved = localStorage.getItem('clownTossHighScore');
+            if (saved) {
+                highScore = parseInt(saved);
+                document.getElementById('highScore').textContent = highScore;
+            }
+        }
+
+        function saveHighScore() {
+            localStorage.setItem('clownTossHighScore', highScore.toString());
+        }
+
+        function startGame() {
+            if (gameActive) return;
+
+            gameActive = true;
+            score = 0;
+            ballsRemaining = 15;
+            clowns = [];
+            balls = [];
+
+            // Create clowns
+            clownTypes.forEach(type => {
+                for (let i = 0; i < type.count; i++) {
+                    clowns.push({
+                        x: Math.random() * (canvas.width - type.size),
+                        y: Math.random() * (canvas.height - 150 - type.size) + 50,
+                        size: type.size,
+                        points: type.points,
+                        color: type.color,
+                        speed: type.speed,
+                        vx: (Math.random() - 0.5) * type.speed,
+                        vy: (Math.random() - 0.5) * type.speed,
+                        hit: false
+                    });
+                }
+            });
+
+            updateUI();
+            document.getElementById('startBtn').textContent = '🎯 PLAYING...';
+            document.getElementById('startBtn').disabled = true;
+
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            // Update clowns
+            clowns.forEach(clown => {
+                if (clown.hit) return;
+
+                // Move clown
+                clown.x += clown.vx;
+                clown.y += clown.vy;
+
+                // Bounce off walls
+                if (clown.x <= 0 || clown.x + clown.size >= canvas.width) {
+                    clown.vx *= -1;
+                    clown.x = Math.max(0, Math.min(canvas.width - clown.size, clown.x));
+                }
+                if (clown.y <= 0 || clown.y + clown.size >= canvas.height - 100) {
+                    clown.vy *= -1;
+                    clown.y = Math.max(0, Math.min(canvas.height - 100 - clown.size, clown.y));
+                }
+            });
+
+            // Update balls
+            balls = balls.filter(ball => {
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                ball.vy += 0.3; // Gravity
+
+                // Check collision with clowns
+                for (let clown of clowns) {
+                    if (clown.hit) continue;
+
+                    const dx = ball.x - (clown.x + clown.size / 2);
+                    const dy = ball.y - (clown.y + clown.size / 2);
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < ball.radius + clown.size / 2) {
+                        // Hit!
+                        clown.hit = true;
+                        score += clown.points;
+                        updateUI();
+                        showFloatingText(clown.x + clown.size / 2, clown.y, `+${clown.points}!`);
+                        return false; // Remove ball
+                    }
+                }
+
+                // Remove if off screen
+                return ball.y < canvas.height + 50 && ball.x > -50 && ball.x < canvas.width + 50;
+            });
+
+            // Check if game over
+            if (ballsRemaining === 0 && balls.length === 0) {
+                endGame();
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#ffeaa7';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw carnival stripes
+            ctx.strokeStyle = '#fdcb6e';
+            ctx.lineWidth = 20;
+            for (let i = 0; i < 10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * 100, 0);
+                ctx.lineTo(i * 100 + 100, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw clowns
+            clowns.forEach(clown => {
+                if (clown.hit) {
+                    // Shrinking animation
+                    clown.size *= 0.9;
+                    if (clown.size < 1) return;
+                }
+
+                drawClown(clown.x, clown.y, clown.size, clown.color);
+            });
+
+            // Draw balls
+            balls.forEach(ball => {
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Shine effect
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(ball.x - ball.radius / 3, ball.y - ball.radius / 3, ball.radius / 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw floating text
+            floatingTexts = floatingTexts.filter(text => {
+                text.y -= 2;
+                text.opacity -= 0.02;
+
+                ctx.save();
+                ctx.globalAlpha = text.opacity;
+                ctx.fillStyle = '#2ecc71';
+                ctx.font = 'bold 32px Arial';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.strokeText(text.text, text.x, text.y);
+                ctx.fillText(text.text, text.x, text.y);
+                ctx.restore();
+
+                return text.opacity > 0;
+            });
+        }
+
+        function drawClown(x, y, size, color) {
+            // Face
+            ctx.fillStyle = '#ffe5cc';
+            ctx.beginPath();
+            ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Red nose
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(x + size / 2, y + size / 2, size / 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x + size / 2 - size / 5, y + size / 2 - size / 8, size / 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + size / 2 + size / 5, y + size / 2 - size / 8, size / 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Smile
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = size / 20;
+            ctx.beginPath();
+            ctx.arc(x + size / 2, y + size / 2, size / 3, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+
+            // Hair
+            ctx.fillStyle = color;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const hairX = x + size / 2 + Math.cos(angle) * size / 2;
+                const hairY = y + size / 2 + Math.sin(angle) * size / 2;
+                ctx.beginPath();
+                ctx.arc(hairX, hairY, size / 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Hat
+            ctx.fillStyle = color;
+            ctx.fillRect(x + size / 4, y - size / 6, size / 2, size / 8);
+            ctx.beginPath();
+            ctx.moveTo(x + size / 4 - size / 8, y - size / 6);
+            ctx.lineTo(x + size / 2, y - size / 2);
+            ctx.lineTo(x + size * 3 / 4 + size / 8, y - size / 6);
+            ctx.closePath();
+            ctx.fill();
+
+            // Point value
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${size / 4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText(clowns.find(c => c.x === x && c.y === y)?.points || '', x + size / 2, y + size + size / 6);
+        }
+
+        let floatingTexts = [];
+
+        function showFloatingText(x, y, text) {
+            floatingTexts.push({
+                x: x,
+                y: y,
+                text: text,
+                opacity: 1
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('ballsLeft').textContent = ballsRemaining;
+
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                document.getElementById('highScore').textContent = highScore;
+                saveHighScore();
+            }
+
+            // Update ammo indicator
+            const ammoIndicator = document.getElementById('ammoIndicator');
+            let ballsHTML = '';
+            for (let i = 0; i < ballsRemaining; i++) {
+                ballsHTML += '<span class="ball-icon"></span>';
+            }
+            ammoIndicator.innerHTML = ballsHTML || 'No balls left!';
+        }
+
+        function endGame() {
+            gameActive = false;
+            document.getElementById('startBtn').textContent = '🎯 START GAME';
+            document.getElementById('startBtn').disabled = false;
+
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalHighScore').textContent = highScore;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
+        function restartGame() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            startGame();
+        }
+
+        // Click to throw ball
+        canvas.addEventListener('click', (e) => {
+            if (!gameActive || ballsRemaining <= 0) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            // Start position at bottom center
+            const startX = canvas.width / 2;
+            const startY = canvas.height - 50;
+
+            // Calculate velocity to reach click point
+            const dx = clickX - startX;
+            const dy = clickY - startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            const speed = 15;
+            const vx = (dx / distance) * speed;
+            const vy = (dy / distance) * speed;
+
+            balls.push({
+                x: startX,
+                y: startY,
+                vx: vx,
+                vy: vy,
+                radius: 15
+            });
+
+            ballsRemaining--;
+            updateUI();
+        });
+
+        // Initialize
+        loadHighScore();
+        updateUI();
+    </script>
+</body>
+</html>
