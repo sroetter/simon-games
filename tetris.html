@@ -412,15 +412,28 @@
         let musicInterval = null;
         let beatCount = 0;
 
-        // Techno music patterns
-        const bassPattern = [220, 220, 0, 220, 165, 165, 0, 165]; // Bass notes (A3, E3)
-        const melodyPattern = [
-            [440, 554, 659, 554], // A, C#, E, C#
-            [392, 494, 587, 494], // G, B, D, B
-            [349, 440, 523, 440], // F, A, C, A
-            [330, 415, 494, 415]  // E, G#, B, G#
+        // Techno music patterns - More varied and less repetitive
+        const bassPatterns = [
+            [220, 220, 0, 220, 165, 165, 0, 165],      // Pattern 1: A3, E3
+            [196, 196, 0, 196, 147, 147, 0, 147],      // Pattern 2: G3, D3
+            [220, 165, 220, 0, 196, 147, 196, 0],      // Pattern 3: Mixed
+            [185, 185, 220, 220, 165, 165, 196, 196]   // Pattern 4: F#3, A3, E3, G3
         ];
-        let melodyIndex = 0;
+
+        const melodyPatterns = [
+            [440, 554, 659, 554, 440, 659, 554, 880],     // Phrase 1: A, C#, E progression
+            [392, 494, 587, 494, 392, 587, 784, 587],     // Phrase 2: G, B, D progression
+            [349, 440, 523, 659, 523, 440, 349, 523],     // Phrase 3: F, A, C, E
+            [330, 415, 494, 554, 494, 415, 330, 494],     // Phrase 4: E, G#, B, C#
+            [466, 587, 698, 587, 466, 698, 932, 698],     // Phrase 5: Bb, D, F
+            [523, 659, 784, 659, 523, 784, 1047, 784],    // Phrase 6: C, E, G
+            [294, 370, 440, 554, 440, 370, 294, 440],     // Phrase 7: D, F#, A, C#
+            [262, 330, 392, 494, 392, 330, 262, 392]      // Phrase 8: C, E, G, B
+        ];
+
+        let bassPatternIndex = 0;
+        let melodyPatternIndex = 0;
+        let phraseCount = 0;
 
         function initAudio() {
             if (!audioContext) {
@@ -448,13 +461,17 @@
         function playBeat() {
             const now = audioContext.currentTime;
 
+            // Get current patterns
+            const currentBassPattern = bassPatterns[bassPatternIndex];
+            const currentMelodyPattern = melodyPatterns[melodyPatternIndex];
+
             // Bass drum (kick)
             const bass = audioContext.createOscillator();
             const bassGain = audioContext.createGain();
             bass.connect(bassGain);
             bassGain.connect(audioContext.destination);
 
-            const bassNote = bassPattern[beatCount % bassPattern.length];
+            const bassNote = currentBassPattern[beatCount % currentBassPattern.length];
             if (bassNote > 0) {
                 bass.frequency.value = bassNote;
                 bass.type = 'sine';
@@ -466,8 +483,7 @@
 
             // Synth melody (every 2 beats)
             if (beatCount % 2 === 0) {
-                const melodyCycle = melodyPattern[melodyIndex % melodyPattern.length];
-                const note = melodyCycle[Math.floor(beatCount / 2) % melodyCycle.length];
+                const note = currentMelodyPattern[phraseCount % currentMelodyPattern.length];
 
                 const synth = audioContext.createOscillator();
                 const synthGain = audioContext.createGain();
@@ -481,13 +497,37 @@
                 synth.start(now);
                 synth.stop(now + 0.3);
 
-                // Change melody pattern every 8 beats
-                if (beatCount % 8 === 0) {
-                    melodyIndex++;
+                phraseCount++;
+
+                // Change melody pattern every 16 beats (8 melody notes)
+                if (phraseCount % 8 === 0) {
+                    melodyPatternIndex = (melodyPatternIndex + 1) % melodyPatterns.length;
                 }
             }
 
-            // Hi-hat (every beat)
+            // Add arpeggiated synth pad (every 4 beats for variety)
+            if (beatCount % 4 === 0) {
+                const padNote = currentMelodyPattern[0] / 2; // Lower octave
+                const pad = audioContext.createOscillator();
+                const padGain = audioContext.createGain();
+                const padFilter = audioContext.createBiquadFilter();
+
+                pad.connect(padFilter);
+                padFilter.connect(padGain);
+                padGain.connect(audioContext.destination);
+
+                pad.frequency.value = padNote;
+                pad.type = 'sawtooth';
+                padFilter.type = 'lowpass';
+                padFilter.frequency.value = 800;
+
+                padGain.gain.setValueAtTime(0.04, now);
+                padGain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                pad.start(now);
+                pad.stop(now + 0.8);
+            }
+
+            // Hi-hat (varying pattern)
             const hihat = audioContext.createOscillator();
             const hihatGain = audioContext.createGain();
             const hihatFilter = audioContext.createBiquadFilter();
@@ -501,11 +541,18 @@
             hihatFilter.type = 'highpass';
             hihatFilter.frequency.value = 7000;
 
-            hihatGain.gain.setValueAtTime(0.05, now);
+            // Vary hi-hat volume for groove
+            const hihatVolume = (beatCount % 2 === 0) ? 0.06 : 0.03;
+            hihatGain.gain.setValueAtTime(hihatVolume, now);
             hihatGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
 
             hihat.start(now);
             hihat.stop(now + 0.05);
+
+            // Change bass pattern every 32 beats for variety
+            if (beatCount % 32 === 0 && beatCount > 0) {
+                bassPatternIndex = (bassPatternIndex + 1) % bassPatterns.length;
+            }
         }
 
         function stopMusic() {
@@ -529,7 +576,9 @@
             oscillators = [];
             gainNodes = [];
             beatCount = 0;
-            melodyIndex = 0;
+            bassPatternIndex = 0;
+            melodyPatternIndex = 0;
+            phraseCount = 0;
         }
 
         function playBoomSound() {

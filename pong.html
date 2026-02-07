@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong - Classic Arcade</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 1000px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-screen, .color-select-screen, .game-screen, .game-over-screen {
+            display: none;
+            text-align: center;
+        }
+
+        .menu-screen.active, .color-select-screen.active, .game-screen.active, .game-over-screen.active {
+            display: block;
+        }
+
+        .menu-btn, .color-btn, .game-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-btn:hover, .color-btn:hover, .game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        canvas {
+            display: block;
+            background: #000;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            margin: 20px auto;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .player-info {
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            margin: 30px auto;
+        }
+
+        .color-option {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 3px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: white;
+        }
+
+        .color-option.selected {
+            border-color: yellow;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
+        }
+
+        .color-option::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 7px;
+            background: inherit;
+        }
+
+        .instructions {
+            color: white;
+            font-size: 16px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .tournament-status {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid gold;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            color: white;
+            font-size: 18px;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+        }
+
+        .win-message {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 15px;
+            text-transform: uppercase;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🏓 PONG 🏓</h1>
+
+        <!-- Main Menu -->
+        <div class="menu-screen active" id="menuScreen">
+            <div class="instructions">
+                Choose your game mode and compete for the top score!
+            </div>
+            <button class="menu-btn" onclick="selectMode('vs-ai')">Play vs AI</button>
+            <button class="menu-btn" onclick="selectMode('2-player')">2 Player Mode</button>
+            <button class="menu-btn" onclick="selectMode('tournament-ai')">Tournament vs AI</button>
+            <button class="menu-btn" onclick="selectMode('tournament-2p')">2 Player Tournament</button>
+            <a href="index.html"><button class="menu-btn back-btn">🏠 Back to Gallery</button></a>
+        </div>
+
+        <!-- Color Selection -->
+        <div class="color-select-screen" id="colorSelectScreen">
+            <h2 style="color: white; margin-bottom: 20px;" id="colorSelectTitle">Player 1: Choose Your Color</h2>
+            <div class="color-grid" id="colorGrid"></div>
+            <button class="color-btn" onclick="confirmColor()" id="confirmColorBtn">Confirm</button>
+            <button class="color-btn back-btn" onclick="backToMenu()">Back</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <div class="tournament-status" id="tournamentStatus" style="display: none;"></div>
+            <div class="scoreboard">
+                <div class="player-info" id="player1Info">
+                    <div id="player1Color" style="font-weight: bold; margin-bottom: 5px;">Red</div>
+                    <div style="font-size: 18px;">Player 1</div>
+                    <div id="player1Score" style="font-size: 32px; margin-top: 5px;">0</div>
+                </div>
+                <div class="player-info" id="player2Info">
+                    <div id="player2Color" style="font-weight: bold; margin-bottom: 5px;">Blue</div>
+                    <div style="font-size: 18px;" id="player2Name">Player 2</div>
+                    <div id="player2Score" style="font-size: 32px; margin-top: 5px;">0</div>
+                </div>
+            </div>
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <div class="instructions">
+                <strong>Player 1:</strong> W/S to move, SPACE to serve • <strong>Player 2:</strong> O/L to move, SPACE to serve
+                <br>First to 5 points wins!
+            </div>
+            <button class="game-btn back-btn" onclick="backToMenu()">Back to Menu</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div class="game-over-screen" id="gameOverScreen">
+            <div class="win-message" id="winMessage"></div>
+            <div style="color: white; font-size: 24px; margin: 20px 0;">
+                <div id="finalScore"></div>
+            </div>
+            <button class="game-btn" onclick="playAgain()">Play Again</button>
+            <button class="game-btn back-btn" onclick="backToMenu()">Back to Menu</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game state
+        let gameMode = '';
+        let gameActive = false;
+        let player1Color = '';
+        let player2Color = '';
+        let currentColorPlayer = 1;
+
+        // Tournament state
+        let isTournament = false;
+        let tournamentGames = 0;
+        let player1Wins = 0;
+        let player2Wins = 0;
+
+        // Color options
+        const colors = [
+            { name: 'Red', value: '#ff0000' },
+            { name: 'Blue', value: '#0000ff' },
+            { name: 'Green', value: '#00ff00' },
+            { name: 'Yellow', value: '#ffff00' },
+            { name: 'Purple', value: '#9370db' },
+            { name: 'Cyan', value: '#00ffff' },
+            { name: 'Orange', value: '#ff8800' },
+            { name: 'Pink', value: '#ff69b4' },
+            { name: 'Lime', value: '#00ff88' },
+            { name: 'Violet', value: '#8800ff' },
+            { name: 'Gold', value: '#daa520' },
+            { name: 'White', value: '#ffffff' }
+        ];
+
+        // Paddle properties
+        const paddleWidth = 10;
+        const paddleHeight = 80;
+        const paddleSpeed = 6; // Original speed
+        let paddle1 = { x: 20, y: canvas.height / 2 - paddleHeight / 2, dy: 0, prevY: canvas.height / 2 - paddleHeight / 2 };
+        let paddle2 = { x: canvas.width - 20 - paddleWidth, y: canvas.height / 2 - paddleHeight / 2, dy: 0, prevY: canvas.height / 2 - paddleHeight / 2 };
+
+        // Ball properties
+        let ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            dx: 5.28, // 10% faster than 4.8 (4.8 * 1.1 = 5.28)
+            dy: 5.28,
+            radius: 8,
+            speed: 5.28 // Base speed
+        };
+
+        // Score
+        let score1 = 0;
+        let score2 = 0;
+
+        // Serve state
+        let serving = 1; // 1 or 2 - who is serving
+        let ballAttached = true; // Is ball attached to paddle?
+
+        // Controls
+        let keys = {};
+
+        // Initialize color grid
+        function initColorGrid() {
+            const grid = document.getElementById('colorGrid');
+            grid.innerHTML = '';
+            colors.forEach((color, index) => {
+                const div = document.createElement('div');
+                div.className = 'color-option';
+                div.style.background = color.value;
+                div.title = color.name;
+                div.onclick = () => selectColor(index);
+                grid.appendChild(div);
+            });
+        }
+
+        function selectMode(mode) {
+            gameMode = mode;
+            isTournament = mode.includes('tournament');
+
+            if (isTournament) {
+                tournamentGames = 0;
+                player1Wins = 0;
+                player2Wins = 0;
+            }
+
+            currentColorPlayer = 1;
+            document.getElementById('menuScreen').classList.remove('active');
+            document.getElementById('colorSelectScreen').classList.add('active');
+            document.getElementById('colorSelectTitle').textContent = 'Player 1: Choose Your Color';
+            initColorGrid();
+        }
+
+        function selectColor(index) {
+            document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.color-option')[index].classList.add('selected');
+
+            if (currentColorPlayer === 1) {
+                player1Color = colors[index].value;
+            } else {
+                player2Color = colors[index].value;
+            }
+        }
+
+        function confirmColor() {
+            if (currentColorPlayer === 1 && !player1Color) {
+                alert('Please select a color!');
+                return;
+            }
+            if (currentColorPlayer === 2 && !player2Color) {
+                alert('Please select a color!');
+                return;
+            }
+
+            if (currentColorPlayer === 1 && !gameMode.includes('ai')) {
+                // Two player mode - need second color
+                currentColorPlayer = 2;
+                document.getElementById('colorSelectTitle').textContent = 'Player 2: Choose Your Color';
+                document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+            } else {
+                // Start game
+                if (gameMode.includes('ai')) {
+                    player2Color = '#ffffff'; // AI is white
+                }
+                startGame();
+            }
+        }
+
+        function startGame() {
+            document.getElementById('colorSelectScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+
+            // Reset game
+            paddle1.y = canvas.height / 2 - paddleHeight / 2;
+            paddle2.y = canvas.height / 2 - paddleHeight / 2;
+            score1 = 0;
+            score2 = 0;
+            resetBall(1); // Player 1 serves first
+
+            // Update UI
+            const player1ColorName = colors.find(c => c.value === player1Color)?.name || 'Player 1';
+            const player2ColorName = colors.find(c => c.value === player2Color)?.name || 'Player 2';
+
+            document.getElementById('player1Color').textContent = player1ColorName;
+            document.getElementById('player1Color').style.color = player1Color;
+            document.getElementById('player1Info').style.background = player1Color + '33';
+            document.getElementById('player1Info').style.border = `3px solid ${player1Color}`;
+
+            if (gameMode.includes('ai')) {
+                document.getElementById('player2Name').textContent = 'AI';
+            } else {
+                document.getElementById('player2Name').textContent = 'Player 2';
+            }
+            document.getElementById('player2Color').textContent = player2ColorName;
+            document.getElementById('player2Color').style.color = player2Color;
+            document.getElementById('player2Info').style.background = player2Color + '33';
+            document.getElementById('player2Info').style.border = `3px solid ${player2Color}`;
+
+            updateScore();
+            updateTournamentStatus();
+
+            gameActive = true;
+            gameLoop();
+        }
+
+        function updateTournamentStatus() {
+            const statusDiv = document.getElementById('tournamentStatus');
+            if (isTournament) {
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = `
+                    <strong>TOURNAMENT MODE</strong><br>
+                    Game ${tournamentGames + 1} of 3 |
+                    Player 1: ${player1Wins} wins |
+                    Player 2/AI: ${player2Wins} wins |
+                    First to 2 wins the tournament!
+                `;
+            } else {
+                statusDiv.style.display = 'none';
+            }
+        }
+
+        function resetBall(server) {
+            serving = server;
+            ballAttached = true;
+            ball.dy = 0;
+            ball.dx = 0;
+
+            // Attach ball to serving paddle
+            if (serving === 1) {
+                ball.x = paddle1.x + paddleWidth + ball.radius + 5;
+                ball.y = paddle1.y + paddleHeight / 2;
+            } else {
+                ball.x = paddle2.x - ball.radius - 5;
+                ball.y = paddle2.y + paddleHeight / 2;
+            }
+        }
+
+        function serveBall() {
+            if (!ballAttached) return;
+
+            ballAttached = false;
+
+            if (serving === 1) {
+                ball.dx = 5.28;
+                ball.dy = (Math.random() - 0.5) * 7.92;
+            } else {
+                ball.dx = -5.28;
+                ball.dy = (Math.random() - 0.5) * 7.92;
+            }
+            ball.speed = 5.28;
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw center line
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw paddles
+            ctx.fillStyle = player1Color;
+            ctx.fillRect(paddle1.x, paddle1.y, paddleWidth, paddleHeight);
+
+            ctx.fillStyle = player2Color;
+            ctx.fillRect(paddle2.x, paddle2.y, paddleWidth, paddleHeight);
+
+            // Draw ball
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Store previous paddle positions for momentum calculation
+            paddle1.prevY = paddle1.y;
+            paddle2.prevY = paddle2.y;
+
+            // Move paddles - Player 1 uses W/S only
+            if (keys['w']) {
+                paddle1.y = Math.max(0, paddle1.y - paddleSpeed);
+            }
+            if (keys['s']) {
+                paddle1.y = Math.min(canvas.height - paddleHeight, paddle1.y + paddleSpeed);
+            }
+
+            // Calculate paddle 1 velocity
+            paddle1.dy = paddle1.y - paddle1.prevY;
+
+            if (gameMode.includes('ai')) {
+                // AI logic
+                const aiSpeed = 4.56; // 24% slower than player paddle speed (6 * 0.76 = 4.56)
+                if (!ballAttached && ball.x > canvas.width / 2) { // Only move when ball is on AI side and active
+                    if (ball.y < paddle2.y + paddleHeight / 2) {
+                        paddle2.y = Math.max(0, paddle2.y - aiSpeed);
+                    } else if (ball.y > paddle2.y + paddleHeight / 2) {
+                        paddle2.y = Math.min(canvas.height - paddleHeight, paddle2.y + aiSpeed);
+                    }
+                }
+
+                // AI auto-serves after a short delay
+                if (ballAttached && serving === 2) {
+                    setTimeout(() => {
+                        if (ballAttached && serving === 2) {
+                            serveBall();
+                        }
+                    }, 1000);
+                }
+            } else {
+                // Player 2 controls - O and L keys
+                if (keys['o'] || keys['O']) {
+                    paddle2.y = Math.max(0, paddle2.y - paddleSpeed);
+                }
+                if (keys['l'] || keys['L']) {
+                    paddle2.y = Math.min(canvas.height - paddleHeight, paddle2.y + paddleSpeed);
+                }
+            }
+
+            // Calculate paddle 2 velocity
+            paddle2.dy = paddle2.y - paddle2.prevY;
+
+            // Update ball position if attached to paddle
+            if (ballAttached) {
+                if (serving === 1) {
+                    ball.x = paddle1.x + paddleWidth + ball.radius + 5;
+                    ball.y = paddle1.y + paddleHeight / 2;
+                } else {
+                    ball.x = paddle2.x - ball.radius - 5;
+                    ball.y = paddle2.y + paddleHeight / 2;
+                }
+                return; // Don't process ball physics while attached
+            }
+
+            // Move ball
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collision with top/bottom
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+                ball.dy *= -1;
+            }
+
+            // Ball collision with paddles
+            if (ball.x - ball.radius < paddle1.x + paddleWidth &&
+                ball.y > paddle1.y && ball.y < paddle1.y + paddleHeight) {
+                ball.dx = Math.abs(ball.dx);
+
+                // Add paddle momentum to ball
+                ball.dy += paddle1.dy * 0.5; // Transfer 50% of paddle momentum to ball
+
+                // Speed up slightly
+                ball.speed *= 1.05;
+                const angle = Math.atan2(ball.dy, ball.dx);
+                ball.dx = Math.cos(angle) * ball.speed;
+                ball.dy = Math.sin(angle) * ball.speed;
+            }
+
+            if (ball.x + ball.radius > paddle2.x &&
+                ball.y > paddle2.y && ball.y < paddle2.y + paddleHeight) {
+                ball.dx = -Math.abs(ball.dx);
+
+                // Add paddle momentum to ball
+                ball.dy += paddle2.dy * 0.5; // Transfer 50% of paddle momentum to ball
+
+                // Speed up slightly
+                ball.speed *= 1.05;
+                const angle = Math.atan2(ball.dy, ball.dx);
+                ball.dx = Math.cos(angle) * ball.speed;
+                ball.dy = Math.sin(angle) * ball.speed;
+            }
+
+            // Scoring
+            if (ball.x - ball.radius < 0) {
+                score2++;
+                updateScore();
+                resetBall(2); // Player 2 serves after scoring
+            }
+            if (ball.x + ball.radius > canvas.width) {
+                score1++;
+                updateScore();
+                resetBall(1); // Player 1 serves after scoring
+            }
+
+            // Check for win
+            if (score1 >= 5 || score2 >= 5) {
+                endGame();
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('player1Score').textContent = score1;
+            document.getElementById('player2Score').textContent = score2;
+        }
+
+        function endGame() {
+            gameActive = false;
+
+            const winner = score1 >= 5 ? 1 : 2;
+
+            if (isTournament) {
+                if (winner === 1) {
+                    player1Wins++;
+                } else {
+                    player2Wins++;
+                }
+
+                tournamentGames++;
+
+                // Check if tournament is over
+                if (player1Wins === 2 || player2Wins === 2) {
+                    showTournamentWinner();
+                } else {
+                    // Play next game
+                    setTimeout(() => {
+                        alert(`Game ${tournamentGames} complete! ${winner === 1 ? 'Player 1' : (gameMode.includes('ai') ? 'AI' : 'Player 2')} wins!\n\nStarting Game ${tournamentGames + 1}...`);
+                        startGame();
+                    }, 1000);
+                }
+            } else {
+                showGameWinner(winner);
+            }
+        }
+
+        function showGameWinner(winner) {
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('gameOverScreen').classList.add('active');
+
+            const winnerColor = winner === 1 ? player1Color : player2Color;
+            const winnerName = winner === 1 ? 'Player 1' : (gameMode.includes('ai') ? 'AI' : 'Player 2');
+            const colorName = colors.find(c => c.value === winnerColor)?.name || 'Champion';
+
+            const winMsg = document.getElementById('winMessage');
+            winMsg.textContent = `Congratulations ${colorName}!`;
+            winMsg.style.background = winnerColor;
+            winMsg.style.color = getContrastColor(winnerColor);
+
+            document.getElementById('finalScore').textContent = `${score1} - ${score2}`;
+        }
+
+        function showTournamentWinner() {
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('gameOverScreen').classList.add('active');
+
+            const winner = player1Wins === 2 ? 1 : 2;
+            const winnerColor = winner === 1 ? player1Color : player2Color;
+            const winnerName = winner === 1 ? 'Player 1' : (gameMode.includes('ai') ? 'AI' : 'Player 2');
+            const colorName = colors.find(c => c.value === winnerColor)?.name || 'Champion';
+
+            const winMsg = document.getElementById('winMessage');
+            winMsg.textContent = `🏆 ${colorName} Wins the Tournament! 🏆`;
+            winMsg.style.background = winnerColor;
+            winMsg.style.color = getContrastColor(winnerColor);
+
+            document.getElementById('finalScore').textContent = `Tournament Score: ${player1Wins} - ${player2Wins}`;
+        }
+
+        function getContrastColor(hexColor) {
+            const rgb = parseInt(hexColor.slice(1), 16);
+            const r = (rgb >> 16) & 0xff;
+            const g = (rgb >> 8) & 0xff;
+            const b = (rgb >> 0) & 0xff;
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? '#000000' : '#ffffff';
+        }
+
+        function playAgain() {
+            document.getElementById('gameOverScreen').classList.remove('active');
+
+            if (isTournament) {
+                // Restart tournament
+                tournamentGames = 0;
+                player1Wins = 0;
+                player2Wins = 0;
+            }
+
+            startGame();
+        }
+
+        function backToMenu() {
+            gameActive = false;
+            document.getElementById('colorSelectScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('gameOverScreen').classList.remove('active');
+            document.getElementById('menuScreen').classList.add('active');
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            if (gameActive) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+
+            // Prevent default for space bar to stop browser scrolling
+            if (e.key === ' ') {
+                e.preventDefault();
+            }
+
+            // Space bar to serve
+            if (e.key === ' ' && ballAttached) {
+                serveBall();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Initialize
+        initColorGrid();
+    </script>
+</body>
+</html>

@@ -155,6 +155,18 @@
             background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
         }
 
+        .game-card.pong {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        }
+
+        .game-card.foosball {
+            background: linear-gradient(135deg, #1a6b3c 0%, #2d8a4e 50%, #5a2d0c 100%);
+        }
+
+        .game-card.pong .game-title {
+            color: #667eea;
+        }
+
         .game-card.pacman .game-icon {
             display: flex;
             align-items: center;
@@ -282,6 +294,22 @@
                 <div class="game-title">Clown Toss</div>
                 <div class="game-description">
                     Carnival target game! Throw red balls at moving clowns to score points. Smaller clowns are worth more points but harder to hit. 15 balls to get your high score!
+                </div>
+            </a>
+
+            <a href="pong.html" class="game-card pong">
+                <div class="game-icon">🏓⚪</div>
+                <div class="game-title">Pong</div>
+                <div class="game-description">
+                    Classic arcade action! Play vs AI or with a friend. Choose your paddle color, compete in tournaments, and climb the leaderboard. First to 10 points wins!
+                </div>
+            </a>
+
+            <a href="foosball.html" class="game-card foosball">
+                <div class="game-icon">⚽🏟️</div>
+                <div class="game-title">Foosball</div>
+                <div class="game-description">
+                    Table soccer action! Control your rods to kick, block, and score goals. Play against a friend or challenge the computer. First to 7 wins!
                 </div>
             </a>
         </div>
