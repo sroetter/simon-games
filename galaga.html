@@ -381,9 +381,9 @@
 
     // Enemies
     const ENEMY_TYPES = {
-        grunt: { w: 24, h: 20, hp: 1, score: 100, color1: '#44ff44', color2: '#22aa22' },
-        mid: { w: 28, h: 22, hp: 2, score: 250, color1: '#ff4444', color2: '#aa2222' },
-        boss: { w: 32, h: 26, hp: 4, score: 500, color1: '#ff44ff', color2: '#aa22aa' }
+        grunt: { w: 26, h: 22, hp: 1, score: 100, color1: '#66cc44', color2: '#335522' },
+        mid: { w: 30, h: 24, hp: 2, score: 250, color1: '#cc2222', color2: '#661111' },
+        boss: { w: 34, h: 28, hp: 4, score: 500, color1: '#aa00cc', color2: '#550066' }
     };
 
     function createEnemyFormation() {
@@ -441,70 +441,187 @@
         const wingFlap = Math.sin(t * 3) * 0.2;
 
         if (e.type === 'grunt') {
-            // Bug-like alien
+            // Creepy spider-like alien
+            const pulse = Math.sin(t * 4) * 0.15;
+            // Slimy body
             ctx.fillStyle = flash ? '#fff' : e.color1;
             ctx.beginPath();
-            ctx.ellipse(0, 0, 10, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 10 + pulse * 3, 9, 0, 0, Math.PI * 2);
             ctx.fill();
-            // Eyes
+            // Veiny texture
+            ctx.strokeStyle = flash ? '#fff' : '#113300';
+            ctx.lineWidth = 0.5;
+            for (let v = 0; v < 4; v++) {
+                ctx.beginPath();
+                ctx.moveTo(-6 + v * 4, -6);
+                ctx.quadraticCurveTo(-4 + v * 3, 0 + Math.sin(t + v) * 2, -5 + v * 4, 7);
+                ctx.stroke();
+            }
+            // Multiple creepy eyes
+            const eyeGlow = 0.6 + 0.4 * Math.sin(t * 6);
+            ctx.fillStyle = flash ? '#fff' : `rgba(255, ${Math.floor(50 * eyeGlow)}, 0, ${eyeGlow})`;
+            ctx.beginPath();
+            ctx.arc(-5, -3, 2.5, 0, Math.PI * 2);
+            ctx.arc(5, -3, 2.5, 0, Math.PI * 2);
+            ctx.arc(0, -1, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+            // Slit pupils
             ctx.fillStyle = flash ? '#fff' : '#000';
+            ctx.fillRect(-5.5, -4.5, 1, 3);
+            ctx.fillRect(4.5, -4.5, 1, 3);
+            // Spindly legs
+            ctx.strokeStyle = flash ? '#fff' : e.color2;
+            ctx.lineWidth = 1.2;
+            for (let leg = 0; leg < 4; leg++) {
+                const side = leg < 2 ? -1 : 1;
+                const idx = leg % 2;
+                const legAnim = Math.sin(t * 5 + leg * 1.5) * 3;
+                ctx.beginPath();
+                ctx.moveTo(side * 8, -3 + idx * 6);
+                ctx.quadraticCurveTo(side * 14, -1 + idx * 6 + legAnim, side * 16, 4 + idx * 5 + legAnim);
+                ctx.stroke();
+            }
+            // Dripping slime
+            const dripY = (t * 2 + e.homeX) % 3;
+            ctx.fillStyle = flash ? '#fff' : 'rgba(100, 200, 50, 0.6)';
             ctx.beginPath();
-            ctx.arc(-4, -2, 2, 0, Math.PI * 2);
-            ctx.arc(4, -2, 2, 0, Math.PI * 2);
-            ctx.fill();
-            // Wings
-            ctx.fillStyle = flash ? '#fff' : e.color2;
-            ctx.beginPath();
-            ctx.ellipse(-11, -2 + wingFlap * 10, 5, 8, -0.3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(11, -2 + wingFlap * 10, 5, 8, 0.3, 0, Math.PI * 2);
+            ctx.ellipse(Math.sin(t) * 3, 8 + dripY, 1.5, 2 + dripY, 0, 0, Math.PI * 2);
             ctx.fill();
         } else if (e.type === 'mid') {
-            // Butterfly-like alien
+            // Creepy flesh-moth alien
+            const pulse = Math.sin(t * 3) * 0.2;
+            // Fleshy body
             ctx.fillStyle = flash ? '#fff' : e.color1;
             ctx.beginPath();
-            ctx.ellipse(0, 0, 8, 10, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 9 + pulse * 2, 11, 0, 0, Math.PI * 2);
             ctx.fill();
-            // Wings
+            // Exposed ribcage lines
+            ctx.strokeStyle = flash ? '#fff' : '#880000';
+            ctx.lineWidth = 0.8;
+            for (let r = 0; r < 3; r++) {
+                ctx.beginPath();
+                ctx.ellipse(0, -2 + r * 4, 6 - r, 2, 0, 0, Math.PI);
+                ctx.stroke();
+            }
+            // Torn, veiny wings
             ctx.fillStyle = flash ? '#fff' : e.color2;
+            const wf = wingFlap * 14;
+            // Left wing
             ctx.beginPath();
-            ctx.ellipse(-13, 0 + wingFlap * 12, 7, 10, -0.2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(13, 0 + wingFlap * 12, 7, 10, 0.2, 0, Math.PI * 2);
-            ctx.fill();
-            // Eyes
-            ctx.fillStyle = flash ? '#fff' : '#ffff00';
-            ctx.beginPath();
-            ctx.arc(-3, -3, 2.5, 0, Math.PI * 2);
-            ctx.arc(3, -3, 2.5, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (e.type === 'boss') {
-            // Commander alien
-            ctx.fillStyle = flash ? '#fff' : e.color1;
-            ctx.beginPath();
-            ctx.moveTo(0, -13);
-            ctx.lineTo(-14, 0);
-            ctx.lineTo(-10, 13);
-            ctx.lineTo(10, 13);
-            ctx.lineTo(14, 0);
+            ctx.moveTo(-8, -4);
+            ctx.quadraticCurveTo(-18, -8 + wf, -16, 2 + wf);
+            ctx.quadraticCurveTo(-14, 8 + wf, -12, 4 + wf);
+            ctx.quadraticCurveTo(-15, 10 + wf, -8, 8);
             ctx.closePath();
             ctx.fill();
-            // Inner
+            // Right wing
+            ctx.beginPath();
+            ctx.moveTo(8, -4);
+            ctx.quadraticCurveTo(18, -8 + wf, 16, 2 + wf);
+            ctx.quadraticCurveTo(14, 8 + wf, 12, 4 + wf);
+            ctx.quadraticCurveTo(15, 10 + wf, 8, 8);
+            ctx.closePath();
+            ctx.fill();
+            // Wing veins
+            ctx.strokeStyle = flash ? '#fff' : 'rgba(200, 0, 0, 0.5)';
+            ctx.lineWidth = 0.6;
+            ctx.beginPath();
+            ctx.moveTo(-8, -2); ctx.lineTo(-15, 0 + wf);
+            ctx.moveTo(-9, 2); ctx.lineTo(-13, 7 + wf);
+            ctx.moveTo(8, -2); ctx.lineTo(15, 0 + wf);
+            ctx.moveTo(9, 2); ctx.lineTo(13, 7 + wf);
+            ctx.stroke();
+            // Hollow glowing eyes
+            const eyePulse = 0.5 + 0.5 * Math.sin(t * 8);
+            ctx.strokeStyle = flash ? '#fff' : `rgba(255, 255, 0, ${eyePulse})`;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(-4, -4, 3, 0, Math.PI * 2);
+            ctx.arc(4, -4, 3, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = flash ? '#fff' : `rgba(255, 0, 0, ${eyePulse})`;
+            ctx.beginPath();
+            ctx.arc(-4, -4, 1.2, 0, Math.PI * 2);
+            ctx.arc(4, -4, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+            // Fanged mouth
+            ctx.fillStyle = flash ? '#fff' : '#220000';
+            ctx.beginPath();
+            ctx.ellipse(0, 3, 4, 2, 0, 0, Math.PI);
+            ctx.fill();
+            ctx.fillStyle = flash ? '#fff' : '#ffcccc';
+            ctx.beginPath();
+            ctx.moveTo(-3, 3); ctx.lineTo(-2, 6); ctx.lineTo(-1, 3);
+            ctx.moveTo(1, 3); ctx.lineTo(2, 6); ctx.lineTo(3, 3);
+            ctx.fill();
+        } else if (e.type === 'boss') {
+            // Eldritch horror boss
+            const pulse = Math.sin(t * 2) * 0.2;
+            // Shifting dark body
+            ctx.fillStyle = flash ? '#fff' : e.color1;
+            ctx.beginPath();
+            ctx.moveTo(0, -15);
+            ctx.quadraticCurveTo(-10 - pulse * 5, -10, -16, -2);
+            ctx.quadraticCurveTo(-14, 8, -10, 14);
+            ctx.lineTo(10, 14);
+            ctx.quadraticCurveTo(14, 8, 16, -2);
+            ctx.quadraticCurveTo(10 + pulse * 5, -10, 0, -15);
+            ctx.fill();
+            // Inner pulsing core
             ctx.fillStyle = flash ? '#fff' : e.color2;
+            const coreSize = 7 + pulse * 3;
             ctx.beginPath();
-            ctx.arc(0, 2, 7, 0, Math.PI * 2);
+            ctx.arc(0, 2, coreSize, 0, Math.PI * 2);
             ctx.fill();
-            // Eye
-            ctx.fillStyle = flash ? '#fff' : '#ffff00';
+            // Swirling dark pattern inside core
+            ctx.strokeStyle = flash ? '#fff' : 'rgba(200, 0, 255, 0.4)';
+            ctx.lineWidth = 1;
+            for (let s = 0; s < 3; s++) {
+                ctx.beginPath();
+                ctx.arc(0, 2, 3 + s * 2, t * 2 + s, t * 2 + s + 2);
+                ctx.stroke();
+            }
+            // Giant central eye
+            const eyeTrackX = Math.sin(t * 0.7) * 2;
+            const eyeTrackY = Math.cos(t * 0.5) * 1;
+            ctx.fillStyle = flash ? '#fff' : '#ffee00';
             ctx.beginPath();
-            ctx.arc(0, 0, 4, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 6, 5, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = flash ? '#fff' : '#ff0000';
+            // Bloodshot veins in eye
+            ctx.strokeStyle = flash ? '#fff' : 'rgba(255, 0, 0, 0.6)';
+            ctx.lineWidth = 0.5;
+            for (let v = 0; v < 6; v++) {
+                const a = (v / 6) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * 2, Math.sin(a) * 2);
+                ctx.lineTo(Math.cos(a) * 5.5, Math.sin(a) * 4.5);
+                ctx.stroke();
+            }
+            // Slit pupil that tracks
+            ctx.fillStyle = flash ? '#fff' : '#000';
             ctx.beginPath();
-            ctx.arc(0, 0, 2, 0, Math.PI * 2);
+            ctx.ellipse(eyeTrackX, eyeTrackY, 1.5, 4, 0, 0, Math.PI * 2);
             ctx.fill();
+            // Writhing tentacles
+            ctx.strokeStyle = flash ? '#fff' : e.color1;
+            ctx.lineWidth = 2;
+            for (let tn = 0; tn < 6; tn++) {
+                const baseX = -12 + tn * 5;
+                const baseY = 13;
+                ctx.beginPath();
+                ctx.moveTo(baseX, baseY);
+                const wave1 = Math.sin(t * 3 + tn * 1.2) * 5;
+                const wave2 = Math.sin(t * 4 + tn * 0.8) * 3;
+                ctx.quadraticCurveTo(baseX + wave1, baseY + 8, baseX + wave2, baseY + 16);
+                ctx.stroke();
+            }
+            // Glowing aura
+            ctx.strokeStyle = flash ? '#fff' : `rgba(170, 0, 200, ${0.2 + pulse * 0.3})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 18 + pulse * 4, 16 + pulse * 3, 0, 0, Math.PI * 2);
+            ctx.stroke();
         }
 
         // HP bar for multi-hit enemies
@@ -1019,7 +1136,7 @@
 
     function startGame() {
         score = 0;
-        lives = 3;
+        lives = 5;
         wave = 1;
         paused = false;
         gameOver = false;
