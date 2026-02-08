@@ -208,6 +208,14 @@
                 <button class="color-btn" data-color="#ffffff" style="background:#ffffff;" title="White"></button>
                 <button class="color-btn" data-color="#ffff00" style="background:#ffff00;" title="Yellow"></button>
                 <button class="color-btn" data-color="#8844ff" style="background:#8844ff;" title="Purple"></button>
+                <button class="color-btn" data-color="#ff8888" style="background:#ff8888;" title="Salmon"></button>
+                <button class="color-btn" data-color="#88ffcc" style="background:#88ffcc;" title="Mint"></button>
+                <button class="color-btn" data-color="#4488ff" style="background:#4488ff;" title="Blue"></button>
+                <button class="color-btn" data-color="#ff6600" style="background:#ff6600;" title="Flame"></button>
+                <button class="color-btn" data-color="#00ff00" style="background:#00ff00;" title="Lime"></button>
+                <button class="color-btn" data-color="#cc88ff" style="background:#cc88ff;" title="Lavender"></button>
+                <button class="color-btn" data-color="#ff0066" style="background:#ff0066;" title="Hot Pink"></button>
+                <button class="color-btn" data-color="#66ffff" style="background:#66ffff;" title="Aqua"></button>
             </div>
             <button class="start-btn" id="startBtn">Start Game</button>
             <div class="controls-info">
@@ -1622,12 +1630,14 @@
         }
     }
 
-    let activePowerup = null;
-    let powerupTimer = 0;
+    let activePowerups = {}; // { rapid: 8, spread: 5, shield: 3 } etc
 
     function activatePowerup(type) {
-        activePowerup = type;
-        powerupTimer = 8; // 8 seconds
+        activePowerups[type] = (activePowerups[type] || 0) + 8; // add 8 seconds
+    }
+
+    function hasPowerup(type) {
+        return (activePowerups[type] || 0) > 0;
     }
 
     function drawPowerups() {
@@ -1690,7 +1700,7 @@
         for (let i = enemyBullets.length - 1; i >= 0; i--) {
             const b = enemyBullets[i];
             if (Math.abs(b.x - player.x) < player.w / 2 && Math.abs(b.y - player.y) < player.h / 2) {
-                if (activePowerup === 'shield') {
+                if (hasPowerup('shield')) {
                     enemyBullets.splice(i, 1);
                     spawnExplosion(b.x, b.y, '#00aaff', 8);
                 } else {
@@ -1704,7 +1714,7 @@
         for (const e of enemies) {
             if (Math.abs(e.x - player.x) < (e.w + player.w) / 2 &&
                 Math.abs(e.y - player.y) < (e.h + player.h) / 2) {
-                if (activePowerup === 'shield') {
+                if (hasPowerup('shield')) {
                     e.hp = 0;
                     score += e.score;
                     spawnExplosion(e.x, e.y, e.color1, 8);
@@ -1800,26 +1810,34 @@
         ctx.restore();
     }
 
-    // Draw active powerup indicator
-    function drawPowerupIndicator() {
-        if (!activePowerup || powerupTimer <= 0) return;
-        let color, label;
-        if (activePowerup === 'rapid') { color = '#00ff88'; label = 'RAPID FIRE'; }
-        else if (activePowerup === 'spread') { color = '#ff8800'; label = 'SPREAD SHOT'; }
-        else { color = '#00aaff'; label = 'INVINCIBLE'; }
+    // Draw active powerup indicators
+    const POWERUP_DISPLAY = {
+        rapid: { color: '#00ff88', label: 'RAPID FIRE' },
+        spread: { color: '#ff8800', label: 'SPREAD SHOT' },
+        shield: { color: '#00aaff', label: 'INVINCIBLE' }
+    };
 
+    function drawPowerupIndicator() {
+        const active = Object.keys(activePowerups);
+        if (active.length === 0) return;
         ctx.save();
-        ctx.fillStyle = color;
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 13px Arial';
         ctx.textAlign = 'center';
-        ctx.globalAlpha = 0.7 + 0.3 * Math.sin(Date.now() * 0.005);
-        ctx.fillText(`${label} ${powerupTimer.toFixed(1)}s`, W / 2, H - 10);
+        ctx.globalAlpha = 0.8;
+        let yOff = 0;
+        for (const type of active) {
+            const info = POWERUP_DISPLAY[type];
+            if (!info) continue;
+            ctx.fillStyle = info.color;
+            ctx.fillText(`${info.label} ${activePowerups[type].toFixed(1)}s`, W / 2, H - 10 - yOff);
+            yOff += 16;
+        }
         ctx.restore();
     }
 
     // Draw shield effect
     function drawShield() {
-        if (activePowerup !== 'shield') return;
+        if (!hasPowerup('shield')) return;
         ctx.save();
         ctx.strokeStyle = playerColor;
         ctx.lineWidth = 3;
@@ -1844,10 +1862,10 @@
             player.x = Math.max(player.w / 2, Math.min(W - player.w / 2, player.x));
 
             if (keys['Space'] && shootCooldown <= 0) {
-                const cooldownTime = activePowerup === 'rapid' ? 0.1 : 0.22;
+                const cooldownTime = hasPowerup('rapid') ? 0.1 : 0.22;
                 shootCooldown = cooldownTime;
 
-                if (activePowerup === 'spread') {
+                if (hasPowerup('spread')) {
                     bullets.push({ x: player.x, y: player.y - 14 });
                     bullets.push({ x: player.x - 10, y: player.y - 10 });
                     bullets.push({ x: player.x + 10, y: player.y - 10 });
@@ -1859,11 +1877,13 @@
             shootCooldown -= dt;
             if (invincibleTimer > 0) invincibleTimer -= dt;
 
-            // Powerup timer
-            if (activePowerup && powerupTimer > 0) {
-                powerupTimer -= dt;
-                if (powerupTimer <= 0) {
-                    activePowerup = null;
+            // Powerup timers
+            for (const type in activePowerups) {
+                if (activePowerups[type] > 0) {
+                    activePowerups[type] -= dt;
+                    if (activePowerups[type] <= 0) {
+                        delete activePowerups[type];
+                    }
                 }
             }
 
@@ -1921,8 +1941,7 @@
         gameOver = false;
         gameRunning = true;
         waveTransition = false;
-        activePowerup = null;
-        powerupTimer = 0;
+        activePowerups = {};
 
         bullets = [];
         enemyBullets = [];
