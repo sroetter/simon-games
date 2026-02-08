@@ -384,31 +384,35 @@
         grunt: { w: 26, h: 22, hp: 1, score: 100, color1: '#66cc44', color2: '#335522' },
         wasp: { w: 24, h: 20, hp: 1, score: 150, color1: '#ccaa00', color2: '#665500' },
         mid: { w: 30, h: 24, hp: 2, score: 250, color1: '#cc2222', color2: '#661111' },
+        worm: { w: 30, h: 20, hp: 2, score: 300, color1: '#cc6699', color2: '#882255' },
         skull: { w: 28, h: 26, hp: 3, score: 350, color1: '#bbbbbb', color2: '#555555' },
-        boss: { w: 34, h: 28, hp: 4, score: 500, color1: '#aa00cc', color2: '#550066' }
+        eye: { w: 30, h: 30, hp: 3, score: 400, color1: '#ff6600', color2: '#993300' },
+        crab: { w: 32, h: 24, hp: 4, score: 450, color1: '#22aacc', color2: '#115566' },
+        boss: { w: 34, h: 28, hp: 4, score: 500, color1: '#aa00cc', color2: '#550066' },
+        dragon: { w: 36, h: 30, hp: 6, score: 700, color1: '#ff2200', color2: '#881100' },
+        demon: { w: 38, h: 32, hp: 8, score: 1000, color1: '#440000', color2: '#220000' }
     };
 
-    // Monsters unlock progressively by wave
-    // Wave 1: grunts only (but more of them)
-    // Wave 2: wasps appear
-    // Wave 4: mids appear
-    // Wave 6: skulls appear
-    // Wave 8: bosses appear
-    // Wave 10+: everything, keeps getting harder
+    // New enemy every 2 waves
     function getAvailableTypes() {
         const types = ['grunt'];
         if (wave >= 2) types.push('wasp');
         if (wave >= 4) types.push('mid');
-        if (wave >= 6) types.push('skull');
-        if (wave >= 8) types.push('boss');
+        if (wave >= 6) types.push('worm');
+        if (wave >= 8) types.push('skull');
+        if (wave >= 10) types.push('eye');
+        if (wave >= 12) types.push('crab');
+        if (wave >= 14) types.push('boss');
+        if (wave >= 16) types.push('dragon');
+        if (wave >= 18) types.push('demon');
         return types;
     }
 
     function createEnemyFormation() {
         enemies = [];
         // Start with a solid grid, grows each wave
-        const cols = Math.min(9, 6 + Math.floor(wave / 3));
-        const rows = Math.min(6, 3 + Math.floor(wave / 3));
+        const cols = Math.min(9, 5 + Math.floor(wave / 2));
+        const rows = Math.min(6, 2 + Math.floor(wave / 2));
         const spacingX = 55;
         const spacingY = 42;
         const offsetX = (W - (cols - 1) * spacingX) / 2;
@@ -429,8 +433,8 @@
                     targetY: offsetY + r * spacingY,
                     w: et.w,
                     h: et.h,
-                    hp: et.hp + Math.floor(wave / 5),
-                    maxHp: et.hp + Math.floor(wave / 5),
+                    hp: et.hp + Math.floor(wave / 3),
+                    maxHp: et.hp + Math.floor(wave / 3),
                     score: et.score + wave * 10,
                     type: type,
                     color1: et.color1,
@@ -448,7 +452,7 @@
         }
 
         enemyDir = 1;
-        enemySpeed = 0.3 + wave * 0.1;
+        enemySpeed = 0.4 + wave * 0.15;
         enemyShootTimer = 0;
     }
 
@@ -633,6 +637,47 @@
             ctx.moveTo(-3, 3); ctx.lineTo(-2, 6); ctx.lineTo(-1, 3);
             ctx.moveTo(1, 3); ctx.lineTo(2, 6); ctx.lineTo(3, 3);
             ctx.fill();
+        } else if (e.type === 'worm') {
+            // Brain worm - segmented pulsing worm with exposed brain
+            const pulse = Math.sin(t * 4) * 0.2;
+            // Segments
+            for (let s = 3; s >= 0; s--) {
+                const sx = Math.sin(t * 3 + s * 1.2) * 3;
+                const segSize = 5 + (3 - s) * 1.5 + pulse;
+                ctx.fillStyle = flash ? '#fff' : (s === 0 ? e.color1 : `hsl(330, 50%, ${30 + s * 10}%)`);
+                ctx.beginPath();
+                ctx.ellipse(sx, -8 + s * 6, segSize, 4.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // Brain bulge on head
+            ctx.fillStyle = flash ? '#fff' : '#ee88aa';
+            ctx.beginPath();
+            ctx.ellipse(Math.sin(t * 3) * 3, -10, 7 + pulse * 2, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Brain folds
+            ctx.strokeStyle = flash ? '#fff' : '#cc5577';
+            ctx.lineWidth = 0.8;
+            for (let f = 0; f < 3; f++) {
+                ctx.beginPath();
+                const fx = Math.sin(t * 3) * 3;
+                ctx.arc(fx - 3 + f * 3, -11, 3, 0.5, 2.5);
+                ctx.stroke();
+            }
+            // Tiny evil eyes
+            const eg = 0.5 + 0.5 * Math.sin(t * 7);
+            ctx.fillStyle = flash ? '#fff' : `rgba(255, 255, 0, ${eg})`;
+            ctx.beginPath();
+            ctx.arc(Math.sin(t * 3) * 3 - 3, -8, 1.5, 0, Math.PI * 2);
+            ctx.arc(Math.sin(t * 3) * 3 + 3, -8, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            // Tail stinger
+            ctx.fillStyle = flash ? '#fff' : '#ff4488';
+            ctx.beginPath();
+            ctx.moveTo(Math.sin(t * 3 + 3.6) * 3 - 2, 12);
+            ctx.lineTo(Math.sin(t * 3 + 3.6) * 3, 18 + Math.sin(t * 5) * 2);
+            ctx.lineTo(Math.sin(t * 3 + 3.6) * 3 + 2, 12);
+            ctx.closePath();
+            ctx.fill();
         } else if (e.type === 'skull') {
             // Floating demon skull
             const pulse = Math.sin(t * 3) * 0.15;
@@ -768,6 +813,234 @@
             ctx.beginPath();
             ctx.ellipse(0, 0, 18 + pulse * 4, 16 + pulse * 3, 0, 0, Math.PI * 2);
             ctx.stroke();
+        } else if (e.type === 'eye') {
+            // Giant floating evil eye
+            const pulse = Math.sin(t * 2.5) * 0.2;
+            const irisAngle = t * 0.5;
+            // Outer eye white
+            ctx.fillStyle = flash ? '#fff' : '#ffeecc';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 14 + pulse * 3, 11, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Bloodshot veins
+            ctx.strokeStyle = flash ? '#fff' : 'rgba(200, 0, 0, 0.5)';
+            ctx.lineWidth = 0.6;
+            for (let v = 0; v < 8; v++) {
+                const a = (v / 8) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * 5, Math.sin(a) * 4);
+                ctx.quadraticCurveTo(Math.cos(a) * 10 + Math.sin(t + v) * 1, Math.sin(a) * 8, Math.cos(a) * 13, Math.sin(a) * 10);
+                ctx.stroke();
+            }
+            // Iris
+            ctx.fillStyle = flash ? '#fff' : e.color1;
+            ctx.beginPath();
+            ctx.arc(Math.sin(irisAngle) * 3, Math.cos(irisAngle) * 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            // Pupil - slit
+            ctx.fillStyle = flash ? '#fff' : '#000';
+            ctx.beginPath();
+            ctx.ellipse(Math.sin(irisAngle) * 3, Math.cos(irisAngle) * 2, 1.5, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Eyelid shadow
+            ctx.fillStyle = flash ? '#fff' : `rgba(100, 30, 0, ${0.3 + pulse * 0.5})`;
+            ctx.beginPath();
+            ctx.ellipse(0, -8, 14, 5, 0, 0, Math.PI);
+            ctx.fill();
+            // Tear/ichor drip
+            ctx.fillStyle = flash ? '#fff' : 'rgba(180, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(-5, 10 + (t * 2) % 4, 1.5, 2 + (t * 2) % 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (e.type === 'crab') {
+            // Armored alien crab with snapping claws
+            const pulse = Math.sin(t * 3) * 0.15;
+            const clawSnap = Math.abs(Math.sin(t * 4)) * 0.5;
+            // Shell
+            ctx.fillStyle = flash ? '#fff' : e.color1;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 14 + pulse * 2, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Shell armor plates
+            ctx.strokeStyle = flash ? '#fff' : e.color2;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(0, -1, 10, 6, 0, 0, Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(0, 1, 8, 4, 0, Math.PI, Math.PI * 2);
+            ctx.stroke();
+            // Left claw
+            ctx.fillStyle = flash ? '#fff' : e.color1;
+            ctx.beginPath();
+            ctx.moveTo(-13, -2);
+            ctx.lineTo(-19, -6 - clawSnap * 5);
+            ctx.lineTo(-16, -2);
+            ctx.lineTo(-19, 2 + clawSnap * 5);
+            ctx.closePath();
+            ctx.fill();
+            // Right claw
+            ctx.beginPath();
+            ctx.moveTo(13, -2);
+            ctx.lineTo(19, -6 - clawSnap * 5);
+            ctx.lineTo(16, -2);
+            ctx.lineTo(19, 2 + clawSnap * 5);
+            ctx.closePath();
+            ctx.fill();
+            // Legs
+            ctx.strokeStyle = flash ? '#fff' : e.color2;
+            ctx.lineWidth = 1.2;
+            for (let leg = 0; leg < 3; leg++) {
+                const la = Math.sin(t * 4 + leg * 1.5) * 2;
+                ctx.beginPath();
+                ctx.moveTo(-10 + leg * 2, 8);
+                ctx.lineTo(-13 + leg, 14 + la);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(10 - leg * 2, 8);
+                ctx.lineTo(13 - leg, 14 + la);
+                ctx.stroke();
+            }
+            // Eyes on stalks
+            ctx.strokeStyle = flash ? '#fff' : e.color1;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(-5, -8); ctx.lineTo(-6, -14); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(5, -8); ctx.lineTo(6, -14); ctx.stroke();
+            ctx.fillStyle = flash ? '#fff' : '#ff0000';
+            ctx.beginPath();
+            ctx.arc(-6, -14, 2, 0, Math.PI * 2);
+            ctx.arc(6, -14, 2, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (e.type === 'dragon') {
+            // Fire dragon with flapping wings and flame breath
+            const pulse = Math.sin(t * 2) * 0.2;
+            const wingFlap2 = Math.sin(t * 4) * 0.3;
+            // Body
+            ctx.fillStyle = flash ? '#fff' : e.color1;
+            ctx.beginPath();
+            ctx.ellipse(0, 2, 10, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Scales
+            ctx.fillStyle = flash ? '#fff' : e.color2;
+            for (let s = 0; s < 4; s++) {
+                ctx.beginPath();
+                ctx.arc(0, -6 + s * 5, 4, 0.3, 2.8);
+                ctx.fill();
+            }
+            // Wings
+            ctx.fillStyle = flash ? '#fff' : '#cc4400';
+            const wf2 = wingFlap2 * 15;
+            ctx.beginPath();
+            ctx.moveTo(-8, -4);
+            ctx.lineTo(-22, -12 + wf2);
+            ctx.lineTo(-18, 0 + wf2);
+            ctx.lineTo(-8, 4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(8, -4);
+            ctx.lineTo(22, -12 + wf2);
+            ctx.lineTo(18, 0 + wf2);
+            ctx.lineTo(8, 4);
+            ctx.closePath();
+            ctx.fill();
+            // Head with horns
+            ctx.fillStyle = flash ? '#fff' : e.color1;
+            ctx.beginPath();
+            ctx.ellipse(0, -12, 6, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = flash ? '#fff' : '#ffaa00';
+            ctx.beginPath();
+            ctx.moveTo(-4, -16); ctx.lineTo(-6, -22); ctx.lineTo(-2, -17);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(4, -16); ctx.lineTo(6, -22); ctx.lineTo(2, -17);
+            ctx.fill();
+            // Glowing eyes
+            const eg = 0.5 + 0.5 * Math.sin(t * 6);
+            ctx.fillStyle = flash ? '#fff' : `rgba(255, 200, 0, ${eg})`;
+            ctx.beginPath();
+            ctx.arc(-3, -13, 1.5, 0, Math.PI * 2);
+            ctx.arc(3, -13, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            // Flame from mouth
+            ctx.fillStyle = flash ? '#fff' : `rgba(255, ${100 + Math.floor(Math.sin(t * 8) * 50)}, 0, 0.7)`;
+            ctx.beginPath();
+            ctx.moveTo(-2, -7);
+            ctx.quadraticCurveTo(0, -4, 2, -7);
+            ctx.quadraticCurveTo(0, -2 + Math.sin(t * 6) * 2, 0, -7);
+            ctx.fill();
+            // Tail
+            ctx.strokeStyle = flash ? '#fff' : e.color1;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(0, 13);
+            ctx.quadraticCurveTo(8 + Math.sin(t * 3) * 4, 18, 4 + Math.sin(t * 2) * 6, 24);
+            ctx.stroke();
+        } else if (e.type === 'demon') {
+            // Arch demon - massive horned nightmare
+            const pulse = Math.sin(t * 1.5) * 0.2;
+            // Dark body
+            ctx.fillStyle = flash ? '#fff' : e.color1;
+            ctx.beginPath();
+            ctx.moveTo(0, -16);
+            ctx.quadraticCurveTo(-18, -8, -16, 6);
+            ctx.quadraticCurveTo(-14, 16, 0, 16);
+            ctx.quadraticCurveTo(14, 16, 16, 6);
+            ctx.quadraticCurveTo(18, -8, 0, -16);
+            ctx.fill();
+            // Inner hellfire
+            ctx.fillStyle = flash ? '#fff' : `rgba(255, ${50 + Math.floor(Math.sin(t * 4) * 50)}, 0, 0.6)`;
+            ctx.beginPath();
+            ctx.ellipse(0, 2, 10 + pulse * 4, 9 + pulse * 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Massive horns
+            ctx.fillStyle = flash ? '#fff' : '#331111';
+            ctx.beginPath();
+            ctx.moveTo(-8, -14);
+            ctx.quadraticCurveTo(-14, -26, -18, -28 + Math.sin(t) * 2);
+            ctx.lineTo(-10, -16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(8, -14);
+            ctx.quadraticCurveTo(14, -26, 18, -28 + Math.sin(t) * 2);
+            ctx.lineTo(10, -16);
+            ctx.closePath();
+            ctx.fill();
+            // Multiple eyes in a row
+            for (let de = 0; de < 5; de++) {
+                const ex = -8 + de * 4;
+                const eyeFlicker = 0.3 + 0.7 * Math.sin(t * 5 + de * 1.3);
+                ctx.fillStyle = flash ? '#fff' : `rgba(255, 0, 0, ${eyeFlicker})`;
+                ctx.shadowColor = '#ff0000';
+                ctx.shadowBlur = flash ? 0 : 6;
+                ctx.beginPath();
+                ctx.arc(ex, -6, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+            // Jagged mouth
+            ctx.fillStyle = flash ? '#fff' : '#000';
+            ctx.beginPath();
+            ctx.moveTo(-8, 2);
+            for (let tooth = 0; tooth < 5; tooth++) {
+                ctx.lineTo(-6 + tooth * 3, 5 + (tooth % 2) * 3);
+            }
+            ctx.lineTo(8, 2);
+            ctx.closePath();
+            ctx.fill();
+            // Hell flames around body
+            ctx.strokeStyle = flash ? '#fff' : `rgba(255, 100, 0, ${0.3 + pulse * 0.4})`;
+            ctx.lineWidth = 1.5;
+            for (let fl = 0; fl < 6; fl++) {
+                const fa = (fl / 6) * Math.PI * 2 + t * 1.5;
+                const fr = 16 + pulse * 5;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(fa) * fr, Math.sin(fa) * fr);
+                ctx.lineTo(Math.cos(fa) * (fr + 6 + Math.sin(t * 4 + fl) * 3), Math.sin(fa) * (fr + 6));
+                ctx.stroke();
+            }
         }
 
         // HP bar for multi-hit enemies
@@ -859,7 +1132,8 @@
 
                 // Enemy shoots during swoop
                 if (e.swoopT > 0.2 && e.swoopT < 0.5 && Math.random() < 0.02) {
-                    const swoopStyle = e.type === 'boss' ? 'plasma' : e.type === 'skull' ? 'ghost' : e.type === 'wasp' ? 'stinger' : e.type === 'mid' ? 'blood' : 'acid';
+                    const swoopStyles = { boss: 'plasma', skull: 'ghost', wasp: 'stinger', mid: 'blood', worm: 'parasite', eye: 'laser', crab: 'bubble', dragon: 'dragonfire', demon: 'hellfire', grunt: 'acid' };
+                    const swoopStyle = swoopStyles[e.type] || 'acid';
                     enemyBullets.push({
                         x: e.x,
                         y: e.y + e.h / 2,
@@ -877,7 +1151,7 @@
         }
 
         // Random swooping
-        const swoopChance = 0.003 + wave * 0.002;
+        const swoopChance = 0.005 + wave * 0.003;
         for (const e of enemies) {
             if (!e.swooping && !e.entering && Math.random() < swoopChance * dt) {
                 startSwoop(e);
@@ -890,7 +1164,7 @@
             const formationEnemies = enemies.filter(e => !e.swooping && !e.entering);
             if (formationEnemies.length > 0) {
                 const shooter = formationEnemies[Math.floor(Math.random() * formationEnemies.length)];
-                const speed = 1.6 + wave * 0.12;
+                const speed = 1.8 + wave * 0.2;
                 const dx = player.x - shooter.x;
                 const dy = player.y - shooter.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -936,6 +1210,36 @@
                         style: 'ghost',
                         age: 0, maxAge: 3.5
                     });
+                } else if (shooter.type === 'worm') {
+                    // Worm: shoots a bouncing brain parasite
+                    enemyBullets.push({
+                        x: shooter.x, y: shooter.y + shooter.h / 2,
+                        vx: (dx / dist) * speed * 0.4,
+                        vy: speed * 0.6,
+                        style: 'parasite',
+                        age: 0, bounces: 0
+                    });
+                } else if (shooter.type === 'eye') {
+                    // Eye: laser beam - fast narrow line aimed at player
+                    enemyBullets.push({
+                        x: shooter.x, y: shooter.y + shooter.h / 2,
+                        vx: (dx / dist) * speed * 0.7,
+                        vy: (dy / dist) * speed * 0.7,
+                        style: 'laser',
+                        age: 0
+                    });
+                } else if (shooter.type === 'crab') {
+                    // Crab: shoots 2 bubble projectiles that float side to side
+                    enemyBullets.push({
+                        x: shooter.x - 8, y: shooter.y,
+                        vx: -0.8, vy: speed * 0.55,
+                        style: 'bubble', age: 0
+                    });
+                    enemyBullets.push({
+                        x: shooter.x + 8, y: shooter.y,
+                        vx: 0.8, vy: speed * 0.55,
+                        style: 'bubble', age: 0
+                    });
                 } else if (shooter.type === 'boss') {
                     // Boss: plasma ring that expands outward in a circle
                     const ringSpeed = speed * 0.6;
@@ -949,9 +1253,32 @@
                             age: 0
                         });
                     }
+                } else if (shooter.type === 'dragon') {
+                    // Dragon: fire breath - 3 fireballs that spread and fall
+                    for (let f = -1; f <= 1; f++) {
+                        enemyBullets.push({
+                            x: shooter.x, y: shooter.y + shooter.h / 2,
+                            vx: f * 1.8 + (dx / dist) * speed * 0.15,
+                            vy: speed * 0.65,
+                            style: 'dragonfire',
+                            age: 0
+                        });
+                    }
+                } else if (shooter.type === 'demon') {
+                    // Demon: hellfire burst - ring of 8 slow embers
+                    for (let a = 0; a < 8; a++) {
+                        const angle = (a / 8) * Math.PI * 2;
+                        enemyBullets.push({
+                            x: shooter.x, y: shooter.y,
+                            vx: Math.cos(angle) * speed * 0.35,
+                            vy: Math.sin(angle) * speed * 0.35 + speed * 0.3,
+                            style: 'hellfire',
+                            age: 0
+                        });
+                    }
                 }
             }
-            enemyShootTimer = Math.max(0.6, 2.2 - wave * 0.07);
+            enemyShootTimer = Math.max(0.35, 1.8 - wave * 0.1);
         }
     }
 
@@ -1012,11 +1339,36 @@
                 eb.x += eb.vx;
                 eb.y += eb.vy;
             } else if (eb.style === 'plasma') {
-                // Plasma ring pieces: just fly outward
                 eb.x += eb.vx;
                 eb.y += eb.vy;
+            } else if (eb.style === 'parasite') {
+                // Bounces off side walls
+                eb.x += eb.vx;
+                eb.y += eb.vy;
+                if (eb.x < 5 || eb.x > W - 5) {
+                    eb.vx *= -1;
+                    eb.bounces++;
+                    if (eb.bounces > 3) { enemyBullets.splice(i, 1); continue; }
+                }
+            } else if (eb.style === 'laser') {
+                eb.x += eb.vx;
+                eb.y += eb.vy;
+            } else if (eb.style === 'bubble') {
+                // Float side to side
+                eb.age += dt * 3;
+                eb.x += Math.sin(eb.age * 2) * 1.2;
+                eb.y += eb.vy;
+            } else if (eb.style === 'dragonfire') {
+                // Slightly affected by gravity
+                eb.vy += 0.8 * dt;
+                eb.x += eb.vx;
+                eb.y += eb.vy;
+            } else if (eb.style === 'hellfire') {
+                // Slow embers that drift
+                eb.x += eb.vx;
+                eb.y += eb.vy;
+                eb.vx *= 0.998;
             } else {
-                // acid_drop and default
                 eb.x += eb.vx;
                 eb.y += eb.vy;
             }
@@ -1159,6 +1511,87 @@
                     ctx.lineTo(b.x + Math.cos(la) * 8 + (Math.random()-0.5)*2, b.y + Math.sin(la) * 8 + (Math.random()-0.5)*2);
                     ctx.stroke();
                 }
+            } else if (b.style === 'parasite') {
+                // Worm parasite: pulsing pink brain blob
+                const pp = Math.sin(now * 0.012) * 1.5;
+                ctx.fillStyle = '#ee66aa';
+                ctx.shadowColor = '#ff44aa';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.ellipse(b.x, b.y, 4 + pp, 3.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#cc4488';
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y - 1, 2.5, 0.3, 2.8);
+                ctx.stroke();
+            } else if (b.style === 'laser') {
+                // Eye laser: bright orange beam
+                ctx.strokeStyle = '#ff8800';
+                ctx.shadowColor = '#ff4400';
+                ctx.shadowBlur = 10;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(b.x - b.vx * 3, b.y - b.vy * 3);
+                ctx.lineTo(b.x + b.vx * 2, b.y + b.vy * 2);
+                ctx.stroke();
+                ctx.strokeStyle = '#ffcc44';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(b.x - b.vx * 2, b.y - b.vy * 2);
+                ctx.lineTo(b.x + b.vx * 1, b.y + b.vy * 1);
+                ctx.stroke();
+            } else if (b.style === 'bubble') {
+                // Crab bubble: shimmering toxic bubble
+                const bub = Math.sin(now * 0.01 + b.x) * 1;
+                ctx.strokeStyle = '#44ddff';
+                ctx.shadowColor = '#22aacc';
+                ctx.shadowBlur = 8;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 5 + bub, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(50, 200, 255, 0.2)';
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(b.x - 2, b.y - 2, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (b.style === 'dragonfire') {
+                // Dragon fire: flickering orange-red fireball
+                const ff = Math.sin(now * 0.015 + b.y * 0.1) * 2;
+                ctx.fillStyle = '#ff4400';
+                ctx.shadowColor = '#ff2200';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 5 + ff, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffaa00';
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffee66';
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 1, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (b.style === 'hellfire') {
+                // Demon hellfire: dark red embers with smoke
+                const hf = Math.sin(now * 0.008 + b.x * 0.05) * 1.5;
+                ctx.fillStyle = '#881100';
+                ctx.shadowColor = '#ff2200';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 3.5 + hf, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                // Smoke trail
+                ctx.fillStyle = `rgba(60, 20, 0, ${0.3 + Math.sin(now * 0.006) * 0.2})`;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y - 5, 2.5, 0, Math.PI * 2);
+                ctx.fill();
             } else {
                 // Fallback
                 ctx.fillStyle = '#ff4444';
@@ -1390,8 +1823,13 @@
     const NEW_ENEMY_WAVES = {
         2: 'WASP',
         4: 'FLESH-MOTH',
-        6: 'DEMON SKULL',
-        8: 'ELDRITCH BOSS'
+        6: 'BRAIN WORM',
+        8: 'DEMON SKULL',
+        10: 'EVIL EYE',
+        12: 'TERROR CRAB',
+        14: 'ELDRITCH BOSS',
+        16: 'FIRE DRAGON',
+        18: 'ARCH DEMON'
     };
 
     function drawWaveTransition() {
