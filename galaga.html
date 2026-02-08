@@ -388,33 +388,49 @@
         boss: { w: 34, h: 28, hp: 4, score: 500, color1: '#aa00cc', color2: '#550066' }
     };
 
+    // Monsters unlock progressively by wave
+    // Wave 1: grunts only (but more of them)
+    // Wave 2: wasps appear
+    // Wave 4: mids appear
+    // Wave 6: skulls appear
+    // Wave 8: bosses appear
+    // Wave 10+: everything, keeps getting harder
+    function getAvailableTypes() {
+        const types = ['grunt'];
+        if (wave >= 2) types.push('wasp');
+        if (wave >= 4) types.push('mid');
+        if (wave >= 6) types.push('skull');
+        if (wave >= 8) types.push('boss');
+        return types;
+    }
+
     function createEnemyFormation() {
         enemies = [];
-        const cols = Math.min(8, 6 + Math.floor(wave / 3));
-        const rows = Math.min(5, 3 + Math.floor(wave / 2));
+        // Start with a solid grid, grows each wave
+        const cols = Math.min(9, 6 + Math.floor(wave / 3));
+        const rows = Math.min(6, 3 + Math.floor(wave / 3));
         const spacingX = 55;
         const spacingY = 42;
         const offsetX = (W - (cols - 1) * spacingX) / 2;
         const offsetY = 50;
 
+        const available = getAvailableTypes();
+
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                let type;
-                if (r === 0) type = 'boss';
-                else if (r === 1) type = 'skull';
-                else if (r === 2) type = 'mid';
-                else if (r === 3) type = 'wasp';
-                else type = 'grunt';
+                // Tougher monsters go in front rows, weaker in back
+                const rowIndex = Math.min(r, available.length - 1);
+                const type = available[available.length - 1 - rowIndex];
 
                 const et = ENEMY_TYPES[type];
                 enemies.push({
                     x: offsetX + c * spacingX,
-                    y: -50 - r * 30,  // start above screen, animate in
+                    y: -50 - r * 30,
                     targetY: offsetY + r * spacingY,
                     w: et.w,
                     h: et.h,
-                    hp: et.hp + Math.floor(wave / 4),
-                    maxHp: et.hp + Math.floor(wave / 4),
+                    hp: et.hp + Math.floor(wave / 5),
+                    maxHp: et.hp + Math.floor(wave / 5),
                     score: et.score + wave * 10,
                     type: type,
                     color1: et.color1,
@@ -432,7 +448,7 @@
         }
 
         enemyDir = 1;
-        enemySpeed = 0.3 + wave * 0.08;
+        enemySpeed = 0.3 + wave * 0.1;
         enemyShootTimer = 0;
     }
 
@@ -861,7 +877,7 @@
         }
 
         // Random swooping
-        const swoopChance = 0.003 + wave * 0.001;
+        const swoopChance = 0.003 + wave * 0.002;
         for (const e of enemies) {
             if (!e.swooping && !e.entering && Math.random() < swoopChance * dt) {
                 startSwoop(e);
@@ -889,12 +905,13 @@
                         age: 0, split: false
                     });
                 } else if (shooter.type === 'wasp') {
-                    // Wasp: quick 3-shot burst with slight delay between each
+                    // Wasp: quick 3-shot burst that angles toward the player
+                    const waspAngle = Math.atan2(dy, dx);
                     for (let burst = 0; burst < 3; burst++) {
                         enemyBullets.push({
                             x: shooter.x, y: shooter.y + shooter.h / 2,
-                            vx: 0,
-                            vy: speed * 1.1,
+                            vx: Math.cos(waspAngle) * speed * 0.5,
+                            vy: Math.sin(waspAngle) * speed * 0.5 + speed * 0.6,
                             style: 'stinger',
                             delay: burst * 0.12,
                             active: burst === 0
@@ -920,11 +937,10 @@
                         age: 0, maxAge: 3.5
                     });
                 } else if (shooter.type === 'boss') {
-                    // Boss: 5 plasma bolts aimed toward player in a spread
-                    const baseAngle = Math.atan2(dy, dx);
+                    // Boss: plasma ring that expands outward in a circle
                     const ringSpeed = speed * 0.6;
-                    for (let a = -2; a <= 2; a++) {
-                        const angle = baseAngle + a * 0.15;
+                    for (let a = 0; a < 5; a++) {
+                        const angle = (a / 5) * Math.PI * 0.8 + Math.PI * 0.6;
                         enemyBullets.push({
                             x: shooter.x, y: shooter.y + shooter.h / 2,
                             vx: Math.cos(angle) * ringSpeed,
@@ -1371,6 +1387,13 @@
         }
     }
 
+    const NEW_ENEMY_WAVES = {
+        2: 'WASP',
+        4: 'FLESH-MOTH',
+        6: 'DEMON SKULL',
+        8: 'ELDRITCH BOSS'
+    };
+
     function drawWaveTransition() {
         if (!waveTransition) return;
         ctx.save();
@@ -1380,7 +1403,20 @@
         ctx.textBaseline = 'middle';
         ctx.shadowColor = '#ffff00';
         ctx.shadowBlur = 20;
-        ctx.fillText(`WAVE ${wave + 1}`, W / 2, H / 2);
+        ctx.fillText(`WAVE ${wave + 1}`, W / 2, H / 2 - 20);
+
+        // Show new enemy warning
+        const nextWave = wave + 1;
+        if (NEW_ENEMY_WAVES[nextWave]) {
+            ctx.fillStyle = '#ff4444';
+            ctx.font = 'bold 22px Arial';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 15;
+            const blink = Math.sin(Date.now() * 0.008) > 0;
+            if (blink) {
+                ctx.fillText(`NEW ENEMY: ${NEW_ENEMY_WAVES[nextWave]}!`, W / 2, H / 2 + 25);
+            }
+        }
         ctx.restore();
     }
 
