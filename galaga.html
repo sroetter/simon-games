@@ -202,7 +202,7 @@
             <div class="color-picker" id="colorPicker">
                 <button class="color-btn selected" data-color="#00ddff" style="background:#00ddff;" title="Cyan"></button>
                 <button class="color-btn" data-color="#ff4444" style="background:#ff4444;" title="Red"></button>
-                <button class="color-btn" data-color="#44ff44" style="background:#44ff44;" title="Green"></button>
+                <button class="color-btn" data-color="#22aa22" style="background:#22aa22;" title="Green"></button>
                 <button class="color-btn" data-color="#ffaa00" style="background:#ffaa00;" title="Orange"></button>
                 <button class="color-btn" data-color="#ff44ff" style="background:#ff44ff;" title="Pink"></button>
                 <button class="color-btn" data-color="#ffffff" style="background:#ffffff;" title="White"></button>
@@ -212,7 +212,7 @@
                 <button class="color-btn" data-color="#88ffcc" style="background:#88ffcc;" title="Mint"></button>
                 <button class="color-btn" data-color="#4488ff" style="background:#4488ff;" title="Blue"></button>
                 <button class="color-btn" data-color="#ff6600" style="background:#ff6600;" title="Flame"></button>
-                <button class="color-btn" data-color="#00ff00" style="background:#00ff00;" title="Lime"></button>
+                <button class="color-btn" data-color="#33cc33" style="background:#33cc33;" title="Lime"></button>
                 <button class="color-btn" data-color="#cc88ff" style="background:#cc88ff;" title="Lavender"></button>
                 <button class="color-btn" data-color="#ff0066" style="background:#ff0066;" title="Hot Pink"></button>
                 <button class="color-btn" data-color="#66ffff" style="background:#66ffff;" title="Aqua"></button>
@@ -1431,7 +1431,7 @@
 
     function drawBullets() {
         // Player bullets
-        ctx.fillStyle = '#00ffff';
+        ctx.fillStyle = playerColor;
         for (const b of bullets) {
             ctx.fillRect(b.x - 2, b.y - 6, 4, 12);
         }
@@ -1598,7 +1598,7 @@
 
     // Powerups
     function spawnPowerup(x, y) {
-        if (Math.random() < 0.08) {
+        if (Math.random() < 0.06) {
             const types = ['rapid', 'spread', 'shield'];
             powerups.push({
                 x, y,
