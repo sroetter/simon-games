@@ -1144,13 +1144,7 @@
             }
         }
 
-        // Random swooping
-        const swoopChance = 0.005 + wave * 0.003;
-        for (const e of enemies) {
-            if (!e.swooping && !e.entering && Math.random() < swoopChance * dt) {
-                startSwoop(e);
-            }
-        }
+        // Swooping disabled - enemies stay in formation
 
         // Enemy shooting from formation - each type has a different attack
         enemyShootTimer -= dt;
@@ -1592,7 +1586,7 @@
             let label;
             if (p.type === 'rapid') { color = '#00ff88'; label = 'R'; }
             else if (p.type === 'spread') { color = '#ff8800'; label = 'S'; }
-            else { color = '#00aaff'; label = 'H'; }
+            else { color = '#00aaff'; label = 'I'; }
 
             ctx.shadowColor = color;
             ctx.shadowBlur = 10 + glow * 10;
@@ -1762,7 +1756,7 @@
         let color, label;
         if (activePowerup === 'rapid') { color = '#00ff88'; label = 'RAPID FIRE'; }
         else if (activePowerup === 'spread') { color = '#ff8800'; label = 'SPREAD SHOT'; }
-        else { color = '#00aaff'; label = 'SHIELD'; }
+        else { color = '#00aaff'; label = 'INVINCIBLE'; }
 
         ctx.save();
         ctx.fillStyle = color;
