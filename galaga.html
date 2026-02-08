@@ -848,7 +848,7 @@
                         x: e.x,
                         y: e.y + e.h / 2,
                         vx: (player.x - e.x) * 0.01,
-                        vy: 3 + wave * 0.2,
+                        vy: 2 + wave * 0.12,
                         style: swoopStyle,
                         age: 0, split: false, active: true,
                         maxAge: swoopStyle === 'ghost' ? 3.5 : 99
@@ -874,7 +874,7 @@
             const formationEnemies = enemies.filter(e => !e.swooping && !e.entering);
             if (formationEnemies.length > 0) {
                 const shooter = formationEnemies[Math.floor(Math.random() * formationEnemies.length)];
-                const speed = 2.5 + wave * 0.2;
+                const speed = 1.6 + wave * 0.12;
                 const dx = player.x - shooter.x;
                 const dy = player.y - shooter.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -920,10 +920,11 @@
                         age: 0, maxAge: 3.5
                     });
                 } else if (shooter.type === 'boss') {
-                    // Boss: plasma ring that expands outward in a circle
+                    // Boss: 5 plasma bolts aimed toward player in a spread
+                    const baseAngle = Math.atan2(dy, dx);
                     const ringSpeed = speed * 0.6;
-                    for (let a = 0; a < 5; a++) {
-                        const angle = (a / 5) * Math.PI * 0.8 + Math.PI * 0.6;
+                    for (let a = -2; a <= 2; a++) {
+                        const angle = baseAngle + a * 0.15;
                         enemyBullets.push({
                             x: shooter.x, y: shooter.y + shooter.h / 2,
                             vx: Math.cos(angle) * ringSpeed,
@@ -934,7 +935,7 @@
                     }
                 }
             }
-            enemyShootTimer = Math.max(0.4, 1.6 - wave * 0.07);
+            enemyShootTimer = Math.max(0.6, 2.2 - wave * 0.07);
         }
     }
 
