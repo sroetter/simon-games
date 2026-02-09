@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Builder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+        .game-container {
+            background: rgba(0,0,20,0.9);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 0 40px rgba(50,100,255,0.2);
+            border: 1px solid rgba(100,100,255,0.15);
+            max-width: 820px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            background: linear-gradient(135deg, #4CAF50, #8BC34A, #FFD54F);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: 3px;
+        }
+        .screen { display: none; text-align: center; }
+        .screen.active { display: block; }
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 4px;
+            color: #fff;
+            font-size: 15px;
+            font-family: monospace;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .hud-item { display: flex; align-items: center; gap: 5px; }
+        .hud .money { color: #FFD54F; }
+        .hud .pop { color: #64B5F6; }
+        .hud .happy { color: #81C784; }
+        .hud .day { color: #CE93D8; }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 2px solid rgba(100,150,100,0.3);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .toolbar {
+            display: flex;
+            gap: 6px;
+            padding: 10px 4px 4px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .tool-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 11px;
+            min-width: 64px;
+        }
+        .tool-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .tool-btn.selected { border-color: #4CAF50; background: rgba(76,175,80,0.2); color: #fff; }
+        .tool-btn .icon { font-size: 24px; margin-bottom: 2px; }
+        .tool-btn .cost { color: #FFD54F; font-size: 10px; }
+        .start-btn, .restart-btn {
+            display: inline-block;
+            padding: 14px 44px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 15px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .start-btn:hover, .restart-btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(76,175,80,0.4); }
+        .menu-sub { color: #8888aa; font-size: 15px; margin: 15px 0; line-height: 1.8; }
+        .menu-sub span { color: #aaa; }
+        .back-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #8888cc;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back-link:hover { color: #4CAF50; }
+        .speed-controls {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 0 0;
+        }
+        .speed-btn {
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .speed-btn.active { border-color: #4CAF50; color: #4CAF50; }
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,20,0.95);
+            border: 1px solid rgba(100,150,100,0.4);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #ccc;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 10;
+            max-width: 200px;
+            line-height: 1.5;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>City Builder</h1>
+
+        <div class="screen active" id="menuScreen">
+            <div class="menu-sub">
+                Build your dream city from scratch!<br>
+                <span>Place buildings, grow your population, and keep citizens happy.</span><br>
+                <span>Earn money from taxes and shops to expand further.</span>
+            </div>
+            <button class="start-btn" id="startBtn">Build City</button>
+            <br>
+            <a href="index.html" class="back-link">&larr; Back to Game Gallery</a>
+        </div>
+
+        <div class="screen" id="gameScreen">
+            <div class="hud">
+                <div class="hud-item money">💰 $<span id="moneyDisplay">5000</span></div>
+                <div class="hud-item pop">👥 <span id="popDisplay">0</span></div>
+                <div class="hud-item happy">😊 <span id="happyDisplay">50</span>%</div>
+                <div class="hud-item day">📅 Day <span id="dayDisplay">1</span></div>
+            </div>
+            <canvas id="gameCanvas" width="640" height="480"></canvas>
+            <div class="toolbar" id="toolbar"></div>
+            <div class="speed-controls">
+                <button class="speed-btn active" data-speed="1">▶ 1x</button>
+                <button class="speed-btn" data-speed="2">▶▶ 2x</button>
+                <button class="speed-btn" data-speed="4">▶▶▶ 4x</button>
+            </div>
+        </div>
+
+        <div class="screen" id="gameOverScreen">
+            <div style="font-size:36px; color:#ff4444; margin:20px; text-shadow:0 0 20px rgba(255,0,0,0.4); letter-spacing:3px;">CITY BANKRUPT</div>
+            <div style="font-size:22px; color:#64B5F6; margin:10px;">Population: <span id="finalPop">0</span></div>
+            <div style="font-size:18px; color:#CE93D8; margin:10px;">Survived <span id="finalDay">0</span> days</div>
+            <button class="restart-btn" id="restartBtn">Try Again</button>
+            <br>
+            <a href="index.html" class="back-link">&larr; Back to Game Gallery</a>
+        </div>
+    </div>
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+    // ============ CONSTANTS ============
+    const GRID_W = 20;
+    const GRID_H = 15;
+    const CELL = 32;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('tooltip');
+
+    const BUILDINGS = {
+        road:     { name: 'Road',      icon: '🛤️',  cost: 50,   color: '#555555', desc: 'Connects buildings. Boosts nearby shop income.' },
+        house:    { name: 'House',      icon: '🏠', cost: 200,  color: '#4CAF50', pop: 8,   desc: 'Houses 8 citizens. Needs road access.' },
+        shop:     { name: 'Shop',       icon: '🏪', cost: 400,  color: '#2196F3', income: 15, desc: 'Earns $15/day. More with nearby roads & houses.' },
+        factory:  { name: 'Factory',    icon: '🏭', cost: 800,  color: '#FF9800', income: 40, happyMod: -5, desc: 'Earns $40/day but reduces nearby happiness.' },
+        park:     { name: 'Park',       icon: '🌳', cost: 300,  color: '#66BB6A', happyMod: 8, desc: 'Boosts happiness for nearby houses.' },
+        fire:     { name: 'Fire Stn',   icon: '🚒', cost: 600,  color: '#f44336', happyMod: 4, desc: 'Boosts safety & happiness in area.' },
+        police:   { name: 'Police',     icon: '🚔', cost: 600,  color: '#3F51B5', happyMod: 4, desc: 'Boosts safety & happiness in area.' },
+        hospital: { name: 'Hospital',   icon: '🏥', cost: 1000, color: '#E91E63', happyMod: 6, pop: 2, desc: 'Heals citizens. +6 happiness, +2 pop.' },
+        school:   { name: 'School',     icon: '🏫', cost: 700,  color: '#9C27B0', happyMod: 5, income: 5, desc: 'Educates citizens. +5 happiness, $5/day.' },
+        stadium:  { name: 'Stadium',    icon: '🏟️',  cost: 1500, color: '#00BCD4', happyMod: 12, income: 25, desc: 'Big happiness & income boost.' },
+        bulldoze: { name: 'Bulldoze',   icon: '🔨', cost: 0,    color: '#ff0000', desc: 'Remove a building. Get 30% cost back.' }
+    };
+
+    const TOOL_ORDER = ['road','house','shop','factory','park','fire','police','hospital','school','stadium','bulldoze'];
+
+    // ============ GAME STATE ============
+    let grid, money, population, happiness, day, dayTimer, gameSpeed;
+    let selectedTool = 'road';
+    let gameRunning = false;
+    let hoverX = -1, hoverY = -1;
+    let animFrame;
+    let notifications = [];
+    let dayIncome = 0;
+
+    // ============ INIT ============
+    function initGame() {
+        grid = [];
+        for (let y = 0; y < GRID_H; y++) {
+            grid[y] = [];
+            for (let x = 0; x < GRID_W; x++) {
+                grid[y][x] = null;
+            }
+        }
+        money = 5000;
+        population = 0;
+        happiness = 50;
+        day = 1;
+        dayTimer = 0;
+        gameSpeed = 1;
+        dayIncome = 0;
+        notifications = [];
+        selectedTool = 'road';
+        updateHUD();
+    }
+
+    // ============ TOOLBAR ============
+    function buildToolbar() {
+        const tb = document.getElementById('toolbar');
+        tb.innerHTML = '';
+        for (const key of TOOL_ORDER) {
+            const b = BUILDINGS[key];
+            const btn = document.createElement('div');
+            btn.className = 'tool-btn' + (key === selectedTool ? ' selected' : '');
+            btn.dataset.tool = key;
+            btn.innerHTML = `<div class="icon">${b.icon}</div><div>${b.name}</div>${b.cost > 0 ? `<div class="cost">$${b.cost}</div>` : '<div class="cost">Refund</div>'}`;
+            btn.addEventListener('click', () => {
+                selectedTool = key;
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+            btn.addEventListener('mouseenter', (e) => {
+                tooltip.style.display = 'block';
+                tooltip.innerHTML = `<b>${b.name}</b><br>${b.desc}`;
+                const rect = btn.getBoundingClientRect();
+                tooltip.style.left = rect.left + 'px';
+                tooltip.style.top = (rect.top - tooltip.offsetHeight - 5) + 'px';
+            });
+            btn.addEventListener('mouseleave', () => tooltip.style.display = 'none');
+            tb.appendChild(btn);
+        }
+    }
+
+    // ============ PLACE / BULLDOZE ============
+    function placeBuilding(gx, gy) {
+        if (gx < 0 || gx >= GRID_W || gy < 0 || gy >= GRID_H) return;
+
+        if (selectedTool === 'bulldoze') {
+            const cell = grid[gy][gx];
+            if (cell) {
+                const refund = Math.floor(BUILDINGS[cell.type].cost * 0.3);
+                money += refund;
+                addNotif(gx, gy, `+$${refund}`, '#FFD54F');
+                grid[gy][gx] = null;
+                recalcStats();
+                updateHUD();
+            }
+            return;
+        }
+
+        if (grid[gy][gx] !== null) return;
+
+        const b = BUILDINGS[selectedTool];
+        if (money < b.cost) {
+            addNotif(gx, gy, 'No funds!', '#ff4444');
+            return;
+        }
+
+        money -= b.cost;
+        grid[gy][gx] = {
+            type: selectedTool,
+            age: 0,
+            animOffset: Math.random() * Math.PI * 2
+        };
+        addNotif(gx, gy, `-$${b.cost}`, '#ff8888');
+        recalcStats();
+        updateHUD();
+    }
+
+    // ============ STATS ============
+    function recalcStats() {
+        let totalPop = 0;
+        let happySum = 50; // base happiness
+        let happyFactors = 0;
+
+        for (let y = 0; y < GRID_H; y++) {
+            for (let x = 0; x < GRID_W; x++) {
+                const cell = grid[y][x];
+                if (!cell) continue;
+                const b = BUILDINGS[cell.type];
+
+                if (b.pop) totalPop += b.pop;
+
+                if (b.happyMod) {
+                    happySum += b.happyMod;
+                    happyFactors++;
+                }
+            }
+        }
+
+        // Adjacency bonuses for happiness
+        for (let y = 0; y < GRID_H; y++) {
+            for (let x = 0; x < GRID_W; x++) {
+                const cell = grid[y][x];
+                if (!cell || cell.type !== 'house') continue;
+
+                let hasRoad = false;
+                let nearPark = false;
+                let nearFactory = false;
+
+                for (let dy = -2; dy <= 2; dy++) {
+                    for (let dx = -2; dx <= 2; dx++) {
+                        if (dx === 0 && dy === 0) continue;
+                        const nx = x + dx, ny = y + dy;
+                        if (nx < 0 || nx >= GRID_W || ny < 0 || ny >= GRID_H) continue;
+                        const neighbor = grid[ny][nx];
+                        if (!neighbor) continue;
+                        if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+                            if (neighbor.type === 'road') hasRoad = true;
+                        }
+                        if (neighbor.type === 'park') nearPark = true;
+                        if (neighbor.type === 'factory') nearFactory = true;
+                    }
+                }
+
+                if (!hasRoad) totalPop -= Math.floor(b.pop * 0.5) || 0;
+                if (nearPark) happySum += 3;
+                if (nearFactory) happySum -= 3;
+            }
+        }
+
+        population = Math.max(0, totalPop);
+        happiness = Math.max(0, Math.min(100, happySum));
+    }
+
+    function calcDailyIncome() {
+        let income = 0;
+
+        // Tax from population
+        const taxRate = happiness >= 70 ? 3 : happiness >= 40 ? 2 : 1;
+        income += population * taxRate;
+
+        // Building income
+        for (let y = 0; y < GRID_H; y++) {
+            for (let x = 0; x < GRID_W; x++) {
+                const cell = grid[y][x];
+                if (!cell) continue;
+                const b = BUILDINGS[cell.type];
+                if (!b.income) continue;
+
+                let mult = 1;
+                // Shops get bonus from nearby roads and houses
+                if (cell.type === 'shop') {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            if (dx === 0 && dy === 0) continue;
+                            const nx = x + dx, ny = y + dy;
+                            if (nx < 0 || nx >= GRID_W || ny < 0 || ny >= GRID_H) continue;
+                            const n = grid[ny][nx];
+                            if (n && n.type === 'road') mult += 0.15;
+                            if (n && n.type === 'house') mult += 0.25;
+                        }
+                    }
+                }
+                income += Math.floor(b.income * mult);
+            }
+        }
+
+        // Maintenance costs
+        let maintenance = 0;
+        for (let y = 0; y < GRID_H; y++) {
+            for (let x = 0; x < GRID_W; x++) {
+                const cell = grid[y][x];
+                if (!cell) continue;
+                if (cell.type === 'fire' || cell.type === 'police') maintenance += 8;
+                if (cell.type === 'hospital') maintenance += 12;
+                if (cell.type === 'school') maintenance += 6;
+                if (cell.type === 'stadium') maintenance += 15;
+            }
+        }
+
+        return income - maintenance;
+    }
+
+    // ============ DAY TICK ============
+    function tickDay() {
+        dayIncome = calcDailyIncome();
+        money += dayIncome;
+        day++;
+
+        // Age buildings
+        for (let y = 0; y < GRID_H; y++) {
+            for (let x = 0; x < GRID_W; x++) {
+                if (grid[y][x]) grid[y][x].age++;
+            }
+        }
+
+        recalcStats();
+
+        // Random events
+        if (day > 5 && Math.random() < 0.08) {
+            const events = [
+                { msg: 'Tourism boom! +$500', effect: () => money += 500 },
+                { msg: 'Tax windfall! +$300', effect: () => money += 300 },
+                { msg: 'Storm damage! -$400', effect: () => money -= 400 },
+                { msg: 'Festival! +10 happiness', effect: () => happiness = Math.min(100, happiness + 10) },
+                { msg: 'Crime wave! -8 happiness', effect: () => happiness = Math.max(0, happiness - 8) },
+            ];
+            const ev = events[Math.floor(Math.random() * events.length)];
+            ev.effect();
+            addNotif(GRID_W / 2, 0, ev.msg, '#CE93D8');
+        }
+
+        // Bankruptcy check
+        if (money < -500) {
+            endGame();
+            return;
+        }
+
+        updateHUD();
+    }
+
+    // ============ HUD ============
+    function updateHUD() {
+        document.getElementById('moneyDisplay').textContent = money.toLocaleString();
+        document.getElementById('popDisplay').textContent = population;
+        document.getElementById('happyDisplay').textContent = happiness;
+        document.getElementById('dayDisplay').textContent = day;
+    }
+
+    // ============ NOTIFICATIONS ============
+    function addNotif(gx, gy, text, color) {
+        notifications.push({
+            x: gx * CELL + CELL / 2,
+            y: gy * CELL + CELL / 2,
+            text, color,
+            life: 1.5,
+            vy: -1
+        });
+    }
+
+    function updateNotifs(dt) {
+        for (let i = notifications.length - 1; i >= 0; i--) {
+            const n = notifications[i];
+            n.life -= dt;
+            n.y += n.vy;
+            if (n.life <= 0) notifications.splice(i, 1);
+        }
+    }
+
+    function drawNotifs() {
+        for (const n of notifications) {
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, n.life * 2);
+            ctx.fillStyle = n.color;
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(n.text, n.x, n.y);
+            ctx.restore();
+        }
+    }
+
+    // ============ DRAWING ============
+    function drawGrid() {
+        // Background - grass
+        ctx.fillStyle = '#2d5a1e';
+        ctx.fillRect(0, 0, GRID_W * CELL, GRID_H * CELL);
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= GRID_W; x++) {
+            ctx.beginPath();
+            ctx.moveTo(x * CELL, 0);
+            ctx.lineTo(x * CELL, GRID_H * CELL);
+            ctx.stroke();
+        }
+        for (let y = 0; y <= GRID_H; y++) {
+            ctx.beginPath();
+            ctx.moveTo(0, y * CELL);
+            ctx.lineTo(GRID_W * CELL, y * CELL);
+            ctx.stroke();
+        }
+    }
+
+    function drawBuildings(time) {
+        for (let y = 0; y < GRID_H; y++) {
+            for (let x = 0; x < GRID_W; x++) {
+                const cell = grid[y][x];
+                if (!cell) continue;
+                const b = BUILDINGS[cell.type];
+                const px = x * CELL;
+                const py = y * CELL;
+                const t = time + cell.animOffset;
+
+                if (cell.type === 'road') {
+                    // Road tile
+                    ctx.fillStyle = '#444';
+                    ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4);
+                    ctx.fillStyle = '#555';
+                    // Center line
+                    ctx.fillRect(px + CELL / 2 - 1, py + 2, 2, CELL - 4);
+                    // Connect to adjacent roads
+                    const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
+                    for (const [dx, dy] of dirs) {
+                        const nx = x + dx, ny = y + dy;
+                        if (nx >= 0 && nx < GRID_W && ny >= 0 && ny < GRID_H && grid[ny][nx] && grid[ny][nx].type === 'road') {
+                            ctx.fillStyle = '#444';
+                            if (dx !== 0) ctx.fillRect(px + (dx > 0 ? CELL - 2 : 0), py + 2, 4, CELL - 4);
+                            if (dy !== 0) ctx.fillRect(px + 2, py + (dy > 0 ? CELL - 2 : 0), CELL - 4, 4);
+                        }
+                    }
+                } else if (cell.type === 'house') {
+                    // House
+                    ctx.fillStyle = '#5D4037';
+                    ctx.fillRect(px + 4, py + 12, 24, 16);
+                    ctx.fillStyle = '#795548';
+                    ctx.fillRect(px + 6, py + 14, 20, 12);
+                    // Roof
+                    ctx.fillStyle = '#C62828';
+                    ctx.beginPath();
+                    ctx.moveTo(px + 2, py + 12);
+                    ctx.lineTo(px + 16, py + 2);
+                    ctx.lineTo(px + 30, py + 12);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Door
+                    ctx.fillStyle = '#3E2723';
+                    ctx.fillRect(px + 13, py + 20, 6, 8);
+                    // Window
+                    ctx.fillStyle = '#FFEB3B';
+                    const windowGlow = 0.6 + Math.sin(t * 2) * 0.2;
+                    ctx.globalAlpha = windowGlow;
+                    ctx.fillRect(px + 8, py + 16, 4, 4);
+                    ctx.fillRect(px + 20, py + 16, 4, 4);
+                    ctx.globalAlpha = 1;
+                } else if (cell.type === 'shop') {
+                    // Shop
+                    ctx.fillStyle = '#1565C0';
+                    ctx.fillRect(px + 3, py + 8, 26, 20);
+                    // Awning
+                    ctx.fillStyle = '#E91E63';
+                    ctx.fillRect(px + 2, py + 6, 28, 5);
+                    // Stripes
+                    ctx.fillStyle = '#F48FB1';
+                    for (let s = 0; s < 4; s++) {
+                        ctx.fillRect(px + 2 + s * 7, py + 6, 3, 5);
+                    }
+                    // Window
+                    ctx.fillStyle = '#BBDEFB';
+                    ctx.fillRect(px + 6, py + 13, 8, 8);
+                    ctx.fillRect(px + 18, py + 13, 8, 8);
+                    // Door
+                    ctx.fillStyle = '#0D47A1';
+                    ctx.fillRect(px + 13, py + 18, 6, 10);
+                    // Sign glow
+                    ctx.fillStyle = '#FFEB3B';
+                    ctx.globalAlpha = 0.5 + Math.sin(t * 3) * 0.3;
+                    ctx.fillRect(px + 8, py + 2, 16, 3);
+                    ctx.globalAlpha = 1;
+                } else if (cell.type === 'factory') {
+                    // Factory
+                    ctx.fillStyle = '#616161';
+                    ctx.fillRect(px + 3, py + 10, 26, 18);
+                    // Chimney
+                    ctx.fillStyle = '#424242';
+                    ctx.fillRect(px + 6, py + 2, 6, 10);
+                    ctx.fillRect(px + 20, py + 4, 5, 8);
+                    // Smoke
+                    ctx.fillStyle = 'rgba(150,150,150,0.4)';
+                    const smokeY = Math.sin(t * 2) * 3;
+                    ctx.beginPath();
+                    ctx.arc(px + 9, py - 2 + smokeY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(px + 22, py + smokeY, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Windows
+                    ctx.fillStyle = '#FF6F00';
+                    ctx.fillRect(px + 7, py + 14, 4, 4);
+                    ctx.fillRect(px + 14, py + 14, 4, 4);
+                    ctx.fillRect(px + 21, py + 14, 4, 4);
+                } else if (cell.type === 'park') {
+                    // Grass
+                    ctx.fillStyle = '#388E3C';
+                    ctx.fillRect(px + 2, py + 2, 28, 28);
+                    // Trees
+                    ctx.fillStyle = '#2E7D32';
+                    const sway = Math.sin(t * 1.5) * 2;
+                    ctx.beginPath();
+                    ctx.arc(px + 10 + sway, py + 10, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(px + 22 - sway, py + 12, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Trunks
+                    ctx.fillStyle = '#5D4037';
+                    ctx.fillRect(px + 9, py + 16, 3, 8);
+                    ctx.fillRect(px + 21, py + 17, 3, 7);
+                    // Flowers
+                    ctx.fillStyle = '#FF4081';
+                    ctx.fillRect(px + 5, py + 24, 2, 2);
+                    ctx.fillStyle = '#FFEB3B';
+                    ctx.fillRect(px + 15, py + 22, 2, 2);
+                    ctx.fillStyle = '#E040FB';
+                    ctx.fillRect(px + 25, py + 25, 2, 2);
+                } else if (cell.type === 'fire') {
+                    // Fire station
+                    ctx.fillStyle = '#C62828';
+                    ctx.fillRect(px + 3, py + 6, 26, 22);
+                    ctx.fillStyle = '#B71C1C';
+                    ctx.fillRect(px + 3, py + 4, 26, 4);
+                    // Garage door
+                    ctx.fillStyle = '#212121';
+                    ctx.fillRect(px + 8, py + 16, 16, 12);
+                    ctx.strokeStyle = '#444';
+                    ctx.lineWidth = 1;
+                    for (let s = 0; s < 3; s++) {
+                        ctx.beginPath();
+                        ctx.moveTo(px + 8, py + 20 + s * 3);
+                        ctx.lineTo(px + 24, py + 20 + s * 3);
+                        ctx.stroke();
+                    }
+                    // Light
+                    ctx.fillStyle = '#FF1744';
+                    ctx.globalAlpha = 0.5 + Math.sin(t * 6) * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(px + 16, py + 3, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                } else if (cell.type === 'police') {
+                    // Police station
+                    ctx.fillStyle = '#283593';
+                    ctx.fillRect(px + 3, py + 6, 26, 22);
+                    ctx.fillStyle = '#1A237E';
+                    ctx.fillRect(px + 3, py + 4, 26, 4);
+                    // Door
+                    ctx.fillStyle = '#1B1B2F';
+                    ctx.fillRect(px + 11, py + 17, 10, 11);
+                    // Windows
+                    ctx.fillStyle = '#90CAF9';
+                    ctx.fillRect(px + 5, py + 10, 6, 5);
+                    ctx.fillRect(px + 21, py + 10, 6, 5);
+                    // Light
+                    ctx.fillStyle = '#2196F3';
+                    ctx.globalAlpha = 0.5 + Math.sin(t * 5) * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(px + 16, py + 3, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                } else if (cell.type === 'hospital') {
+                    // Hospital
+                    ctx.fillStyle = '#E8E8E8';
+                    ctx.fillRect(px + 3, py + 5, 26, 23);
+                    ctx.fillStyle = '#BDBDBD';
+                    ctx.fillRect(px + 3, py + 3, 26, 4);
+                    // Red cross
+                    ctx.fillStyle = '#E91E63';
+                    ctx.fillRect(px + 13, py + 8, 6, 14);
+                    ctx.fillRect(px + 9, py + 12, 14, 6);
+                    // Door
+                    ctx.fillStyle = '#90A4AE';
+                    ctx.fillRect(px + 12, py + 22, 8, 6);
+                } else if (cell.type === 'school') {
+                    // School
+                    ctx.fillStyle = '#6A1B9A';
+                    ctx.fillRect(px + 3, py + 8, 26, 20);
+                    // Roof
+                    ctx.fillStyle = '#4A148C';
+                    ctx.beginPath();
+                    ctx.moveTo(px + 1, py + 8);
+                    ctx.lineTo(px + 16, py + 1);
+                    ctx.lineTo(px + 31, py + 8);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Door
+                    ctx.fillStyle = '#38006b';
+                    ctx.fillRect(px + 12, py + 19, 8, 9);
+                    // Windows
+                    ctx.fillStyle = '#CE93D8';
+                    ctx.fillRect(px + 5, py + 12, 5, 5);
+                    ctx.fillRect(px + 22, py + 12, 5, 5);
+                    // Bell
+                    ctx.fillStyle = '#FFD54F';
+                    ctx.beginPath();
+                    ctx.arc(px + 16, py + 3, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (cell.type === 'stadium') {
+                    // Stadium
+                    ctx.fillStyle = '#00838F';
+                    ctx.fillRect(px + 2, py + 6, 28, 22);
+                    // Arched roof
+                    ctx.fillStyle = '#006064';
+                    ctx.beginPath();
+                    ctx.ellipse(px + 16, py + 6, 14, 6, 0, Math.PI, 0);
+                    ctx.fill();
+                    // Field
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(px + 6, py + 14, 20, 10);
+                    // Lines on field
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(px + 7, py + 15, 18, 8);
+                    ctx.beginPath();
+                    ctx.moveTo(px + 16, py + 15);
+                    ctx.lineTo(px + 16, py + 23);
+                    ctx.stroke();
+                    // Lights
+                    ctx.fillStyle = '#FFEB3B';
+                    ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.3;
+                    ctx.fillRect(px + 3, py + 7, 3, 2);
+                    ctx.fillRect(px + 26, py + 7, 3, 2);
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+    }
+
+    function drawHover() {
+        if (hoverX < 0 || hoverY < 0 || hoverX >= GRID_W || hoverY >= GRID_H) return;
+
+        const px = hoverX * CELL;
+        const py = hoverY * CELL;
+        const cell = grid[hoverY][hoverX];
+
+        if (selectedTool === 'bulldoze') {
+            if (cell) {
+                ctx.fillStyle = 'rgba(255,0,0,0.3)';
+                ctx.fillRect(px, py, CELL, CELL);
+                ctx.strokeStyle = '#ff4444';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(px + 1, py + 1, CELL - 2, CELL - 2);
+            }
+        } else {
+            if (!cell) {
+                const canAfford = money >= BUILDINGS[selectedTool].cost;
+                ctx.fillStyle = canAfford ? 'rgba(76,175,80,0.25)' : 'rgba(255,0,0,0.25)';
+                ctx.fillRect(px, py, CELL, CELL);
+                ctx.strokeStyle = canAfford ? '#4CAF50' : '#ff4444';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(px + 1, py + 1, CELL - 2, CELL - 2);
+            }
+        }
+    }
+
+    function drawIncomeIndicator() {
+        ctx.save();
+        ctx.fillStyle = dayIncome >= 0 ? '#4CAF50' : '#ff4444';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${dayIncome >= 0 ? '+' : ''}$${dayIncome}/day`, GRID_W * CELL - 5, GRID_H * CELL - 5);
+        ctx.restore();
+    }
+
+    // ============ GAME LOOP ============
+    let lastTime = 0;
+
+    function gameLoop(timestamp) {
+        if (!gameRunning) return;
+        const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+        lastTime = timestamp;
+
+        dayTimer += dt * gameSpeed;
+        if (dayTimer >= 3) { // 3 seconds = 1 day
+            dayTimer = 0;
+            tickDay();
+        }
+
+        updateNotifs(dt);
+
+        // Draw
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        drawBuildings(timestamp / 1000);
+        drawHover();
+        drawNotifs();
+        drawIncomeIndicator();
+
+        // Day progress bar
+        const progress = dayTimer / 3;
+        ctx.fillStyle = 'rgba(206,147,216,0.3)';
+        ctx.fillRect(0, GRID_H * CELL - 2, GRID_W * CELL * progress, 2);
+
+        animFrame = requestAnimationFrame(gameLoop);
+    }
+
+    // ============ SCREENS ============
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function startGame() {
+        initGame();
+        buildToolbar();
+        showScreen('gameScreen');
+        gameRunning = true;
+        lastTime = performance.now();
+        animFrame = requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+        gameRunning = false;
+        cancelAnimationFrame(animFrame);
+        document.getElementById('finalPop').textContent = population;
+        document.getElementById('finalDay').textContent = day;
+        setTimeout(() => showScreen('gameOverScreen'), 500);
+    }
+
+    // ============ EVENTS ============
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        hoverX = Math.floor((e.clientX - rect.left) * scaleX / CELL);
+        hoverY = Math.floor((e.clientY - rect.top) * scaleY / CELL);
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        hoverX = -1;
+        hoverY = -1;
+    });
+
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const gx = Math.floor((e.clientX - rect.left) * scaleX / CELL);
+        const gy = Math.floor((e.clientY - rect.top) * scaleY / CELL);
+        placeBuilding(gx, gy);
+    });
+
+    // Click and drag for roads
+    let dragging = false;
+    canvas.addEventListener('mousedown', () => dragging = true);
+    canvas.addEventListener('mouseup', () => dragging = false);
+    canvas.addEventListener('mousemove', (e) => {
+        if (!dragging || selectedTool !== 'road') return;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const gx = Math.floor((e.clientX - rect.left) * scaleX / CELL);
+        const gy = Math.floor((e.clientY - rect.top) * scaleY / CELL);
+        placeBuilding(gx, gy);
+    });
+
+    // Speed buttons
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            gameSpeed = parseInt(btn.dataset.speed);
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= TOOL_ORDER.length) {
+            selectedTool = TOOL_ORDER[num - 1];
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+            const btns = document.querySelectorAll('.tool-btn');
+            if (btns[num - 1]) btns[num - 1].classList.add('selected');
+        }
+    });
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+    </script>
+</body>
+</html>
