@@ -1464,22 +1464,19 @@
                         age: 0
                     });
                 } else if (shooter.type === 'crab') {
-                    // Crab: shoots 2 bubble projectiles that float side to side
-                    enemyBullets.push({
-                        x: shooter.x - 8, y: shooter.y,
-                        vx: -0.8, vy: speed * 0.55,
-                        style: 'bubble', age: 0
-                    });
-                    enemyBullets.push({
-                        x: shooter.x + 8, y: shooter.y,
-                        vx: 0.8, vy: speed * 0.55,
-                        style: 'bubble', age: 0
-                    });
+                    // Crab: 5 bubble barrage that fans out and wobbles
+                    for (let b = -2; b <= 2; b++) {
+                        enemyBullets.push({
+                            x: shooter.x + b * 6, y: shooter.y,
+                            vx: b * 0.5, vy: speed * 0.4,
+                            style: 'bubble', age: Math.random() * 2
+                        });
+                    }
                 } else if (shooter.type === 'boss') {
-                    // Boss: plasma ring that expands outward in a circle
-                    const ringSpeed = speed * 0.6;
-                    for (let a = 0; a < 5; a++) {
-                        const angle = (a / 5) * Math.PI * 0.8 + Math.PI * 0.6;
+                    // Boss: full plasma ring - 10 bolts in all directions
+                    const ringSpeed = speed * 0.45;
+                    for (let a = 0; a < 10; a++) {
+                        const angle = (a / 10) * Math.PI * 2;
                         enemyBullets.push({
                             x: shooter.x, y: shooter.y + shooter.h / 2,
                             vx: Math.cos(angle) * ringSpeed,
@@ -1489,24 +1486,35 @@
                         });
                     }
                 } else if (shooter.type === 'dragon') {
-                    // Dragon: fire breath - 3 fireballs that spread and fall
-                    for (let f = -1; f <= 1; f++) {
+                    // Dragon: massive fire breath - 7 aimed fireballs in a wide cone
+                    const aimAngle = Math.atan2(dy, dx);
+                    for (let f = -3; f <= 3; f++) {
+                        const a = aimAngle + f * 0.18;
                         enemyBullets.push({
                             x: shooter.x, y: shooter.y + shooter.h / 2,
-                            vx: f * 1.8 + (dx / dist) * speed * 0.15,
-                            vy: speed * 0.65,
+                            vx: Math.cos(a) * speed * 0.4,
+                            vy: Math.sin(a) * speed * 0.4,
                             style: 'dragonfire',
                             age: 0
                         });
                     }
                 } else if (shooter.type === 'demon') {
-                    // Demon: hellfire burst - ring of 8 slow embers
-                    for (let a = 0; a < 8; a++) {
-                        const angle = (a / 8) * Math.PI * 2;
+                    // Demon: double hellfire ring - 12 embers in 2 staggered waves
+                    for (let a = 0; a < 12; a++) {
+                        const angle = (a / 12) * Math.PI * 2;
                         enemyBullets.push({
                             x: shooter.x, y: shooter.y,
-                            vx: Math.cos(angle) * speed * 0.35,
-                            vy: Math.sin(angle) * speed * 0.35 + speed * 0.3,
+                            vx: Math.cos(angle) * speed * 0.3,
+                            vy: Math.sin(angle) * speed * 0.3 + speed * 0.2,
+                            style: 'hellfire',
+                            age: 0
+                        });
+                        // Second staggered ring
+                        const angle2 = angle + Math.PI / 12;
+                        enemyBullets.push({
+                            x: shooter.x, y: shooter.y,
+                            vx: Math.cos(angle2) * speed * 0.18,
+                            vy: Math.sin(angle2) * speed * 0.18 + speed * 0.25,
                             style: 'hellfire',
                             age: 0
                         });
@@ -2025,7 +2033,7 @@
     function createFinalBoss() {
         enemies = [];
         activePowerups = {}; // disable all powerups for boss
-        lives = 5; // refill lives for the boss fight
+        lives = 100; // refill lives for the boss fight
         updateHUD();
         playSound('bossAppear');
         const boss = ENEMY_TYPES['demon']; // base size on demon
@@ -2258,7 +2266,7 @@
 
     function startGame() {
         score = 0;
-        lives = 5;
+        lives = 100;
         wave = 1;
         paused = false;
         gameOver = false;
