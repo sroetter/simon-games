@@ -521,29 +521,29 @@ function selectTower(type) {
 }
 
 function getWaveEnemies(wave) {
-    const count = 6 + wave * 3;
-    const hp = 30 + wave * 25 + Math.floor(wave * wave * 0.8);
-    const speed = 1.1 + Math.min(wave * 0.07, 2.0);
-    const reward = 5 + Math.floor(wave / 2);
+    const count = 8 + wave * 4;
+    const hp = 50 + wave * 45 + Math.floor(wave * wave * 2.5);
+    const speed = 1.2 + Math.min(wave * 0.09, 2.5);
+    const reward = 6 + Math.floor(wave / 2);
     let types = ['normal'];
     if (wave >= 2) types.push('fast');
-    if (wave >= 4) types.push('tank');
-    if (wave >= 6) types.push('boss');
-    if (wave >= 10) types.push('swarm');
-    if (wave >= 15) types.push('juggernaut');
-    if (wave >= 20) types.push('demon');
+    if (wave >= 3) types.push('tank');
+    if (wave >= 5) types.push('boss');
+    if (wave >= 8) types.push('swarm');
+    if (wave >= 12) types.push('juggernaut');
+    if (wave >= 16) types.push('demon');
     return { count, hp, speed, reward, types };
 }
 
 function spawnEnemy(waveInfo) {
     const type = waveInfo.types[Math.floor(Math.random() * waveInfo.types.length)];
     let hp = waveInfo.hp, speed = waveInfo.speed, size = 8, color = '#e74c3c', reward = waveInfo.reward;
-    if (type === 'fast') { hp *= 0.6; speed *= 1.6; size = 6; color = '#f39c12'; reward = Math.floor(reward * 0.8); }
-    if (type === 'tank') { hp *= 2.5; speed *= 0.6; size = 12; color = '#8e44ad'; reward = Math.floor(reward * 1.5); }
-    if (type === 'boss') { hp *= 5; speed *= 0.4; size = 15; color = '#c0392b'; reward = Math.floor(reward * 3); }
-    if (type === 'swarm') { hp *= 0.3; speed *= 2.0; size = 5; color = '#e67e22'; reward = Math.floor(reward * 0.5); }
-    if (type === 'juggernaut') { hp *= 8; speed *= 0.3; size = 16; color = '#2c3e50'; reward = Math.floor(reward * 4); }
-    if (type === 'demon') { hp *= 6; speed *= 0.8; size = 14; color = '#8b0000'; reward = Math.floor(reward * 5); }
+    if (type === 'fast') { hp *= 0.7; speed *= 1.8; size = 6; color = '#f39c12'; reward = Math.floor(reward * 0.8); }
+    if (type === 'tank') { hp *= 4; speed *= 0.6; size = 13; color = '#8e44ad'; reward = Math.floor(reward * 1.5); }
+    if (type === 'boss') { hp *= 8; speed *= 0.45; size = 16; color = '#c0392b'; reward = Math.floor(reward * 3); }
+    if (type === 'swarm') { hp *= 0.4; speed *= 2.2; size = 5; color = '#e67e22'; reward = Math.floor(reward * 0.5); }
+    if (type === 'juggernaut') { hp *= 14; speed *= 0.3; size = 18; color = '#2c3e50'; reward = Math.floor(reward * 4); }
+    if (type === 'demon') { hp *= 10; speed *= 0.9; size = 15; color = '#8b0000'; reward = Math.floor(reward * 5); }
     enemies.push({ x: path[0][0]*TILE+TILE/2, y: path[0][1]*TILE+TILE/2, pathIdx: 0, hp, maxHp: hp, speed, size, color, reward, type, slowTimer: 0, slowAmount: 0, poisonTimer: 0, poisonDmg: 0 });
 }
 
