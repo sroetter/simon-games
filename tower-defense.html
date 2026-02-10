@@ -1099,6 +1099,27 @@ function deleteSave(index) {
 
 function showSaveMsg(text) { const el=document.getElementById('saveMsg'); el.textContent=text; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2000); }
 
+// Auto-save when leaving/closing page or switching tabs
+function autoSave() {
+    if (gameOver || (waveNum === 0 && towers.length === 0)) return;
+    const thumb = canvas.toDataURL('image/png', 0.5);
+    const now = new Date();
+    const name = `Auto-save · Wave ${waveNum} · ${now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+    const d = {
+        name, thumb, date: now.toISOString(), gold, lives, waveNum, kills, gameSpeed, auto: true,
+        towers: towers.map(t=>({col:t.col,row:t.row,type:t.type,level:t.level,range:t.range,damage:t.damage,fireRate:t.fireRate,splash:t.splash,slow:t.slow,chain:t.chain,poison:t.poison||0,color:t.color,totalCost:t.totalCost}))
+    };
+    const saves = getSaveList();
+    // Replace previous auto-save if it exists, otherwise add
+    const autoIdx = saves.findIndex(s => s.auto);
+    if (autoIdx >= 0) saves.splice(autoIdx, 1);
+    saves.unshift(d);
+    if (saves.length > 20) saves.length = 20;
+    setSaveList(saves);
+}
+window.addEventListener('beforeunload', autoSave);
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoSave(); });
+
 initGame();
 gameLoop();
 </script>
