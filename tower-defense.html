@@ -353,7 +353,10 @@
     </div>
 
     <div class="game-area">
-        <canvas id="game" width="700" height="500"></canvas>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+            <canvas id="game" width="700" height="500"></canvas>
+            <button class="ctrl-btn start" id="waveBtn" onclick="startWave()" style="padding:12px 40px;font-size:16px;margin-top:10px;width:100%;">Start Wave 1</button>
+        </div>
         <div class="sidebar">
             <div class="stats">
                 <span>❤️ Lives <span class="value" id="lives">20</span></span>
@@ -414,9 +417,6 @@
                 <button class="ctrl-btn speed" onclick="toggleSpeed()">Speed: 1x</button>
             </div>
         </div>
-    </div>
-    <div style="position:relative;z-index:1;margin-top:10px;">
-        <button class="ctrl-btn start" id="waveBtn" onclick="startWave()" style="padding:12px 40px;font-size:16px;">Start Wave 1</button>
     </div>
 
     <div class="overlay" id="gameOverOverlay">
@@ -488,7 +488,7 @@ function buildPath() {
 function isPath(col, row) { return pathSet.has(col+','+row); }
 
 function initGame() {
-    gold = 100; lives = 20; waveNum = 0; kills = 0;
+    gold = 150; lives = 25; waveNum = 0; kills = 0;
     towers = []; enemies = []; projectiles = []; particles = [];
     waveActive = false; waveEnemiesLeft = 0; spawnTimer = 0;
     gameOver = false; gameSpeed = 1;
@@ -521,10 +521,10 @@ function selectTower(type) {
 }
 
 function getWaveEnemies(wave) {
-    const count = 8 + wave * 4;
-    const hp = 50 + wave * 45 + Math.floor(wave * wave * 2.5);
-    const speed = 1.2 + Math.min(wave * 0.09, 2.5);
-    const reward = 6 + Math.floor(wave / 2);
+    const count = 6 + wave * 3;
+    const hp = 40 + wave * 30 + Math.floor(wave * wave * 1.5);
+    const speed = 1.1 + Math.min(wave * 0.07, 2.0);
+    const reward = 7 + Math.floor(wave / 2);
     let types = ['normal'];
     if (wave >= 2) types.push('fast');
     if (wave >= 3) types.push('tank');
@@ -538,12 +538,12 @@ function getWaveEnemies(wave) {
 function spawnEnemy(waveInfo) {
     const type = waveInfo.types[Math.floor(Math.random() * waveInfo.types.length)];
     let hp = waveInfo.hp, speed = waveInfo.speed, size = 8, color = '#e74c3c', reward = waveInfo.reward;
-    if (type === 'fast') { hp *= 0.7; speed *= 1.8; size = 6; color = '#f39c12'; reward = Math.floor(reward * 0.8); }
-    if (type === 'tank') { hp *= 4; speed *= 0.6; size = 13; color = '#8e44ad'; reward = Math.floor(reward * 1.5); }
-    if (type === 'boss') { hp *= 8; speed *= 0.45; size = 16; color = '#c0392b'; reward = Math.floor(reward * 3); }
-    if (type === 'swarm') { hp *= 0.4; speed *= 2.2; size = 5; color = '#e67e22'; reward = Math.floor(reward * 0.5); }
-    if (type === 'juggernaut') { hp *= 14; speed *= 0.3; size = 18; color = '#2c3e50'; reward = Math.floor(reward * 4); }
-    if (type === 'demon') { hp *= 10; speed *= 0.9; size = 15; color = '#8b0000'; reward = Math.floor(reward * 5); }
+    if (type === 'fast') { hp *= 0.6; speed *= 1.7; size = 6; color = '#f39c12'; reward = Math.floor(reward * 0.8); }
+    if (type === 'tank') { hp *= 3; speed *= 0.6; size = 13; color = '#8e44ad'; reward = Math.floor(reward * 1.5); }
+    if (type === 'boss') { hp *= 6; speed *= 0.45; size = 16; color = '#c0392b'; reward = Math.floor(reward * 3); }
+    if (type === 'swarm') { hp *= 0.35; speed *= 2.0; size = 5; color = '#e67e22'; reward = Math.floor(reward * 0.5); }
+    if (type === 'juggernaut') { hp *= 10; speed *= 0.3; size = 18; color = '#2c3e50'; reward = Math.floor(reward * 4); }
+    if (type === 'demon') { hp *= 7; speed *= 0.8; size = 15; color = '#8b0000'; reward = Math.floor(reward * 5); }
     enemies.push({ x: path[0][0]*TILE+TILE/2, y: path[0][1]*TILE+TILE/2, pathIdx: 0, hp, maxHp: hp, speed, size, color, reward, type, slowTimer: 0, slowAmount: 0, poisonTimer: 0, poisonDmg: 0 });
 }
 
