@@ -2033,7 +2033,7 @@
     function createFinalBoss() {
         enemies = [];
         activePowerups = {}; // disable all powerups for boss
-        lives = 100; // refill lives for the boss fight
+        lives = 12; // refill lives for the boss fight
         updateHUD();
         playSound('bossAppear');
         const boss = ENEMY_TYPES['demon']; // base size on demon
@@ -2266,7 +2266,7 @@
 
     function startGame() {
         score = 0;
-        lives = 100;
+        lives = 12;
         wave = 1;
         paused = false;
         gameOver = false;
