@@ -409,6 +409,11 @@
         <div id="jobSelection" class="job-selection">
             <p style="text-align: center; color: #666; margin-bottom: 20px;">Choose your career path and start earning!</p>
             <div class="job-grid">
+                <div class="job-card" onclick="startJob('all')" style="border:3px solid #ffd700;background:linear-gradient(135deg,#fff9c4,#ffe082)">
+                    <div class="job-icon">🌟</div>
+                    <div class="job-title">All Jobs!</div>
+                    <div class="job-description">Do EVERY job at once! Chef, shop owner, farmer, mailman, and supermarket all combined!</div>
+                </div>
                 <div class="job-card" onclick="startJob('chef')">
                     <div class="job-icon">👨‍🍳</div>
                     <div class="job-title">Chef</div>
@@ -456,7 +461,23 @@
                     <div class="stat-label">📊 Level</div>
                     <div class="stat-value"><span id="level">1</span></div>
                 </div>
+                <div class="stat">
+                    <div class="stat-label">🔥 Combo</div>
+                    <div class="stat-value">x<span id="combo">0</span></div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">📅 Day</div>
+                    <div class="stat-value"><span id="dayCount">1</span></div>
+                </div>
             </div>
+            <div style="background:rgba(0,0,0,.05);border-radius:8px;padding:8px 15px;margin-bottom:15px;display:flex;align-items:center;gap:10px">
+                <span style="font-size:13px;color:#666">XP:</span>
+                <div style="flex:1;height:14px;background:#ddd;border-radius:7px;overflow:hidden">
+                    <div id="xp-bar" style="height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:7px;transition:width .3s;width:0%"></div>
+                </div>
+                <span id="xp-text" style="font-size:12px;color:#666">0/10</span>
+            </div>
+            <div id="event-banner" style="display:none;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#333;padding:12px 20px;border-radius:8px;margin-bottom:15px;font-weight:bold;text-align:center;animation:slideIn .3s ease-out"></div>
 
             <div class="main-content">
                 <div class="customer-area">
@@ -480,21 +501,66 @@
     </div>
 
     <script>
+        // Audio
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        const audio = new AudioCtor();
+        function tone(type,freq,freqEnd,dur,vol){
+            if(audio.state==='suspended')audio.resume();
+            const o=audio.createOscillator(),g=audio.createGain();
+            o.connect(g);g.connect(audio.destination);
+            const t=audio.currentTime; o.type=type;
+            o.frequency.setValueAtTime(freq,t);
+            if(freqEnd!==null)o.frequency.exponentialRampToValueAtTime(Math.max(freqEnd,1),t+dur);
+            g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+            o.start(t);o.stop(t+dur);
+        }
+        function sfx(name){
+            if(audio.state==='suspended')audio.resume();
+            switch(name){
+                case 'sell': tone('sine',500,800,.1,.15); tone('sine',800,1200,.1,.12); break;
+                case 'buy': tone('triangle',400,200,.1,.1); break;
+                case 'levelup': {
+                    const t=audio.currentTime;
+                    [400,500,600,800].forEach((f,i)=>{
+                        const o=audio.createOscillator(),g=audio.createGain();
+                        o.connect(g);g.connect(audio.destination);o.type='sine';
+                        o.frequency.setValueAtTime(f,t+i*.1);
+                        g.gain.setValueAtTime(.15,t+i*.1);g.gain.exponentialRampToValueAtTime(.001,t+i*.1+.2);
+                        o.start(t+i*.1);o.stop(t+i*.1+.2);
+                    }); break;
+                }
+                case 'fail': tone('sawtooth',300,100,.2,.15); break;
+                case 'combo': tone('sine',600,1400,.15,.2); break;
+                case 'event': tone('square',800,400,.15,.12); tone('square',600,900,.15,.12); break;
+                case 'upgrade': tone('sine',400,1000,.2,.15); break;
+                case 'coin': tone('sine',1200,800,.06,.1); break;
+            }
+        }
+
         // Game State
         let gameState = {
             money: 100,
             reputation: 50,
             customersServed: 0,
             level: 1,
+            xp: 0,
+            xpNeeded: 10,
             currentJob: null,
             inventory: {},
             unlockedProducts: [],
             customers: [],
             customerIdCounter: 0,
+            combo: 0,
+            comboTimer: null,
+            totalEarned: 0,
+            dayCount: 1,
             upgrades: {
                 betterEquipment: false,
                 marketing: false,
-                automation: false
+                automation: false,
+                bigStorage: false,
+                vipLounge: false,
+                speedService: false
             }
         };
 
@@ -596,27 +662,22 @@
         };
 
         const upgrades = [
-            {
-                id: "betterEquipment",
-                name: "Better Equipment",
-                description: "Increase all sale prices by 20%",
-                cost: 200,
-                icon: "⚙️"
-            },
-            {
-                id: "marketing",
-                name: "Marketing Campaign",
-                description: "Customers arrive 30% faster",
-                cost: 150,
-                icon: "📢"
-            },
-            {
-                id: "automation",
-                name: "Automation System",
-                description: "10% chance of instant service",
-                cost: 300,
-                icon: "🤖"
-            }
+            { id: "betterEquipment", name: "Better Equipment", description: "Increase all sale prices by 20%", cost: 200, icon: "⚙️" },
+            { id: "marketing", name: "Marketing Campaign", description: "Customers arrive 30% faster", cost: 150, icon: "📢" },
+            { id: "automation", name: "Automation System", description: "10% chance of instant service", cost: 300, icon: "🤖" },
+            { id: "bigStorage", name: "Big Storage", description: "Buy 10x stock at once for cheaper", cost: 250, icon: "📦" },
+            { id: "vipLounge", name: "VIP Lounge", description: "VIP customers with 2x tips appear", cost: 400, icon: "👑" },
+            { id: "speedService", name: "Speed Service", description: "Customers have 50% more patience", cost: 350, icon: "⚡" }
+        ];
+
+        // Random events
+        const randomEvents = [
+            { name: "🎉 Rush Hour!", msg: "Double customers for 30 seconds!", duration: 30000, effect: 'rush' },
+            { name: "⭐ VIP Visit!", msg: "A VIP customer with big tips arrived!", duration: 0, effect: 'vip' },
+            { name: "📰 Great Review!", msg: "+15 reputation!", duration: 0, effect: 'review' },
+            { name: "💰 Tip Jar Bonus!", msg: "Found $50 in the tip jar!", duration: 0, effect: 'tipjar' },
+            { name: "🎁 Bulk Delivery!", msg: "+5 stock to all items!", duration: 0, effect: 'bulk' },
+            { name: "😤 Bad Review!", msg: "-10 reputation!", duration: 0, effect: 'badreview' }
         ];
 
         function startJob(jobType) {
@@ -624,13 +685,26 @@
             gameState.inventory = {};
             gameState.unlockedProducts = [];
 
-            // Initialize inventory with all products
-            const job = jobs[jobType];
-            for (let productId in job.products) {
-                gameState.inventory[productId] = { ...job.products[productId] };
-                // Unlock level 1 products
-                if (job.products[productId].unlockLevel === 1) {
-                    gameState.unlockedProducts.push(productId);
+            if (jobType === 'all') {
+                // Load ALL jobs' products
+                for (let jt in jobs) {
+                    const job = jobs[jt];
+                    for (let productId in job.products) {
+                        if (!gameState.inventory[productId]) {
+                            gameState.inventory[productId] = { ...job.products[productId], fromJob: jt };
+                            if (job.products[productId].unlockLevel === 1) {
+                                gameState.unlockedProducts.push(productId);
+                            }
+                        }
+                    }
+                }
+            } else {
+                const job = jobs[jobType];
+                for (let productId in job.products) {
+                    gameState.inventory[productId] = { ...job.products[productId] };
+                    if (job.products[productId].unlockLevel === 1) {
+                        gameState.unlockedProducts.push(productId);
+                    }
                 }
             }
 
@@ -647,18 +721,33 @@
             const baseInterval = gameState.upgrades.marketing ? 4000 : 6000;
 
             setInterval(() => {
-                if (gameState.customers.length < 3) {
+                if (gameState.customers.length < 4) {
                     spawnCustomer();
                 }
             }, baseInterval);
+
+            // Random events every 30-60s
+            setInterval(() => {
+                if (Math.random() < 0.5) triggerRandomEvent();
+            }, 30000);
+
+            // Day counter every 60s
+            setInterval(() => advanceDay(), 60000);
 
             // Spawn first customer immediately
             setTimeout(() => spawnCustomer(), 1000);
         }
 
         function spawnCustomer() {
-            const job = jobs[gameState.currentJob];
-            const customerType = job.customerTypes[Math.floor(Math.random() * job.customerTypes.length)];
+            let customerType;
+            if (gameState.currentJob === 'all') {
+                const allTypes = [];
+                for (let jt in jobs) for (let ct of jobs[jt].customerTypes) allTypes.push(ct);
+                customerType = allTypes[Math.floor(Math.random() * allTypes.length)];
+            } else {
+                const job = jobs[gameState.currentJob];
+                customerType = job.customerTypes[Math.floor(Math.random() * job.customerTypes.length)];
+            }
 
             const requestedProducts = [];
             const numProducts = Math.floor(Math.random() * 2) + 1;
@@ -689,14 +778,72 @@
             gameState.customers.push(customer);
 
             // Start patience timer
+            const patienceRate = gameState.upgrades.speedService ? 3000 : 2000;
             customer.patienceTimer = setInterval(() => {
                 customer.patience -= 5;
+                renderCustomers();
                 if (customer.patience <= 0) {
                     removeCustomer(customer.id, true);
                 }
-            }, 2000);
+            }, patienceRate);
 
             renderCustomers();
+        }
+
+        // Random events
+        function triggerRandomEvent() {
+            const evt = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+            sfx('event');
+            const banner = document.getElementById('event-banner');
+            banner.textContent = evt.name + ' ' + evt.msg;
+            banner.style.display = 'block';
+            setTimeout(() => { banner.style.display = 'none'; }, 4000);
+
+            switch(evt.effect) {
+                case 'rush':
+                    for (let i = 0; i < 3; i++) setTimeout(() => spawnCustomer(), i * 1000);
+                    break;
+                case 'vip': {
+                    const job = jobs[gameState.currentJob];
+                    const ct = job.customerTypes[Math.floor(Math.random() * job.customerTypes.length)];
+                    const prods = ct.products.filter(p => gameState.unlockedProducts.includes(p));
+                    if (prods.length > 0) {
+                        const c = { id: gameState.customerIdCounter++, name: '👑 VIP ' + ct.name, avatar: '👑',
+                            requestedProducts: [prods[Math.floor(Math.random()*prods.length)]],
+                            tip: ct.tip * 3, patience: 100, patienceTimer: null };
+                        gameState.customers.push(c);
+                        const pr = gameState.upgrades.speedService ? 3000 : 2000;
+                        c.patienceTimer = setInterval(() => { c.patience -= 5; renderCustomers(); if(c.patience<=0) removeCustomer(c.id,true); }, pr);
+                        renderCustomers();
+                    }
+                    break;
+                }
+                case 'review':
+                    gameState.reputation = Math.min(100, gameState.reputation + 15);
+                    updateUI();
+                    break;
+                case 'tipjar':
+                    gameState.money += 50;
+                    sfx('coin');
+                    updateUI();
+                    break;
+                case 'bulk':
+                    for (let pid of gameState.unlockedProducts) {
+                        gameState.inventory[pid].stock += 5;
+                    }
+                    renderInventory();
+                    break;
+                case 'badreview':
+                    gameState.reputation = Math.max(0, gameState.reputation - 10);
+                    updateUI();
+                    break;
+            }
+        }
+
+        // Day counter
+        function advanceDay() {
+            gameState.dayCount++;
+            updateUI();
         }
 
         function serveCustomer(customerId) {
@@ -721,8 +868,11 @@
 
             if (!canServe) {
                 showMessage("Not enough stock!", "error");
+                sfx('fail');
                 return;
             }
+
+            sfx('sell');
 
             // Check for automation instant service
             if (gameState.upgrades.automation && Math.random() < 0.1) {
@@ -734,36 +884,55 @@
                 gameState.inventory[productId].stock--;
             }
 
+            // Combo system
+            gameState.combo++;
+            clearTimeout(gameState.comboTimer);
+            gameState.comboTimer = setTimeout(() => { gameState.combo = 0; updateUI(); }, 5000);
+            const comboBonus = gameState.combo > 1 ? Math.floor(gameState.combo * 2) : 0;
+            if (gameState.combo >= 3) sfx('combo');
+
             // Add money and tip
             const tip = customer.patience > 70 ? customer.tip : Math.floor(customer.tip / 2);
-            gameState.money += totalCost + tip;
+            const earned = Math.round(totalCost + tip + comboBonus);
+            gameState.money += earned;
+            gameState.totalEarned += earned;
             gameState.customersServed++;
+
+            // XP system
+            const xpGain = customer.requestedProducts.length + (customer.patience > 80 ? 1 : 0);
+            gameState.xp += xpGain;
+            if (gameState.xp >= gameState.xpNeeded) {
+                gameState.xp -= gameState.xpNeeded;
+                gameState.level++;
+                gameState.xpNeeded = Math.floor(gameState.xpNeeded * 1.4);
+                checkUnlocks();
+                sfx('levelup');
+                showMessage(`LEVEL UP! Level ${gameState.level}! 🎉`, "success");
+            }
 
             // Increase reputation
             gameState.reputation = Math.min(100, gameState.reputation + 2);
 
-            // Level up
-            if (gameState.customersServed % 10 === 0) {
-                gameState.level++;
-                checkUnlocks();
-                showMessage("Level Up! 🎉", "success");
-            }
-
-            showMessage(`+$${Math.round(totalCost + tip)} (Tip: $${tip})`, "success");
+            let msg = `+$${earned}`;
+            if (comboBonus > 0) msg += ` (Combo x${gameState.combo}: +$${comboBonus})`;
+            showMessage(msg, "success");
             removeCustomer(customerId, false);
             updateUI();
             renderInventory();
         }
 
         function checkUnlocks() {
-            const job = jobs[gameState.currentJob];
             let newUnlocks = [];
+            const jobsToCheck = gameState.currentJob === 'all' ? Object.keys(jobs) : [gameState.currentJob];
 
-            for (let productId in job.products) {
-                const product = job.products[productId];
-                if (product.unlockLevel === gameState.level && !gameState.unlockedProducts.includes(productId)) {
-                    gameState.unlockedProducts.push(productId);
-                    newUnlocks.push(product.name);
+            for (let jt of jobsToCheck) {
+                const job = jobs[jt];
+                for (let productId in job.products) {
+                    const product = job.products[productId];
+                    if (product.unlockLevel <= gameState.level && !gameState.unlockedProducts.includes(productId)) {
+                        gameState.unlockedProducts.push(productId);
+                        newUnlocks.push(product.name);
+                    }
                 }
             }
 
@@ -796,17 +965,20 @@
 
         function buyProduct(productId, amount = 1) {
             const product = gameState.inventory[productId];
-            const cost = product.buyPrice * amount;
+            let cost = product.buyPrice * amount;
+            if (amount >= 10 && gameState.upgrades.bigStorage) cost = Math.floor(cost * 0.8);
 
             if (gameState.money < cost) {
                 showMessage("Not enough money!", "error");
+                sfx('fail');
                 return;
             }
 
             gameState.money -= cost;
             product.stock += amount;
+            sfx('buy');
 
-            showMessage(`Bought ${amount}x ${product.name}`, "info");
+            showMessage(`Bought ${amount}x ${product.name} (-$${cost})`, "info");
             updateUI();
             renderInventory();
         }
@@ -817,15 +989,18 @@
 
             if (gameState.money < upgrade.cost) {
                 showMessage("Not enough money!", "error");
+                sfx('fail');
                 return;
             }
 
             gameState.money -= upgrade.cost;
             gameState.upgrades[upgradeId] = true;
+            sfx('upgrade');
 
             showMessage(`Purchased ${upgrade.name}!`, "success");
             updateUI();
             renderUpgrades();
+            renderInventory();
         }
 
         function renderCustomers() {
@@ -910,6 +1085,7 @@
                         <div class="item-actions">
                             <button class="btn-small" onclick="buyProduct('${productId}', 1)">Buy 1</button>
                             <button class="btn-small" onclick="buyProduct('${productId}', 5)">Buy 5</button>
+                            ${gameState.upgrades.bigStorage ? `<button class="btn-small" onclick="buyProduct('${productId}', 10)" style="background:#28a745">Buy 10 (-20%)</button>` : ''}
                         </div>
                     </div>
                 `;
@@ -941,6 +1117,10 @@
             document.getElementById('reputation').textContent = gameState.reputation;
             document.getElementById('customersServed').textContent = gameState.customersServed;
             document.getElementById('level').textContent = gameState.level;
+            document.getElementById('combo').textContent = gameState.combo;
+            document.getElementById('dayCount').textContent = gameState.dayCount;
+            document.getElementById('xp-bar').style.width = (gameState.xp / gameState.xpNeeded * 100) + '%';
+            document.getElementById('xp-text').textContent = gameState.xp + '/' + gameState.xpNeeded;
         }
 
         function showMessage(text, type) {
