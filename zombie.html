@@ -262,7 +262,7 @@ function initGame(){
 function startWave(){
   wave++;
   waveActive = true;
-  const count = 6 + wave * 4;
+  const count = 4 + wave * 2;
   zombiesToSpawn = count;
   zombiesLeft = count;
   spawnTimer = 0;
@@ -355,12 +355,12 @@ function spawnZombie(){
   const type = pool[Math.floor(Math.random() * pool.length)];
   let hp, speed, size, color, bldgDmg;
   switch(type){
-    case 'regular':  hp=30;  speed=.8;  size=10; color='#2ecc40'; bldgDmg=10; break;
-    case 'fast':     hp=20;  speed=1.8; size=8;  color='#b5cc18'; bldgDmg=12; break;
-    case 'tank':     hp=120; speed=.5;  size=16; color='#8B5E3C'; bldgDmg=25; break;
-    case 'exploder': hp=40;  speed=1.0; size=11; color='#e74c3c'; bldgDmg=15; break;
+    case 'regular':  hp=30;  speed=.5;  size=10; color='#2ecc40'; bldgDmg=10; break;
+    case 'fast':     hp=20;  speed=1.1; size=8;  color='#b5cc18'; bldgDmg=12; break;
+    case 'tank':     hp=120; speed=.3;  size=16; color='#8B5E3C'; bldgDmg=25; break;
+    case 'exploder': hp=40;  speed=.6;  size=11; color='#e74c3c'; bldgDmg=15; break;
   }
-  hp = Math.floor(hp * (1 + wave * .14));
+  hp = Math.floor(hp * (1 + wave * .06));
   let x, y;
   const side = Math.floor(Math.random()*4);
   if(side===0){ x=Math.random()*W; y=-20; }
@@ -733,7 +733,7 @@ function update(){
       z.pAtkTimer++;
       if(z.pAtkTimer >= 20){
         z.pAtkTimer = 0;
-        player.hp -= 5;
+        player.hp -= 3;
         hitFlash = 8;
         sfx('hit');
         if(player.hp <= 0){ gameOver(); return; }
