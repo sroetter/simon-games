@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minesweeper</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#e0e0e0;font-family:'Cinzel',serif;overflow:hidden;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#bg-particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.back-btn{position:fixed;top:18px;left:24px;color:#aaa;text-decoration:none;font-size:14px;z-index:100;font-family:'Cinzel',serif;transition:color .3s}.back-btn:hover{color:#fff}
+h1{font-family:'Cinzel',serif;font-weight:900;font-size:28px;text-align:center;margin-bottom:10px;z-index:2;text-shadow:0 0 20px rgba(50,120,220,.5)}
+#game-wrapper{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
+#top-bar{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:600px;padding:8px 16px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:10px 10px 0 0;border:1px solid rgba(255,255,255,.06);font-size:14px;gap:12px}
+#mine-count{color:#e74c3c;font-weight:700;min-width:50px}
+#timer{color:#3498db;font-weight:700;min-width:50px;text-align:right}
+#face-btn{font-size:28px;cursor:pointer;user-select:none;transition:transform .15s;background:none;border:none;padding:0}
+#face-btn:hover{transform:scale(1.15)}
+#board{display:grid;gap:1px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-top:none;border-radius:0 0 10px 10px;padding:1px;user-select:none}
+.cell{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;cursor:pointer;transition:background .1s;border-radius:2px;font-family:'Cinzel',serif}
+.cell.hidden{background:linear-gradient(135deg,#2a2a3e,#1e1e30);border:1px solid rgba(255,255,255,.08)}
+.cell.hidden:hover{background:linear-gradient(135deg,#3a3a50,#2e2e42)}
+.cell.revealed{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.03);cursor:default}
+.cell.flagged{background:linear-gradient(135deg,#3a2020,#2a1515);border:1px solid rgba(200,50,50,.2)}
+.cell.mine-hit{background:rgba(200,30,30,.4)!important;border:1px solid rgba(255,50,50,.3)!important}
+.cell.mine-show{background:rgba(100,30,30,.2);border:1px solid rgba(200,50,50,.15)}
+.n1{color:#3498db}.n2{color:#27ae60}.n3{color:#e74c3c}.n4{color:#8e44ad}
+.n5{color:#c0392b}.n6{color:#16a085}.n7{color:#2c3e50}.n8{color:#7f8c8d}
+#difficulty{display:flex;gap:8px;margin:12px 0;z-index:2}
+#difficulty button{padding:8px 18px;font-family:'Cinzel',serif;font-weight:700;font-size:13px;border:1px solid rgba(255,255,255,.12);border-radius:6px;cursor:pointer;transition:all .3s;background:rgba(255,255,255,.06);color:#ccc}
+#difficulty button:hover,#difficulty button.active{background:linear-gradient(135deg,#2c3e50,#3498db);color:#fff;border-color:rgba(52,152,219,.4);box-shadow:0 0 15px rgba(52,152,219,.2)}
+#stats{font-size:12px;color:#888;margin-top:8px;z-index:2}
+#best-times{font-size:11px;color:#666;margin-top:4px;z-index:2}
+</style>
+</head>
+<body>
+<canvas id="bg-particles"></canvas>
+<a href="index.html" class="back-btn">&larr; Back to Gallery</a>
+<h1>💣 Minesweeper</h1>
+<div id="difficulty">
+  <button id="btn-easy" class="active">Easy (9x9)</button>
+  <button id="btn-medium">Medium (16x16)</button>
+  <button id="btn-hard">Hard (30x16)</button>
+</div>
+<div id="mine-picker" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;z-index:2;font-size:13px">
+  <label style="color:#aaa">Bombs:</label>
+  <input type="range" id="mine-slider" min="1" max="80" value="10" style="width:140px;accent-color:#e74c3c">
+  <span id="mine-slider-val" style="color:#e74c3c;font-weight:700;min-width:30px">10</span>
+</div>
+<div id="game-wrapper">
+  <div id="top-bar">
+    <span id="mine-count">💣 10</span>
+    <button id="face-btn">😊</button>
+    <span id="timer">⏱ 0</span>
+  </div>
+  <div id="board"></div>
+</div>
+<div id="stats"></div>
+<div id="best-times"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== BACKGROUND PARTICLES ===================== */
+const bgC = document.getElementById('bg-particles');
+const bgCtx = bgC.getContext('2d');
+function resizeBg(){ bgC.width=window.innerWidth; bgC.height=window.innerHeight; }
+resizeBg(); window.addEventListener('resize', resizeBg);
+const bgDots=[];
+for(let i=0;i<60;i++){
+  bgDots.push({x:Math.random()*bgC.width,y:Math.random()*bgC.height,r:Math.random()*2+.5,
+    vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,a:Math.random()*.2+.05});
+}
+function drawBg(){
+  bgCtx.clearRect(0,0,bgC.width,bgC.height);
+  for(const p of bgDots){
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=bgC.width; if(p.x>bgC.width)p.x=0;
+    if(p.y<0)p.y=bgC.height; if(p.y>bgC.height)p.y=0;
+    bgCtx.beginPath(); bgCtx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    bgCtx.fillStyle=`rgba(50,120,220,${p.a})`; bgCtx.fill();
+  }
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+/* ===================== AUDIO ===================== */
+const AudioCtor = window.AudioContext || window.webkitAudioContext;
+const audio = new AudioCtor();
+function tone(type,freq,freqEnd,dur,vol){
+  if(audio.state==='suspended')audio.resume();
+  const o=audio.createOscillator(),g=audio.createGain();
+  o.connect(g);g.connect(audio.destination);
+  const t=audio.currentTime;
+  o.type=type; o.frequency.setValueAtTime(freq,t);
+  if(freqEnd!==null)o.frequency.exponentialRampToValueAtTime(Math.max(freqEnd,1),t+dur);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.start(t); o.stop(t+dur);
+}
+function sfx(name){
+  if(audio.state==='suspended')audio.resume();
+  switch(name){
+    case 'reveal': tone('sine',800,400,.06,.1); break;
+    case 'flag':   tone('triangle',600,900,.08,.12); break;
+    case 'unflag': tone('triangle',900,600,.08,.1); break;
+    case 'boom':   tone('sawtooth',200,20,.5,.35); break;
+    case 'win': {
+      const t=audio.currentTime;
+      [500,600,700,900].forEach((f,i)=>{
+        const o=audio.createOscillator(),g=audio.createGain();
+        o.connect(g);g.connect(audio.destination);o.type='sine';
+        o.frequency.setValueAtTime(f,t+i*.12);
+        g.gain.setValueAtTime(.15,t+i*.12);g.gain.exponentialRampToValueAtTime(.001,t+i*.12+.25);
+        o.start(t+i*.12);o.stop(t+i*.12+.25);
+      }); break;
+    }
+    case 'cascade': tone('sine',1200,600,.04,.06); break;
+  }
+}
+
+/* ===================== GAME CONFIG ===================== */
+const CONFIGS = {
+  easy:   { rows:9,  cols:9,  mines:10 },
+  medium: { rows:16, cols:16, mines:40 },
+  hard:   { rows:16, cols:30, mines:99 }
+};
+
+let difficulty = 'easy';
+let rows, cols, mineCount;
+let grid; // 2D array: { mine, revealed, flagged, count }
+let gameState; // 'waiting' | 'playing' | 'won' | 'lost'
+let timerVal, timerInterval;
+let firstClick;
+let flagsPlaced;
+
+const boardEl = document.getElementById('board');
+const faceBtn = document.getElementById('face-btn');
+const mineCountEl = document.getElementById('mine-count');
+const timerEl = document.getElementById('timer');
+const statsEl = document.getElementById('stats');
+const bestTimesEl = document.getElementById('best-times');
+
+/* ===================== BEST TIMES ===================== */
+function getBest(diff){
+  return parseInt(localStorage.getItem('minesweeper_best_'+diff)) || 0;
+}
+function setBest(diff, val){
+  const cur = getBest(diff);
+  if(cur === 0 || val < cur){
+    localStorage.setItem('minesweeper_best_'+diff, val);
+    return true;
+  }
+  return false;
+}
+function showBestTimes(){
+  const parts = [];
+  for(const d of ['easy','medium','hard']){
+    const b = getBest(d);
+    if(b > 0) parts.push(d.charAt(0).toUpperCase()+d.slice(1)+': '+b+'s');
+  }
+  bestTimesEl.textContent = parts.length ? 'Best: '+parts.join(' | ') : '';
+}
+
+/* ===================== INIT GAME ===================== */
+function initGame(){
+  const cfg = CONFIGS[difficulty];
+  rows = cfg.rows; cols = cfg.cols;
+  mineCount = parseInt(mineSlider.value) || cfg.mines;
+  const maxMines = Math.floor(rows * cols * .6);
+  if(mineCount > maxMines) mineCount = maxMines;
+  if(mineCount < 1) mineCount = 1;
+  updateSliderRange();
+  grid = [];
+  for(let r=0;r<rows;r++){
+    grid[r]=[];
+    for(let c=0;c<cols;c++){
+      grid[r][c] = { mine:false, revealed:false, flagged:false, count:0 };
+    }
+  }
+  gameState = 'waiting';
+  firstClick = true;
+  flagsPlaced = 0;
+  timerVal = 0;
+  clearInterval(timerInterval);
+  faceBtn.textContent = '😊';
+  updateCounts();
+  renderBoard();
+  showBestTimes();
+}
+
+/* ===================== PLACE MINES ===================== */
+function placeMines(safeR, safeC){
+  let placed = 0;
+  while(placed < mineCount){
+    const r = Math.floor(Math.random()*rows);
+    const c = Math.floor(Math.random()*cols);
+    if(grid[r][c].mine) continue;
+    if(Math.abs(r-safeR)<=1 && Math.abs(c-safeC)<=1) continue;
+    grid[r][c].mine = true;
+    placed++;
+  }
+  // compute counts
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      if(grid[r][c].mine) continue;
+      let cnt = 0;
+      for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+        const nr=r+dr, nc=c+dc;
+        if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&grid[nr][nc].mine) cnt++;
+      }
+      grid[r][c].count = cnt;
+    }
+  }
+}
+
+/* ===================== RENDER ===================== */
+function renderBoard(){
+  boardEl.innerHTML = '';
+  boardEl.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      updateCell(cell, r, c);
+      cell.addEventListener('click', ()=> handleClick(r,c));
+      cell.addEventListener('contextmenu', e=>{ e.preventDefault(); handleRightClick(r,c); });
+      cell.addEventListener('mousedown', ()=>{ if(gameState==='playing'||gameState==='waiting') faceBtn.textContent='😮'; });
+      cell.addEventListener('mouseup', ()=>{ if(gameState==='playing'||gameState==='waiting') faceBtn.textContent='😊'; });
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+function updateCell(cell, r, c){
+  const g = grid[r][c];
+  cell.className = 'cell';
+  cell.textContent = '';
+  if(g.revealed){
+    cell.classList.add('revealed');
+    if(g.mine){
+      cell.textContent = '💣';
+      if(g.hit) cell.classList.add('mine-hit');
+      else cell.classList.add('mine-show');
+    } else if(g.count > 0){
+      cell.textContent = g.count;
+      cell.classList.add('n'+g.count);
+    }
+  } else if(g.flagged){
+    cell.classList.add('hidden','flagged');
+    cell.textContent = '🚩';
+  } else {
+    cell.classList.add('hidden');
+  }
+}
+
+function refreshCell(r,c){
+  const idx = r*cols+c;
+  const cell = boardEl.children[idx];
+  if(cell) updateCell(cell, r, c);
+}
+
+function updateCounts(){
+  mineCountEl.textContent = '💣 '+(mineCount - flagsPlaced);
+  timerEl.textContent = '⏱ '+timerVal;
+}
+
+/* ===================== GAME LOGIC ===================== */
+function handleClick(r,c){
+  if(gameState==='won'||gameState==='lost') return;
+  const g = grid[r][c];
+  if(g.revealed || g.flagged) return;
+
+  if(firstClick){
+    firstClick = false;
+    placeMines(r,c);
+    gameState = 'playing';
+    timerInterval = setInterval(()=>{ timerVal++; updateCounts(); }, 1000);
+  }
+
+  if(g.mine){
+    // BOOM
+    g.revealed = true;
+    g.hit = true;
+    gameState = 'lost';
+    clearInterval(timerInterval);
+    faceBtn.textContent = '😵';
+    sfx('boom');
+    revealAllMines();
+    statsEl.textContent = 'You hit a mine! Click 😵 to try again.';
+    return;
+  }
+
+  reveal(r,c);
+  sfx('reveal');
+  checkWin();
+  updateCounts();
+}
+
+function handleRightClick(r,c){
+  if(gameState==='won'||gameState==='lost') return;
+  const g = grid[r][c];
+  if(g.revealed) return;
+
+  if(g.flagged){
+    g.flagged = false;
+    flagsPlaced--;
+    sfx('unflag');
+  } else {
+    g.flagged = true;
+    flagsPlaced++;
+    sfx('flag');
+  }
+  refreshCell(r,c);
+  updateCounts();
+}
+
+function reveal(r,c){
+  if(r<0||r>=rows||c<0||c>=cols) return;
+  const g = grid[r][c];
+  if(g.revealed || g.flagged || g.mine) return;
+  g.revealed = true;
+  refreshCell(r,c);
+
+  if(g.count === 0){
+    // cascade
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      if(dr===0&&dc===0) continue;
+      reveal(r+dr, c+dc);
+    }
+  }
+}
+
+function revealAllMines(){
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      if(grid[r][c].mine && !grid[r][c].revealed){
+        grid[r][c].revealed = true;
+        refreshCell(r,c);
+      }
+      // show wrong flags
+      if(grid[r][c].flagged && !grid[r][c].mine){
+        grid[r][c].revealed = true;
+        grid[r][c].flagged = false;
+        const idx = r*cols+c;
+        const cell = boardEl.children[idx];
+        if(cell){ cell.className='cell mine-show'; cell.textContent='❌'; }
+      }
+    }
+  }
+}
+
+function checkWin(){
+  let unrevealed = 0;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      if(!grid[r][c].revealed && !grid[r][c].mine) unrevealed++;
+    }
+  }
+  if(unrevealed === 0){
+    gameState = 'won';
+    clearInterval(timerInterval);
+    faceBtn.textContent = '😎';
+    sfx('win');
+    // auto-flag remaining mines
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        if(grid[r][c].mine && !grid[r][c].flagged){
+          grid[r][c].flagged = true;
+          flagsPlaced++;
+          refreshCell(r,c);
+        }
+      }
+    }
+    updateCounts();
+    const isNew = setBest(difficulty, timerVal);
+    statsEl.textContent = 'You won in '+timerVal+'s!' + (isNew ? ' NEW BEST TIME!' : '');
+    showBestTimes();
+  }
+}
+
+/* ===================== UI EVENTS ===================== */
+faceBtn.addEventListener('click', ()=>{ initGame(); statsEl.textContent=''; });
+
+document.getElementById('btn-easy').addEventListener('click', ()=>{ setDifficulty('easy'); });
+document.getElementById('btn-medium').addEventListener('click', ()=>{ setDifficulty('medium'); });
+document.getElementById('btn-hard').addEventListener('click', ()=>{ setDifficulty('hard'); });
+
+const mineSlider = document.getElementById('mine-slider');
+const mineSliderVal = document.getElementById('mine-slider-val');
+
+function updateSliderRange(){
+  const cfg = CONFIGS[difficulty];
+  const maxMines = Math.floor(cfg.rows * cfg.cols * .6);
+  mineSlider.max = maxMines;
+  mineSlider.value = Math.min(parseInt(mineSlider.value), maxMines);
+  mineSliderVal.textContent = mineSlider.value;
+}
+
+mineSlider.addEventListener('input', ()=>{
+  mineSliderVal.textContent = mineSlider.value;
+});
+mineSlider.addEventListener('change', ()=>{
+  statsEl.textContent = '';
+  initGame();
+});
+
+function setDifficulty(d){
+  difficulty = d;
+  document.querySelectorAll('#difficulty button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+d).classList.add('active');
+  const defaults = { easy:10, medium:40, hard:99 };
+  mineSlider.value = defaults[d];
+  mineSliderVal.textContent = defaults[d];
+  updateSliderRange();
+  statsEl.textContent = '';
+  initGame();
+}
+
+// prevent context menu on board
+boardEl.addEventListener('contextmenu', e=>e.preventDefault());
+
+// start
+initGame();
+
+})();
+</script>
+</body>
+</html>
