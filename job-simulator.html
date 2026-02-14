@@ -1051,7 +1051,12 @@
         function renderInventory() {
             const inventoryList = document.getElementById('inventoryList');
 
-            inventoryList.innerHTML = Object.keys(gameState.inventory).map(productId => {
+            const sortedProducts = Object.keys(gameState.inventory).sort((a, b) => {
+                const aOwned = gameState.unlockedProducts.includes(a) ? 0 : 1;
+                const bOwned = gameState.unlockedProducts.includes(b) ? 0 : 1;
+                return aOwned - bOwned;
+            });
+            inventoryList.innerHTML = sortedProducts.map(productId => {
                 const product = gameState.inventory[productId];
                 const isUnlocked = gameState.unlockedProducts.includes(productId);
                 let sellPrice = product.sellPrice;
@@ -1095,11 +1100,16 @@
         function renderUpgrades() {
             const upgradesList = document.getElementById('upgradesList');
 
-            upgradesList.innerHTML = upgrades.map(upgrade => {
+            const sortedUpgrades = [...upgrades].sort((a, b) => {
+                const aOwned = gameState.upgrades[a.id] ? 0 : 1;
+                const bOwned = gameState.upgrades[b.id] ? 0 : 1;
+                return aOwned - bOwned;
+            });
+            upgradesList.innerHTML = sortedUpgrades.map(upgrade => {
                 const owned = gameState.upgrades[upgrade.id];
 
                 return `
-                    <div class="upgrade-item" style="${owned ? 'opacity: 0.5; border-color: #28a745;' : ''}">
+                    <div class="upgrade-item" style="${owned ? 'border-color: #28a745; background: #f0fff0;' : ''}">
                         <div class="upgrade-info">
                             <div class="upgrade-name">${upgrade.icon} ${upgrade.name}</div>
                             <div class="upgrade-description">${upgrade.description}</div>
