@@ -61,10 +61,19 @@ canvas#gameCanvas{display:block;border-radius:10px;cursor:crosshair;border:1px s
 </div>
 <div id="shop-menu" style="display:none">
   <div style="margin-bottom:4px;color:#f1c40f;font-weight:700">SHOP (U)</div>
-  <div class="bm-item" id="sh0">[1] Auto-Collect <span id="sh0-cost">100g</span></div>
-  <div class="bm-item" id="sh1">[2] Speed Up <span id="sh1-cost">60g</span></div>
-  <div class="bm-item" id="sh2">[3] Buy 30 Ammo <span>40g</span></div>
-  <div class="bm-item" id="sh3">[4] Buy 100 Ammo <span>120g</span></div>
+  <div style="color:#aaa;margin-bottom:2px">-- UPGRADES --</div>
+  <div class="bm-item" id="sh0">[1] Auto-Collect <span>250g</span></div>
+  <div class="bm-item" id="sh1">[2] Speed Up <span>150g</span></div>
+  <div class="bm-item" id="sh2">[3] Max HP Up <span>200g</span></div>
+  <div class="bm-item" id="sh3">[4] Heal Full <span>100g</span></div>
+  <div style="color:#aaa;margin:4px 0 2px">-- SUPPLIES --</div>
+  <div class="bm-item" id="sh4">[5] 30 Ammo <span>80g</span></div>
+  <div class="bm-item" id="sh5">[6] 100 Ammo <span>250g</span></div>
+  <div style="color:#aaa;margin:4px 0 2px">-- BUILDINGS --</div>
+  <div class="bm-item" id="sh6">[7] Barricade <span>25g</span></div>
+  <div class="bm-item" id="sh7">[8] Archer Tower <span>75g</span></div>
+  <div class="bm-item" id="sh8">[9] Cannon Tower <span>150g</span></div>
+  <div class="bm-item" id="sh9">[0] Spike Trap <span>40g</span></div>
   <div style="margin-top:4px;color:#888;font-size:10px" id="shop-info"></div>
 </div>
 
@@ -214,7 +223,7 @@ let wave, kills, gold;
 let waveTimer, waveActive, zombiesLeft, zombiesToSpawn, spawnTimer;
 let buildMode, buildSel;
 let shopMode;
-let hasAutoCollect, speedLevel;
+let hasAutoCollect, speedLevel, hpLevel;
 let shakeX, shakeY, shakeT, hitFlash;
 let keys = {};
 let mouse = { x: W/2, y: H/2, down: false, rdown: false };
@@ -226,7 +235,7 @@ function initGame(){
   wave=0; kills=0; gold=50;
   waveTimer=0; waveActive=false; zombiesLeft=0; zombiesToSpawn=0; spawnTimer=0;
   buildMode=false; buildSel=0;
-  shopMode=false; hasAutoCollect=false; speedLevel=0;
+  shopMode=false; hasAutoCollect=false; speedLevel=0; hpLevel=0;
   shakeX=0; shakeY=0; shakeT=0; hitFlash=0;
   document.getElementById('build-menu').style.display='none';
   document.getElementById('shop-menu').style.display='none';
@@ -271,10 +280,11 @@ document.addEventListener('keydown', e => {
       document.getElementById('shop-menu').style.display = shopMode ? 'block' : 'none';
       document.getElementById('build-menu').style.display = 'none';
     }
-    if(e.key >= '1' && e.key <= '4'){
-      if(buildMode){ buildSel = parseInt(e.key)-1; }
-      else if(shopMode){ buyUpgrade(parseInt(e.key)-1); }
-      else { player.weap = parseInt(e.key)-1; }
+    if(e.key >= '1' && e.key <= '9' || e.key === '0'){
+      const num = e.key === '0' ? 10 : parseInt(e.key);
+      if(buildMode && num <= 4){ buildSel = num-1; }
+      else if(shopMode){ buyUpgrade(num-1); }
+      else if(num <= 4){ player.weap = num-1; }
     }
     if(e.key.toLowerCase() === 'p' || e.key === 'Escape'){
       state = 'paused';
@@ -299,8 +309,9 @@ document.addEventListener('keydown', e => {
         document.getElementById('shop-menu').style.display = 'none';
       }
     }
-    if(shopMode && e.key >= '1' && e.key <= '4'){
-      buyUpgrade(parseInt(e.key)-1);
+    if(shopMode && (e.key >= '1' && e.key <= '9' || e.key === '0')){
+      const num = e.key === '0' ? 10 : parseInt(e.key);
+      buyUpgrade(num-1);
     }
   }
 });
@@ -468,17 +479,18 @@ function gameOver(){
 
 /* ===================== SHOP / UPGRADES ===================== */
 function buyUpgrade(idx){
-  const SPEED_COST = [60, 100, 160];
+  const SPEED_COST = [150, 250, 400];
+  const HP_COST = [200, 350, 500];
   switch(idx){
     case 0: // auto-collect
       if(hasAutoCollect) return;
-      if(gold < 100) return;
-      gold -= 100;
+      if(gold < 250) return;
+      gold -= 250;
       hasAutoCollect = true;
       sfx('build');
       floatTexts.push({ x:W/2, y:H/2-20, text:'AUTO-COLLECT!', color:'#2ecc71', size:24, life:80, vy:-.5 });
       break;
-    case 1: // speed
+    case 1: { // speed
       if(speedLevel >= 3) return;
       const cost = SPEED_COST[speedLevel];
       if(gold < cost) return;
@@ -488,33 +500,81 @@ function buyUpgrade(idx){
       sfx('build');
       floatTexts.push({ x:W/2, y:H/2-20, text:'SPEED UP! (Lv'+speedLevel+')', color:'#3498db', size:22, life:80, vy:-.5 });
       break;
-    case 2: // 30 ammo
-      if(gold < 40) return;
-      gold -= 40;
+    }
+    case 2: { // max HP up
+      if(hpLevel >= 3) return;
+      const cost = HP_COST[hpLevel];
+      if(gold < cost) return;
+      gold -= cost;
+      hpLevel++;
+      player.maxHp = 200 + hpLevel * 50;
+      player.hp = Math.min(player.hp + 50, player.maxHp);
+      sfx('build');
+      floatTexts.push({ x:W/2, y:H/2-20, text:'MAX HP UP! ('+player.maxHp+')', color:'#e74c3c', size:22, life:80, vy:-.5 });
+      break;
+    }
+    case 3: // heal full
+      if(player.hp >= player.maxHp) return;
+      if(gold < 100) return;
+      gold -= 100;
+      player.hp = player.maxHp;
+      sfx('gold');
+      floatTexts.push({ x:player.x, y:player.y-10, text:'FULL HEAL!', color:'#2ecc71', size:16, life:50, vy:-.8 });
+      break;
+    case 4: // 30 ammo
+      if(gold < 80) return;
+      gold -= 80;
       player.ammo += 30;
       sfx('gold');
       floatTexts.push({ x:player.x, y:player.y-10, text:'+30 Ammo', color:'#3498db', size:14, life:40, vy:-.8 });
       break;
-    case 3: // 100 ammo
-      if(gold < 120) return;
-      gold -= 120;
+    case 5: // 100 ammo
+      if(gold < 250) return;
+      gold -= 250;
       player.ammo += 100;
       sfx('gold');
       floatTexts.push({ x:player.x, y:player.y-10, text:'+100 Ammo', color:'#3498db', size:14, life:40, vy:-.8 });
       break;
+    case 6: // barricade - enter build mode
+      buildSel = 0; buildMode = true; shopMode = false; state = 'playing';
+      document.getElementById('shop-menu').style.display = 'none';
+      document.getElementById('build-menu').style.display = 'block';
+      return;
+    case 7: // archer tower
+      buildSel = 1; buildMode = true; shopMode = false; state = 'playing';
+      document.getElementById('shop-menu').style.display = 'none';
+      document.getElementById('build-menu').style.display = 'block';
+      return;
+    case 8: // cannon tower
+      buildSel = 2; buildMode = true; shopMode = false; state = 'playing';
+      document.getElementById('shop-menu').style.display = 'none';
+      document.getElementById('build-menu').style.display = 'block';
+      return;
+    case 9: // spike trap
+      buildSel = 3; buildMode = true; shopMode = false; state = 'playing';
+      document.getElementById('shop-menu').style.display = 'none';
+      document.getElementById('build-menu').style.display = 'block';
+      return;
   }
   updateShopUI();
 }
 
 function updateShopUI(){
-  const SPEED_COST = [60, 100, 160];
+  const SPEED_COST = [150, 250, 400];
+  const HP_COST = [200, 350, 500];
   document.getElementById('sh0').innerHTML = hasAutoCollect
     ? '[1] Auto-Collect <span style="color:#2ecc71">OWNED</span>'
-    : '[1] Auto-Collect <span>100g</span>';
+    : '[1] Auto-Collect <span>250g</span>';
   document.getElementById('sh1').innerHTML = speedLevel >= 3
     ? '[2] Speed (MAX) <span style="color:#2ecc71">MAXED</span>'
     : '[2] Speed Lv'+(speedLevel+1)+' <span>'+SPEED_COST[speedLevel]+'g</span>';
-  document.getElementById('shop-info').textContent = 'Speed: Lv'+speedLevel+'/3 | Collect: '+(hasAutoCollect?'ON':'OFF');
+  document.getElementById('sh2').innerHTML = hpLevel >= 3
+    ? '[3] Max HP (MAX) <span style="color:#2ecc71">MAXED</span>'
+    : '[3] Max HP Lv'+(hpLevel+1)+' <span>'+HP_COST[hpLevel]+'g</span>';
+  document.getElementById('sh3').innerHTML = player.hp >= player.maxHp
+    ? '[4] Heal Full <span style="color:#888">FULL</span>'
+    : '[4] Heal Full <span>100g</span>';
+  document.getElementById('shop-info').textContent = 'Gold: '+gold+' | HP: '+player.hp+'/'+player.maxHp;
 }
 
 /* ===================== UPDATE ===================== */
