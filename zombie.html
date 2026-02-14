@@ -217,7 +217,7 @@ const BUILDS = [
 let state = 'start'; // start | playing | paused | gameover
 let highScore = parseInt(localStorage.getItem('zombieSurvivalHS')) || 0;
 
-let player, bullets, zombies, buildings, particles, drops, towerProj;
+let player, bullets, zombies, buildings, obstacles, particles, drops, towerProj;
 let bloodSplats, floatTexts, fogParts;
 let wave, kills, gold;
 let waveTimer, waveActive, zombiesLeft, zombiesToSpawn, spawnTimer;
@@ -230,7 +230,7 @@ let mouse = { x: W/2, y: H/2, down: false, rdown: false };
 
 function initGame(){
   player = { x:W/2, y:H/2, hp:200, maxHp:200, spd:3, weap:0, ammo:60, lastShot:0 };
-  bullets=[]; zombies=[]; buildings=[]; particles=[]; drops=[]; towerProj=[];
+  bullets=[]; zombies=[]; buildings=[]; obstacles=[]; particles=[]; drops=[]; towerProj=[];
   bloodSplats=[]; floatTexts=[]; fogParts=[];
   wave=0; kills=0; gold=50;
   waveTimer=0; waveActive=false; zombiesLeft=0; zombiesToSpawn=0; spawnTimer=0;
@@ -243,13 +243,26 @@ function initGame(){
     fogParts.push({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*40+20,
       vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.2, a:Math.random()*.06+.02 });
   }
+  // spawn obstacles
+  const obstTypes = ['rock','rock','crate','crate','tree','barrel'];
+  for(let i=0;i<18;i++){
+    let ox, oy, tries=0;
+    do {
+      ox = 30 + Math.random()*(W-60);
+      oy = 30 + Math.random()*(H-60);
+      tries++;
+    } while(Math.hypot(ox-W/2, oy-H/2) < 80 && tries < 50); // keep away from spawn
+    const t = obstTypes[Math.floor(Math.random()*obstTypes.length)];
+    const sz = t==='tree' ? 18 : t==='rock' ? 14+Math.random()*6 : 12;
+    obstacles.push({ x:ox, y:oy, type:t, size:sz });
+  }
 }
 
 /* ===================== WAVE SYSTEM ===================== */
 function startWave(){
   wave++;
   waveActive = true;
-  const count = 5 + wave * 3;
+  const count = 6 + wave * 4;
   zombiesToSpawn = count;
   zombiesLeft = count;
   spawnTimer = 0;
@@ -347,14 +360,14 @@ function spawnZombie(){
     case 'tank':     hp=120; speed=.5;  size=16; color='#8B5E3C'; bldgDmg=25; break;
     case 'exploder': hp=40;  speed=1.0; size=11; color='#e74c3c'; bldgDmg=15; break;
   }
-  hp = Math.floor(hp * (1 + wave * .08));
+  hp = Math.floor(hp * (1 + wave * .14));
   let x, y;
   const side = Math.floor(Math.random()*4);
   if(side===0){ x=Math.random()*W; y=-20; }
   else if(side===1){ x=W+20; y=Math.random()*H; }
   else if(side===2){ x=Math.random()*W; y=H+20; }
   else { x=-20; y=Math.random()*H; }
-  zombies.push({ x, y, hp, maxHp:hp, speed, size, color, type, bldgDmg, atkTimer:0, lastSpike:0 });
+  zombies.push({ x, y, hp, maxHp:hp, speed, size, color, type, bldgDmg, atkTimer:0, pAtkTimer:0, lastSpike:0 });
 }
 
 /* ===================== PLAYER SHOOTING ===================== */
@@ -389,6 +402,7 @@ function tryBuild(){
   if(gold < bt.cost) return;
   for(const b of buildings){ if(b.gx===gx && b.gy===gy) return; }
   const cx = gx*TILE + TILE/2, cy = gy*TILE + TILE/2;
+  for(const o of obstacles){ if(Math.hypot(cx-o.x, cy-o.y) < o.size+TILE*.4) return; }
   if(Math.abs(cx-player.x)<TILE && Math.abs(cy-player.y)<TILE) return;
   gold -= bt.cost;
   buildings.push({ gx, gy, x:cx, y:cy, hp:bt.hp, maxHp:bt.hp, kind:bt.kind, color:bt.color,
@@ -615,6 +629,11 @@ function update(){
     if(Math.abs(nx-b.x)<TILE*.8 && Math.abs(ny-b.y)<TILE*.8){ blocked=true; break; }
   }
   if(!blocked){
+    for(const o of obstacles){
+      if(Math.hypot(nx-o.x, ny-o.y) < o.size+8){ blocked=true; break; }
+    }
+  }
+  if(!blocked){
     player.x = Math.max(12, Math.min(W-12, nx));
     player.y = Math.max(12, Math.min(H-12, ny));
   }
@@ -629,6 +648,15 @@ function update(){
     const b = bullets[i];
     b.x += b.vx; b.y += b.vy; b.life--;
     if(b.life<=0 || b.x<0 || b.x>W || b.y<0 || b.y>H){ bullets.splice(i,1); continue; }
+    // bullet hits obstacle
+    let hitObs = false;
+    for(const o of obstacles){
+      if(Math.hypot(b.x-o.x, b.y-o.y) < o.size){
+        particles.push({ x:b.x, y:b.y, vx:(Math.random()-.5)*2, vy:(Math.random()-.5)*2, life:10, maxLife:10, color:'#888', size:2 });
+        hitObs=true; break;
+      }
+    }
+    if(hitObs){ bullets.splice(i,1); continue; }
     let hit = false;
     for(let j=zombies.length-1; j>=0; j--){
       const z = zombies[j];
@@ -653,13 +681,25 @@ function update(){
     const my = Math.sin(ang)*z.speed;
     const zx = z.x+mx, zy = z.y+my;
 
+    // obstacle collision for zombies
+    let hitObst = false;
+    for(const o of obstacles){
+      if(Math.hypot(zx-o.x, zy-o.y) < o.size+z.size*.5){
+        // slide around obstacle
+        const oa = Math.atan2(z.y-o.y, z.x-o.x);
+        z.x += Math.cos(oa)*z.speed*.6;
+        z.y += Math.sin(oa)*z.speed*.6;
+        hitObst=true; break;
+      }
+    }
+
     // building collision
     let hitBldg = null;
     for(const b of buildings){
       if(b.kind==='spike') continue;
       if(Math.abs(zx-b.x)<TILE*.6 && Math.abs(zy-b.y)<TILE*.6){ hitBldg=b; break; }
     }
-    if(hitBldg){
+    if(hitObst){} else if(hitBldg){
       z.atkTimer++;
       if(z.atkTimer >= 30){
         z.atkTimer = 0;
@@ -690,10 +730,10 @@ function update(){
 
     // damage player
     if(Math.hypot(z.x-player.x, z.y-player.y) < z.size+10){
-      z.atkTimer++;
-      if(z.atkTimer >= 20){
-        z.atkTimer = 0;
-        player.hp -= 2;
+      z.pAtkTimer++;
+      if(z.pAtkTimer >= 20){
+        z.pAtkTimer = 0;
+        player.hp -= 5;
         hitFlash = 8;
         sfx('hit');
         if(player.hp <= 0){ gameOver(); return; }
@@ -843,6 +883,42 @@ function draw(){
     ctx.fillStyle = `rgba(100,100,120,${f.a})`; ctx.fill();
   }
 
+  // obstacles
+  for(const o of obstacles){
+    ctx.save(); ctx.translate(o.x, o.y);
+    if(o.type === 'rock'){
+      ctx.fillStyle = '#555';
+      ctx.beginPath(); ctx.ellipse(0,2,o.size,o.size*.7,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#666';
+      ctx.beginPath(); ctx.ellipse(-2,-1,o.size*.7,o.size*.5,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#777';
+      ctx.beginPath(); ctx.ellipse(-1,-3,o.size*.3,o.size*.2,.3,0,Math.PI*2); ctx.fill();
+    } else if(o.type === 'crate'){
+      ctx.fillStyle = '#8B6914';
+      ctx.fillRect(-o.size,-o.size,o.size*2,o.size*2);
+      ctx.strokeStyle = '#5a4510'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(-o.size,-o.size,o.size*2,o.size*2);
+      ctx.beginPath(); ctx.moveTo(-o.size,-o.size); ctx.lineTo(o.size,o.size); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(o.size,-o.size); ctx.lineTo(-o.size,o.size); ctx.stroke();
+    } else if(o.type === 'tree'){
+      ctx.fillStyle = '#3e2a14';
+      ctx.fillRect(-3,0,6,10);
+      ctx.fillStyle = '#1a5e1a';
+      ctx.beginPath(); ctx.arc(0,-4,o.size*.7,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#227722';
+      ctx.beginPath(); ctx.arc(-3,-6,o.size*.4,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(4,-3,o.size*.35,0,Math.PI*2); ctx.fill();
+    } else if(o.type === 'barrel'){
+      ctx.fillStyle = '#8B4513';
+      ctx.beginPath(); ctx.ellipse(0,0,o.size,o.size*.8,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(0,0,o.size,o.size*.8,0,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle = '#666'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-o.size*.6,0); ctx.lineTo(o.size*.6,0); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // build grid
   if(buildMode){
     ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = .5;
@@ -913,19 +989,73 @@ function draw(){
   }
 
   // zombies
+  const now2 = performance.now();
   for(const z of zombies){
     ctx.save(); ctx.translate(z.x, z.y);
-    ctx.fillStyle = z.color;
-    ctx.beginPath(); ctx.arc(0,0,z.size,0,Math.PI*2); ctx.fill();
-    // eyes
     const fa = Math.atan2(player.y-z.y, player.x-z.x);
-    ctx.fillStyle = '#300';
-    ctx.beginPath(); ctx.arc(Math.cos(fa-.3)*z.size*.5, Math.sin(fa-.3)*z.size*.5, z.size*.2, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(Math.cos(fa+.3)*z.size*.5, Math.sin(fa+.3)*z.size*.5, z.size*.2, 0, Math.PI*2); ctx.fill();
+    ctx.rotate(fa + Math.PI/2);
+    const s = z.size;
+    const wobble = Math.sin(now2*.006 + z.x*3)*.15; // shamble wobble
+
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.beginPath(); ctx.ellipse(0,2,s*.9,s*.5,0,0,Math.PI*2); ctx.fill();
+
+    // arms (reaching forward, with wobble)
+    ctx.strokeStyle = z.color; ctx.lineWidth = s*.35; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-s*.6, -s*.2); ctx.lineTo(-s*.8+Math.sin(wobble*3)*2, -s*1.1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s*.6, -s*.2); ctx.lineTo(s*.8+Math.cos(wobble*3)*2, -s*1.1); ctx.stroke();
+
+    // body
+    ctx.fillStyle = z.type==='tank'?'#6B4226':z.type==='exploder'?'#992222':z.type==='fast'?'#7a9918':'#335533';
+    ctx.beginPath(); ctx.ellipse(0,s*.15,s*.65,s*.8,wobble,0,Math.PI*2); ctx.fill();
+
+    // torn clothing detail
+    ctx.strokeStyle = z.type==='tank'?'#4a2e18':z.type==='exploder'?'#661111':'#223322';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-s*.4,s*.3); ctx.lineTo(-s*.3,s*.7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s*.3,s*.2); ctx.lineTo(s*.5,s*.6); ctx.stroke();
+
+    // head
+    ctx.fillStyle = z.color;
+    ctx.beginPath(); ctx.arc(0, -s*.5, s*.45, 0, Math.PI*2); ctx.fill();
+    // head outline
+    ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, -s*.5, s*.45, 0, Math.PI*2); ctx.stroke();
+
+    // eyes (glowing)
+    ctx.fillStyle = z.type==='exploder'?'#ff4444':'#aaff00';
+    ctx.shadowColor = z.type==='exploder'?'#ff0000':'#88ff00'; ctx.shadowBlur = 4;
+    ctx.beginPath(); ctx.arc(-s*.15, -s*.55, s*.1, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(s*.15, -s*.55, s*.1, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // pupils
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(-s*.15, -s*.55, s*.05, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(s*.15, -s*.55, s*.05, 0, Math.PI*2); ctx.fill();
+
+    // mouth scar
+    ctx.strokeStyle = '#300'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-s*.15,-s*.35); ctx.lineTo(s*.1,-s*.32); ctx.stroke();
+
+    // blood/wound detail for tanks
+    if(z.type==='tank'){
+      ctx.fillStyle = 'rgba(120,0,0,.5)';
+      ctx.beginPath(); ctx.arc(s*.2, 0, s*.15, 0, Math.PI*2); ctx.fill();
+    }
+    // exploder glow
+    if(z.type==='exploder'){
+      ctx.fillStyle = 'rgba(255,60,0,.15)';
+      ctx.beginPath(); ctx.arc(0,0,s*1.3,0,Math.PI*2); ctx.fill();
+    }
+
+    ctx.rotate(-(fa + Math.PI/2)); // reset rotation for hp bar
+
     // hp bar
     if(z.hp < z.maxHp){
-      ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(-z.size, -z.size-6, z.size*2, 3);
-      ctx.fillStyle = '#e74c3c'; ctx.fillRect(-z.size, -z.size-6, z.size*2*(z.hp/z.maxHp), 3);
+      ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(-s, -s-8, s*2, 3);
+      ctx.fillStyle = '#e74c3c'; ctx.fillRect(-s, -s-8, s*2*(z.hp/z.maxHp), 3);
     }
     ctx.restore();
   }
