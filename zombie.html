@@ -17,7 +17,7 @@ canvas#gameCanvas{display:block;border-radius:10px;cursor:crosshair;border:1px s
 .hp-bar-outer{width:140px;height:14px;background:rgba(255,255,255,.1);border-radius:7px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
 .hp-bar-inner{height:100%;background:linear-gradient(90deg,#c0392b,#e74c3c);border-radius:7px;transition:width .2s}
 #hud-bottom{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:0 0 10px 10px;border-top:1px solid rgba(255,255,255,.06);font-size:12px;z-index:5;pointer-events:none}
-#build-menu,#shop-menu{position:absolute;right:8px;top:40px;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;font-size:11px;z-index:6;display:none;pointer-events:none;min-width:170px}
+#build-menu,#shop-menu{position:absolute;right:8px;top:40px;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;font-size:11px;z-index:6;display:none;pointer-events:none;min-width:200px;max-height:460px;overflow-y:auto}
 #shop-menu{right:auto;left:8px}
 #build-menu .bm-item{padding:3px 0;display:flex;justify-content:space-between;gap:12px}
 #build-menu .bm-item.selected{color:#f1c40f}
@@ -60,27 +60,15 @@ canvas#gameCanvas{display:block;border-radius:10px;cursor:crosshair;border:1px s
   <div style="margin-top:4px;color:#888;font-size:10px">Right-click to sell (50%)</div>
 </div>
 <div id="shop-menu" style="display:none">
-  <div style="margin-bottom:4px;color:#f1c40f;font-weight:700">SHOP (U)</div>
-  <div style="color:#aaa;margin-bottom:2px">-- UPGRADES --</div>
-  <div class="bm-item" id="sh0">[1] Auto-Collect <span>250g</span></div>
-  <div class="bm-item" id="sh1">[2] Speed Up <span>150g</span></div>
-  <div class="bm-item" id="sh2">[3] Max HP Up <span>200g</span></div>
-  <div class="bm-item" id="sh3">[4] Heal Full <span>100g</span></div>
-  <div style="color:#aaa;margin:4px 0 2px">-- SUPPLIES --</div>
-  <div class="bm-item" id="sh4">[5] 30 Ammo <span>80g</span></div>
-  <div class="bm-item" id="sh5">[6] 100 Ammo <span>250g</span></div>
-  <div style="color:#aaa;margin:4px 0 2px">-- BUILDINGS --</div>
-  <div class="bm-item" id="sh6">[7] Barricade <span>25g</span></div>
-  <div class="bm-item" id="sh7">[8] Archer Tower <span>75g</span></div>
-  <div class="bm-item" id="sh8">[9] Cannon Tower <span>150g</span></div>
-  <div class="bm-item" id="sh9">[0] Spike Trap <span>40g</span></div>
+  <div id="shop-content"></div>
   <div style="margin-top:4px;color:#888;font-size:10px" id="shop-info"></div>
 </div>
 
 <div class="overlay overlay-bg" id="start-screen">
   <h2>&#x1F9DF; Zombie Survival</h2>
   <p>WASD to move &bull; Mouse to aim &bull; Click to shoot</p>
-  <p>B to build &bull; U to shop &bull; 1-4 select &bull; P to pause</p>
+  <p>B to build &bull; U to shop (Tab pages) &bull; 1-0 weapons &bull; P to pause</p>
+  <p>V to exit vehicle</p>
   <p>Survive the horde!</p>
   <p style="margin-top:8px;color:#999" id="hs-start"></p>
   <button id="start-btn">START GAME</button>
@@ -187,6 +175,14 @@ function sfx(name){
     }
     case 'gameover':  tone('sawtooth',400,40,1.2,.3); break;
     case 'explosion': noise(.3,.4); tone('sawtooth',100,20,.3,.3); break;
+    case 'crossbow':  tone('sine',600,200,.12,.2); break;
+    case 'flame':     noise(.06,.15); tone('sine',200,100,.06,.1); break;
+    case 'rocket':    tone('sawtooth',200,60,.3,.3); noise(.15,.2); break;
+    case 'laser':     tone('sine',1800,2200,.08,.2); break;
+    case 'minigun':   tone('square',900,300,.04,.18); break;
+    case 'grenade':   tone('sawtooth',150,40,.2,.25); noise(.1,.15); break;
+    case 'vbuy':      tone('sine',300,600,.2,.25); tone('sine',500,800,.15,.2); break;
+    case 'vdestroy':  noise(.4,.35); tone('sawtooth',200,30,.5,.3); break;
   }
 }
 
@@ -199,10 +195,24 @@ const COLS = Math.floor(W / TILE), ROWS = Math.floor(H / TILE);
 
 /* ===================== WEAPON DEFINITIONS ===================== */
 const WEAPONS = [
-  { name:'Pistol',      dmg:15, rate:280, spd:12, color:'#fff',  trail:1, snd:'pistol',     spread:0,   count:1 },
-  { name:'Shotgun',     dmg:10, rate:600, spd:10, color:'#ffa',  trail:1, snd:'shotgun',    spread:.28, count:5 },
-  { name:'Machine Gun', dmg:8,  rate:85,  spd:14, color:'#aff',  trail:1, snd:'machinegun', spread:.09, count:1 },
-  { name:'Sniper',      dmg:60, rate:850, spd:20, color:'#f5f',  trail:2, snd:'sniper',     spread:0,   count:1 }
+  { name:'Pistol',           dmg:15, rate:280,  spd:12, color:'#fff',  trail:1, snd:'pistol',     spread:0,   count:1, cost:0 },
+  { name:'Shotgun',          dmg:10, rate:600,  spd:10, color:'#ffa',  trail:1, snd:'shotgun',    spread:.28, count:5, cost:150 },
+  { name:'Machine Gun',      dmg:8,  rate:85,   spd:14, color:'#aff',  trail:1, snd:'machinegun', spread:.09, count:1, cost:250 },
+  { name:'Sniper',           dmg:60, rate:850,  spd:20, color:'#f5f',  trail:2, snd:'sniper',     spread:0,   count:1, cost:350 },
+  { name:'Crossbow',         dmg:35, rate:700,  spd:11, color:'#a86',  trail:1, snd:'crossbow',   spread:0,   count:1, cost:175 },
+  { name:'Flamethrower',     dmg:4,  rate:40,   spd:7,  color:'#f80',  trail:3, snd:'flame',      spread:.25, count:3, cost:300 },
+  { name:'Rocket Launcher',  dmg:80, rate:1200, spd:8,  color:'#f44',  trail:3, snd:'rocket',     spread:0,   count:1, cost:500, splash:50 },
+  { name:'Laser Gun',        dmg:25, rate:180,  spd:30, color:'#0ff',  trail:1, snd:'laser',      spread:0,   count:1, cost:400 },
+  { name:'Minigun',          dmg:6,  rate:50,   spd:15, color:'#ff0',  trail:1, snd:'minigun',    spread:.12, count:1, cost:600 },
+  { name:'Grenade Launcher', dmg:50, rate:1000, spd:6,  color:'#4a4',  trail:2, snd:'grenade',    spread:.05, count:1, cost:500, splash:70 }
+];
+
+/* ===================== VEHICLE DEFINITIONS ===================== */
+const VEHICLES = [
+  { name:'Motorcycle', cost:200, hp:80,  speed:6,   dmgBonus:0,  color:'#888',    desc:'Fast & light' },
+  { name:'Jeep',       cost:400, hp:200, speed:4.5, dmgBonus:3,  color:'#556B2F', desc:'Sturdy all-rounder' },
+  { name:'APC',        cost:600, hp:350, speed:3.5, dmgBonus:5,  color:'#2F4F4F', desc:'Heavy armor' },
+  { name:'Tank',       cost:800, hp:500, speed:2,   dmgBonus:10, color:'#4a4a2a', desc:'Ultimate firepower' }
 ];
 
 /* ===================== BUILDING DEFINITIONS ===================== */
@@ -222,20 +232,24 @@ let bloodSplats, floatTexts, fogParts;
 let wave, kills, gold;
 let waveTimer, waveActive, zombiesLeft, zombiesToSpawn, spawnTimer;
 let buildMode, buildSel;
-let shopMode;
+let shopMode, shopPage;
 let hasAutoCollect, speedLevel, hpLevel;
+let unlockedWeapons;
+let vehicle;
 let shakeX, shakeY, shakeT, hitFlash;
 let keys = {};
 let mouse = { x: W/2, y: H/2, down: false, rdown: false };
 
 function initGame(){
-  player = { x:W/2, y:H/2, hp:200, maxHp:200, spd:3, weap:0, ammo:60, lastShot:0 };
+  player = { x:W/2, y:H/2, hp:200, maxHp:200, spd:3, weap:0, ammo:40, lastShot:0 };
   bullets=[]; zombies=[]; buildings=[]; obstacles=[]; particles=[]; drops=[]; towerProj=[];
   bloodSplats=[]; floatTexts=[]; fogParts=[];
   wave=0; kills=0; gold=50;
   waveTimer=0; waveActive=false; zombiesLeft=0; zombiesToSpawn=0; spawnTimer=0;
   buildMode=false; buildSel=0;
-  shopMode=false; hasAutoCollect=false; speedLevel=0; hpLevel=0;
+  shopMode=false; shopPage=0; hasAutoCollect=false; speedLevel=0; hpLevel=0;
+  unlockedWeapons=new Set([0]); // start with pistol only
+  vehicle=null;
   shakeX=0; shakeY=0; shakeT=0; hitFlash=0;
   document.getElementById('build-menu').style.display='none';
   document.getElementById('shop-menu').style.display='none';
@@ -293,11 +307,24 @@ document.addEventListener('keydown', e => {
       document.getElementById('shop-menu').style.display = shopMode ? 'block' : 'none';
       document.getElementById('build-menu').style.display = 'none';
     }
+    if(e.key.toLowerCase() === 'v' && vehicle){
+      vehicle = null;
+      player.spd = 3 + speedLevel * .8;
+      sfx('build');
+      floatTexts.push({ x:player.x, y:player.y-10, text:'EXITED VEHICLE', color:'#aaa', size:14, life:50, vy:-.8 });
+    }
+    if(e.key === 'Tab'){ e.preventDefault(); }
     if(e.key >= '1' && e.key <= '9' || e.key === '0'){
       const num = e.key === '0' ? 10 : parseInt(e.key);
       if(buildMode && num <= 4){ buildSel = num-1; }
-      else if(shopMode){ buyUpgrade(num-1); }
-      else if(num <= 4){ player.weap = num-1; }
+      else if(shopMode){ buyShopItem(num-1); }
+      else {
+        // switch weapon (1-0 = weapon indices 0-9)
+        const wi = num - 1;
+        if(wi < WEAPONS.length && unlockedWeapons.has(wi)){
+          player.weap = wi;
+        }
+      }
     }
     if(e.key.toLowerCase() === 'p' || e.key === 'Escape'){
       state = 'paused';
@@ -314,6 +341,11 @@ document.addEventListener('keydown', e => {
       document.getElementById('pause-screen').style.display = 'none';
       e.preventDefault();
     }
+    if(e.key === 'Tab' && shopMode){
+      e.preventDefault();
+      shopPage = (shopPage + 1) % 3;
+      updateShopUI();
+    }
     // allow shop purchases while paused in shop
     if(e.key.toLowerCase() === 'u'){
       if(shopMode){
@@ -324,7 +356,7 @@ document.addEventListener('keydown', e => {
     }
     if(shopMode && (e.key >= '1' && e.key <= '9' || e.key === '0')){
       const num = e.key === '0' ? 10 : parseInt(e.key);
-      buyUpgrade(num-1);
+      buyShopItem(num-1);
     }
   }
 });
@@ -380,10 +412,11 @@ function shoot(){
   player.ammo--;
   sfx(w.snd);
   const ang = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+  const bonusDmg = vehicle ? vehicle.dmgBonus : 0;
   for(let i = 0; i < w.count; i++){
     const a = ang + (Math.random()-.5) * w.spread * 2;
     bullets.push({ x:player.x, y:player.y, vx:Math.cos(a)*w.spd, vy:Math.sin(a)*w.spd,
-      dmg:w.dmg, life:60, trail:w.trail, color:w.color });
+      dmg:w.dmg+bonusDmg, life:60, trail:w.trail, color:w.color, splash:w.splash||0 });
   }
   // muzzle flash particles
   for(let i = 0; i < 5; i++){
@@ -458,15 +491,12 @@ function killZombie(idx){
   // floating gold
   floatTexts.push({ x:z.x, y:z.y-10, text:'+'+g+' gold', color:'#f1c40f', size:13, life:50, vy:-.8 });
 
-  // drops
+  // drops (no weapon drops - buy them from shop)
   const rnd = Math.random();
   if(rnd < .08){
     drops.push({ x:z.x, y:z.y, kind:'health', label:'+30 HP', color:'#2ecc71', life:600 });
-  } else if(rnd < .18){
+  } else if(rnd < .2){
     drops.push({ x:z.x, y:z.y, kind:'ammo', label:'+20 Ammo', color:'#3498db', life:600 });
-  } else if(rnd < .23){
-    const wi = Math.floor(Math.random()*WEAPONS.length);
-    drops.push({ x:z.x, y:z.y, kind:'weapon', weapIdx:wi, label:WEAPONS[wi].name, color:'#e67e22', life:600 });
   }
 
   zombies.splice(idx,1);
@@ -492,6 +522,12 @@ function gameOver(){
 }
 
 /* ===================== SHOP / UPGRADES ===================== */
+function buyShopItem(idx){
+  if(shopPage === 0) buyUpgrade(idx);
+  else if(shopPage === 1) buyWeapon(idx);
+  else if(shopPage === 2) buyVehicle(idx);
+}
+
 function buyUpgrade(idx){
   const SPEED_COST = [150, 250, 400];
   const HP_COST = [200, 350, 500];
@@ -573,22 +609,86 @@ function buyUpgrade(idx){
   updateShopUI();
 }
 
+function buyWeapon(idx){
+  if(idx < 0 || idx >= WEAPONS.length) return;
+  const w = WEAPONS[idx];
+  if(unlockedWeapons.has(idx)) return;
+  if(w.cost <= 0) return; // pistol is free/already owned
+  if(gold < w.cost) return;
+  gold -= w.cost;
+  unlockedWeapons.add(idx);
+  player.weap = idx;
+  player.ammo += 20;
+  sfx('build');
+  floatTexts.push({ x:W/2, y:H/2-20, text:'GOT '+w.name.toUpperCase()+'!', color:'#e67e22', size:22, life:80, vy:-.5 });
+  updateShopUI();
+}
+
+function buyVehicle(idx){
+  if(idx < 0 || idx >= VEHICLES.length) return;
+  const v = VEHICLES[idx];
+  if(vehicle) return; // already in a vehicle
+  if(gold < v.cost) return;
+  gold -= v.cost;
+  vehicle = { type:v.name, hp:v.hp, maxHp:v.hp, speed:v.speed, dmgBonus:v.dmgBonus, color:v.color };
+  player.spd = v.speed + speedLevel * .4;
+  sfx('vbuy');
+  floatTexts.push({ x:W/2, y:H/2-20, text:'ENTERED '+v.name.toUpperCase()+'!', color:'#3498db', size:22, life:80, vy:-.5 });
+  // close shop and resume
+  shopMode = false; state = 'playing';
+  document.getElementById('shop-menu').style.display = 'none';
+}
+
 function updateShopUI(){
   const SPEED_COST = [150, 250, 400];
   const HP_COST = [200, 350, 500];
-  document.getElementById('sh0').innerHTML = hasAutoCollect
-    ? '[1] Auto-Collect <span style="color:#2ecc71">OWNED</span>'
-    : '[1] Auto-Collect <span>250g</span>';
-  document.getElementById('sh1').innerHTML = speedLevel >= 3
-    ? '[2] Speed (MAX) <span style="color:#2ecc71">MAXED</span>'
-    : '[2] Speed Lv'+(speedLevel+1)+' <span>'+SPEED_COST[speedLevel]+'g</span>';
-  document.getElementById('sh2').innerHTML = hpLevel >= 3
-    ? '[3] Max HP (MAX) <span style="color:#2ecc71">MAXED</span>'
-    : '[3] Max HP Lv'+(hpLevel+1)+' <span>'+HP_COST[hpLevel]+'g</span>';
-  document.getElementById('sh3').innerHTML = player.hp >= player.maxHp
-    ? '[4] Heal Full <span style="color:#888">FULL</span>'
-    : '[4] Heal Full <span>100g</span>';
-  document.getElementById('shop-info').textContent = 'Gold: '+gold+' | HP: '+player.hp+'/'+player.maxHp;
+  const content = document.getElementById('shop-content');
+  const pageTitles = ['Upgrades','Weapons','Vehicles'];
+  let html = '<div style="margin-bottom:4px;color:#f1c40f;font-weight:700">SHOP (U) - '+pageTitles[shopPage]+'</div>';
+  html += '<div style="display:flex;gap:4px;margin-bottom:6px">';
+  for(let p=0;p<3;p++){
+    const active = p===shopPage;
+    html += '<span style="padding:2px 6px;border-radius:4px;font-size:10px;'+(active?'background:rgba(255,200,50,.2);color:#f1c40f':'color:#666')+'">'+pageTitles[p]+'</span>';
+  }
+  html += '</div><div style="color:#666;font-size:9px;margin-bottom:4px">Press Tab to switch page</div>';
+
+  if(shopPage === 0){
+    html += '<div style="color:#aaa;margin-bottom:2px">-- UPGRADES --</div>';
+    html += '<div class="bm-item">'+(hasAutoCollect?'[1] Auto-Collect <span style="color:#2ecc71">OWNED</span>':'[1] Auto-Collect <span>250g</span>')+'</div>';
+    html += '<div class="bm-item">'+(speedLevel>=3?'[2] Speed (MAX) <span style="color:#2ecc71">MAXED</span>':'[2] Speed Lv'+(speedLevel+1)+' <span>'+SPEED_COST[speedLevel]+'g</span>')+'</div>';
+    html += '<div class="bm-item">'+(hpLevel>=3?'[3] Max HP (MAX) <span style="color:#2ecc71">MAXED</span>':'[3] Max HP Lv'+(hpLevel+1)+' <span>'+HP_COST[hpLevel]+'g</span>')+'</div>';
+    html += '<div class="bm-item">'+(player.hp>=player.maxHp?'[4] Heal Full <span style="color:#888">FULL</span>':'[4] Heal Full <span>100g</span>')+'</div>';
+    html += '<div style="color:#aaa;margin:4px 0 2px">-- SUPPLIES --</div>';
+    html += '<div class="bm-item">[5] 30 Ammo <span>80g</span></div>';
+    html += '<div class="bm-item">[6] 100 Ammo <span>250g</span></div>';
+    html += '<div style="color:#aaa;margin:4px 0 2px">-- BUILDINGS --</div>';
+    html += '<div class="bm-item">[7] Barricade <span>25g</span></div>';
+    html += '<div class="bm-item">[8] Archer Tower <span>75g</span></div>';
+    html += '<div class="bm-item">[9] Cannon Tower <span>150g</span></div>';
+    html += '<div class="bm-item">[0] Spike Trap <span>40g</span></div>';
+  } else if(shopPage === 1){
+    for(let i=0;i<WEAPONS.length;i++){
+      const w = WEAPONS[i];
+      const key = i===9?'0':''+(i+1);
+      const owned = unlockedWeapons.has(i);
+      if(owned) html += '<div class="bm-item">['+key+'] '+w.name+' <span style="color:#2ecc71">OWNED</span></div>';
+      else html += '<div class="bm-item">['+key+'] '+w.name+' <span>'+w.cost+'g</span></div>';
+    }
+  } else if(shopPage === 2){
+    if(vehicle){
+      html += '<div style="color:#3498db;margin-bottom:4px">Current: '+vehicle.type+' ('+vehicle.hp+'/'+vehicle.maxHp+' HP)</div>';
+      html += '<div style="color:#888;font-size:10px;margin-bottom:4px">Press V to exit vehicle</div>';
+    }
+    for(let i=0;i<VEHICLES.length;i++){
+      const v = VEHICLES[i];
+      const key = ''+(i+1);
+      if(vehicle) html += '<div class="bm-item" style="opacity:.4">['+key+'] '+v.name+' <span style="color:#888">IN VEHICLE</span></div>';
+      else html += '<div class="bm-item">['+key+'] '+v.name+' ('+v.hp+'HP, spd'+v.speed+') <span>'+v.cost+'g</span></div>';
+    }
+  }
+
+  content.innerHTML = html;
+  document.getElementById('shop-info').textContent = 'Gold: '+gold+' | '+WEAPONS[player.weap].name+(vehicle?' | '+vehicle.type+' '+vehicle.hp+'HP':'');
 }
 
 /* ===================== UPDATE ===================== */
@@ -661,12 +761,25 @@ function update(){
     for(let j=zombies.length-1; j>=0; j--){
       const z = zombies[j];
       if(Math.hypot(b.x-z.x, b.y-z.y) < z.size+3){
-        z.hp -= b.dmg;
-        sfx('hit');
-        for(let k=0;k<3;k++) particles.push({ x:z.x, y:z.y, vx:(Math.random()-.5)*2,
-          vy:(Math.random()-.5)*2, life:20+Math.random()*10, maxLife:30, color:'#900', size:2+Math.random()*2 });
-        bloodSplats.push({ x:z.x+(Math.random()-.5)*8, y:z.y+(Math.random()-.5)*8, r:3+Math.random()*4, a:.4 });
-        if(z.hp <= 0) killZombie(j);
+        if(b.splash > 0){
+          // splash damage (rocket/grenade)
+          sfx('explosion'); shakeT=6;
+          for(let k=zombies.length-1;k>=0;k--){
+            if(Math.hypot(b.x-zombies[k].x, b.y-zombies[k].y) < b.splash){
+              zombies[k].hp -= b.dmg;
+              if(zombies[k].hp <= 0) killZombie(k);
+            }
+          }
+          for(let k=0;k<12;k++) particles.push({ x:b.x, y:b.y, vx:(Math.random()-.5)*5,
+            vy:(Math.random()-.5)*5, life:20, maxLife:20, color:'#fa0', size:3+Math.random()*2 });
+        } else {
+          z.hp -= b.dmg;
+          sfx('hit');
+          for(let k=0;k<3;k++) particles.push({ x:z.x, y:z.y, vx:(Math.random()-.5)*2,
+            vy:(Math.random()-.5)*2, life:20+Math.random()*10, maxLife:30, color:'#900', size:2+Math.random()*2 });
+          bloodSplats.push({ x:z.x+(Math.random()-.5)*8, y:z.y+(Math.random()-.5)*8, r:3+Math.random()*4, a:.4 });
+          if(z.hp <= 0) killZombie(j);
+        }
         hit = true; break;
       }
     }
@@ -728,15 +841,25 @@ function update(){
     }
     if(i >= zombies.length) continue; // zombie was killed by spike
 
-    // damage player
+    // damage player (vehicle absorbs hits first)
     if(Math.hypot(z.x-player.x, z.y-player.y) < z.size+10){
       z.pAtkTimer++;
       if(z.pAtkTimer >= 20){
         z.pAtkTimer = 0;
-        player.hp -= 3;
         hitFlash = 8;
         sfx('hit');
-        if(player.hp <= 0){ gameOver(); return; }
+        if(vehicle){
+          vehicle.hp -= 3;
+          if(vehicle.hp <= 0){
+            vehicle = null;
+            player.spd = 3 + speedLevel * .8;
+            sfx('vdestroy');
+            floatTexts.push({ x:player.x, y:player.y-10, text:'VEHICLE DESTROYED!', color:'#ff4444', size:16, life:60, vy:-.8 });
+          }
+        } else {
+          player.hp -= 3;
+          if(player.hp <= 0){ gameOver(); return; }
+        }
       }
     }
 
@@ -823,7 +946,6 @@ function update(){
     if(Math.hypot(d.x-player.x, d.y-player.y) < 20){
       if(d.kind==='health') player.hp = Math.min(player.maxHp, player.hp+30);
       else if(d.kind==='ammo') player.ammo += 20;
-      else if(d.kind==='weapon'){ player.weap = d.weapIdx; player.ammo += 15; }
       sfx('gold');
       floatTexts.push({ x:d.x, y:d.y, text:d.label, color:d.color, size:14, life:40, vy:-1 });
       drops.splice(i,1);
@@ -849,14 +971,18 @@ function update(){
 
 /* ===================== HUD ===================== */
 function updateHUD(){
-  document.getElementById('hp-bar').style.width = (player.hp/player.maxHp*100)+'%';
-  document.getElementById('hp-text').textContent = Math.max(0, player.hp);
+  const hpSource = vehicle ? vehicle : player;
+  const hpMax = vehicle ? vehicle.maxHp : player.maxHp;
+  const hpCur = vehicle ? vehicle.hp : player.hp;
+  document.getElementById('hp-bar').style.width = (hpCur/hpMax*100)+'%';
+  document.getElementById('hp-bar').style.background = vehicle ? 'linear-gradient(90deg,#2980b9,#3498db)' : 'linear-gradient(90deg,#c0392b,#e74c3c)';
+  document.getElementById('hp-text').textContent = (vehicle?'[V]':'') + Math.max(0,Math.floor(hpCur)) + (vehicle?'':'/'+player.maxHp);
   document.getElementById('wave-text').textContent = 'Wave '+wave;
   document.getElementById('kills-text').textContent = 'Kills: '+kills;
   document.getElementById('gold-text').textContent = 'Gold: '+gold;
   document.getElementById('weapon-text').textContent = WEAPONS[player.weap].name;
   document.getElementById('ammo-text').textContent = 'Ammo: '+player.ammo;
-  document.getElementById('build-text').textContent = buildMode ? 'BUILD MODE [B] | RClick sell' : shopMode ? 'SHOP [U] | 1-4 to buy' : '[B] Build | [U] Shop | [1-4] Weapons';
+  document.getElementById('build-text').textContent = buildMode ? 'BUILD MODE [B] | RClick sell' : shopMode ? 'SHOP [U] | Tab pages | 1-0 buy' : '[B]Build [U]Shop [1-0]Weapons';
   for(let i=0;i<4;i++){
     document.getElementById('bm'+i).className = 'bm-item' + (i===buildSel?' selected':'');
   }
@@ -1060,9 +1186,56 @@ function draw(){
     ctx.restore();
   }
 
-  // player
+  // player + vehicle
   ctx.save(); ctx.translate(player.x, player.y);
   const pAng = Math.atan2(mouse.y-player.y, mouse.x-player.x);
+
+  // draw vehicle if in one
+  if(vehicle){
+    ctx.save(); ctx.rotate(pAng);
+    ctx.fillStyle = vehicle.color;
+    if(vehicle.type === 'Motorcycle'){
+      ctx.fillRect(-4,-12,8,24);
+      ctx.fillStyle = '#555'; ctx.fillRect(-5,-14,10,4);
+      ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(0,-14,3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0,12,3,0,Math.PI*2); ctx.fill();
+    } else if(vehicle.type === 'Jeep'){
+      ctx.fillRect(-10,-16,20,32);
+      ctx.fillStyle = '#333';
+      ctx.fillRect(-12,-12,4,8); ctx.fillRect(8,-12,4,8);
+      ctx.fillRect(-12,4,4,8); ctx.fillRect(8,4,4,8);
+      ctx.fillStyle = 'rgba(200,220,255,.3)'; ctx.fillRect(-7,-15,14,5);
+    } else if(vehicle.type === 'APC'){
+      ctx.fillRect(-13,-18,26,36);
+      ctx.fillStyle = '#1a3a1a';
+      ctx.fillRect(-15,-14,4,10); ctx.fillRect(11,-14,4,10);
+      ctx.fillRect(-15,4,4,10); ctx.fillRect(11,4,4,10);
+      ctx.fillStyle = '#3a5a3a'; ctx.fillRect(-8,-20,16,6);
+    } else if(vehicle.type === 'Tank'){
+      // tracks
+      ctx.fillStyle = '#333';
+      ctx.fillRect(-17,-18,6,36); ctx.fillRect(11,-18,6,36);
+      // body
+      ctx.fillStyle = vehicle.color;
+      ctx.fillRect(-14,-16,28,32);
+      // turret base
+      ctx.fillStyle = '#5a5a3a';
+      ctx.beginPath(); ctx.arc(0,-2,9,0,Math.PI*2); ctx.fill();
+      // barrel
+      ctx.fillStyle = '#777'; ctx.fillRect(-2,-24,4,16);
+      // barrel tip
+      ctx.fillStyle = '#999'; ctx.fillRect(-3,-26,6,3);
+    }
+    ctx.restore();
+
+    // vehicle HP bar (above player)
+    const vhpPct = vehicle.hp / vehicle.maxHp;
+    ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(-20,-28,40,4);
+    ctx.fillStyle = vhpPct>.5?'#3498db':vhpPct>.25?'#f39c12':'#e74c3c';
+    ctx.fillRect(-20,-28,40*vhpPct,4);
+  }
+
+  // player body
   ctx.fillStyle = '#3498db';
   ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill();
   ctx.strokeStyle = '#2980b9'; ctx.lineWidth = 2;
