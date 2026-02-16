@@ -235,7 +235,8 @@ let buildMode, buildSel;
 let shopMode, shopPage;
 let hasAutoCollect, speedLevel, hpLevel;
 let unlockedWeapons;
-let vehicle;
+let vehicle;       // active vehicle (riding in)
+let parkedVehicle; // parked vehicle on the map (exited)
 let shakeX, shakeY, shakeT, hitFlash;
 let keys = {};
 let mouse = { x: W/2, y: H/2, down: false, rdown: false };
@@ -250,6 +251,7 @@ function initGame(){
   shopMode=false; shopPage=0; hasAutoCollect=false; speedLevel=0; hpLevel=0;
   unlockedWeapons=new Set([0]); // start with pistol only
   vehicle=null;
+  parkedVehicle=null;
   shakeX=0; shakeY=0; shakeT=0; hitFlash=0;
   document.getElementById('build-menu').style.display='none';
   document.getElementById('shop-menu').style.display='none';
@@ -307,11 +309,22 @@ document.addEventListener('keydown', e => {
       document.getElementById('shop-menu').style.display = shopMode ? 'block' : 'none';
       document.getElementById('build-menu').style.display = 'none';
     }
-    if(e.key.toLowerCase() === 'v' && vehicle){
-      vehicle = null;
-      player.spd = 3 + speedLevel * .8;
-      sfx('build');
-      floatTexts.push({ x:player.x, y:player.y-10, text:'EXITED VEHICLE', color:'#aaa', size:14, life:50, vy:-.8 });
+    if(e.key.toLowerCase() === 'v'){
+      if(vehicle){
+        // park vehicle at current position
+        parkedVehicle = { ...vehicle, x:player.x, y:player.y };
+        vehicle = null;
+        player.spd = 3 + speedLevel * .8;
+        sfx('build');
+        floatTexts.push({ x:player.x, y:player.y-10, text:'PARKED VEHICLE', color:'#aaa', size:14, life:50, vy:-.8 });
+      } else if(parkedVehicle && Math.hypot(player.x-parkedVehicle.x, player.y-parkedVehicle.y) < 30){
+        // re-enter parked vehicle
+        vehicle = { type:parkedVehicle.type, hp:parkedVehicle.hp, maxHp:parkedVehicle.maxHp, speed:parkedVehicle.speed, dmgBonus:parkedVehicle.dmgBonus, color:parkedVehicle.color };
+        parkedVehicle = null;
+        player.spd = vehicle.speed + speedLevel * .4;
+        sfx('vbuy');
+        floatTexts.push({ x:player.x, y:player.y-10, text:'ENTERED '+vehicle.type.toUpperCase()+'!', color:'#3498db', size:14, life:50, vy:-.8 });
+      }
     }
     if(e.key === 'Tab'){ e.preventDefault(); }
     if(e.key >= '1' && e.key <= '9' || e.key === '0'){
@@ -627,7 +640,7 @@ function buyWeapon(idx){
 function buyVehicle(idx){
   if(idx < 0 || idx >= VEHICLES.length) return;
   const v = VEHICLES[idx];
-  if(vehicle) return; // already in a vehicle
+  if(vehicle || parkedVehicle) return; // already have a vehicle
   if(gold < v.cost) return;
   gold -= v.cost;
   vehicle = { type:v.name, hp:v.hp, maxHp:v.hp, speed:v.speed, dmgBonus:v.dmgBonus, color:v.color };
@@ -676,13 +689,17 @@ function updateShopUI(){
     }
   } else if(shopPage === 2){
     if(vehicle){
-      html += '<div style="color:#3498db;margin-bottom:4px">Current: '+vehicle.type+' ('+vehicle.hp+'/'+vehicle.maxHp+' HP)</div>';
-      html += '<div style="color:#888;font-size:10px;margin-bottom:4px">Press V to exit vehicle</div>';
+      html += '<div style="color:#3498db;margin-bottom:4px">Riding: '+vehicle.type+' ('+vehicle.hp+'/'+vehicle.maxHp+' HP)</div>';
+      html += '<div style="color:#888;font-size:10px;margin-bottom:4px">Press V to park vehicle</div>';
+    } else if(parkedVehicle){
+      html += '<div style="color:#f39c12;margin-bottom:4px">Parked: '+parkedVehicle.type+' ('+parkedVehicle.hp+'/'+parkedVehicle.maxHp+' HP)</div>';
+      html += '<div style="color:#888;font-size:10px;margin-bottom:4px">Walk to it & press V to enter</div>';
     }
+    const hasVehicle = vehicle || parkedVehicle;
     for(let i=0;i<VEHICLES.length;i++){
       const v = VEHICLES[i];
       const key = ''+(i+1);
-      if(vehicle) html += '<div class="bm-item" style="opacity:.4">['+key+'] '+v.name+' <span style="color:#888">IN VEHICLE</span></div>';
+      if(hasVehicle) html += '<div class="bm-item" style="opacity:.4">['+key+'] '+v.name+' <span style="color:#888">HAVE VEHICLE</span></div>';
       else html += '<div class="bm-item">['+key+'] '+v.name+' ('+v.hp+'HP, spd'+v.speed+') <span>'+v.cost+'g</span></div>';
     }
   }
@@ -1101,6 +1118,44 @@ function draw(){
     }
     ctx.restore();
     drawBldgHP(b);
+  }
+
+  // parked vehicle
+  if(parkedVehicle){
+    ctx.save(); ctx.translate(parkedVehicle.x, parkedVehicle.y);
+    ctx.globalAlpha = .7;
+    ctx.fillStyle = parkedVehicle.color;
+    if(parkedVehicle.type === 'Motorcycle'){
+      ctx.fillRect(-4,-12,8,24);
+      ctx.fillStyle = '#555'; ctx.fillRect(-5,-14,10,4);
+    } else if(parkedVehicle.type === 'Jeep'){
+      ctx.fillRect(-10,-16,20,32);
+      ctx.fillStyle = '#333';
+      ctx.fillRect(-12,-12,4,8); ctx.fillRect(8,-12,4,8);
+      ctx.fillRect(-12,4,4,8); ctx.fillRect(8,4,4,8);
+    } else if(parkedVehicle.type === 'APC'){
+      ctx.fillRect(-13,-18,26,36);
+      ctx.fillStyle = '#1a3a1a';
+      ctx.fillRect(-15,-14,4,10); ctx.fillRect(11,-14,4,10);
+      ctx.fillRect(-15,4,4,10); ctx.fillRect(11,4,4,10);
+    } else if(parkedVehicle.type === 'Tank'){
+      ctx.fillStyle = '#333'; ctx.fillRect(-17,-18,6,36); ctx.fillRect(11,-18,6,36);
+      ctx.fillStyle = parkedVehicle.color; ctx.fillRect(-14,-16,28,32);
+      ctx.fillStyle = '#5a5a3a'; ctx.beginPath(); ctx.arc(0,-2,9,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#777'; ctx.fillRect(-2,-22,4,16);
+    }
+    ctx.globalAlpha = 1;
+    // HP bar
+    const vhp = parkedVehicle.hp / parkedVehicle.maxHp;
+    ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(-18,-24,36,4);
+    ctx.fillStyle = vhp>.5?'#3498db':vhp>.25?'#f39c12':'#e74c3c';
+    ctx.fillRect(-18,-24,36*vhp,4);
+    // "Press V" hint if player is near
+    if(Math.hypot(player.x-parkedVehicle.x, player.y-parkedVehicle.y) < 30){
+      ctx.fillStyle = '#ffd700'; ctx.font = 'bold 10px Cinzel'; ctx.textAlign = 'center';
+      ctx.fillText('[V] Enter', 0, -30);
+    }
+    ctx.restore();
   }
 
   // drops
