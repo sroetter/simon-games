@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Park Tycoon - Simon's Game Gallery</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e1a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated particle background */
+        #particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: floatUp linear infinite;
+            opacity: 0;
+        }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(100vh) scale(0); }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.3; }
+            100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            text-decoration: none;
+            color: #7ea8e0;
+            background: rgba(10,15,40,0.8);
+            border: 1px solid rgba(100,150,255,0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .back-btn:hover { background: rgba(30,60,150,0.5); border-color: rgba(100,150,255,0.5); color: white; }
+
+        .header {
+            text-align: center;
+            padding: 12px 15px 6px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+        }
+        .header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 32px;
+            font-weight: 900;
+            background: linear-gradient(180deg, #ffd700 0%, #ff8c00 40%, #ff6347 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 20px rgba(255,200,50,0.3));
+        }
+
+        /* Name input overlay */
+        #nameOverlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(5,8,20,0.95);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        #nameOverlay h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(180deg, #ffd700 0%, #ff8c00 40%, #ff6347 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(255,200,50,0.4));
+            text-align: center;
+        }
+        #nameOverlay p {
+            color: #8899bb;
+            font-size: 16px;
+        }
+        #nameInput {
+            background: rgba(20,30,60,0.8);
+            border: 2px solid rgba(255,200,50,0.3);
+            color: #ffd700;
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            text-align: center;
+            width: 350px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        #nameInput:focus { border-color: rgba(255,200,50,0.7); box-shadow: 0 0 20px rgba(255,200,50,0.2); }
+        #nameInput::placeholder { color: rgba(255,215,0,0.3); }
+        #startBtn {
+            background: linear-gradient(135deg, #ff8c00, #ff6347);
+            border: none;
+            color: white;
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        #startBtn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255,140,0,0.4); }
+
+        /* Top HUD bar */
+        .hud-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 6px 15px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1100px;
+        }
+        .hud-item {
+            background: rgba(15,20,40,0.7);
+            border: 1px solid rgba(100,150,255,0.15);
+            border-radius: 10px;
+            padding: 6px 14px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(10px);
+            white-space: nowrap;
+        }
+        .hud-item .label { color: #6688aa; font-size: 11px; }
+        .hud-item .value { font-weight: bold; }
+        .hud-money .value { color: #ffd700; }
+        .hud-visitors .value { color: #4fc3f7; }
+        .hud-happiness .value { color: #66ff88; }
+        .hud-day .value { color: #ffab40; }
+        .hud-park-name {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            color: #ffd700;
+            font-size: 15px;
+        }
+
+        .stars { color: #ffd700; letter-spacing: 2px; font-size: 14px; }
+        .star-empty { color: #334; }
+
+        .speed-controls {
+            display: flex;
+            gap: 4px;
+        }
+        .speed-btn {
+            background: rgba(30,50,100,0.5);
+            border: 1px solid rgba(80,130,255,0.15);
+            border-radius: 6px;
+            color: #7ea8e0;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .speed-btn:hover { background: rgba(40,70,160,0.5); }
+        .speed-btn.active { border-color: #ffd700; color: #ffd700; background: rgba(255,200,50,0.15); }
+
+        /* Main game area */
+        .game-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+            padding: 8px 15px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Park grid */
+        .park-grid-wrapper {
+            background: rgba(10,18,35,0.7);
+            border: 1px solid rgba(100,150,255,0.12);
+            border-radius: 16px;
+            padding: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .park-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 72px);
+            grid-template-rows: repeat(6, 72px);
+            gap: 4px;
+        }
+        .grid-cell {
+            width: 72px;
+            height: 72px;
+            background: rgba(20,30,55,0.6);
+            border: 1px solid rgba(60,90,140,0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .grid-cell:hover {
+            border-color: rgba(100,180,255,0.4);
+            background: rgba(30,50,80,0.6);
+            transform: scale(1.03);
+        }
+        .grid-cell.empty::after {
+            content: '+';
+            color: rgba(60,90,140,0.3);
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .grid-cell.empty:hover::after {
+            color: rgba(100,180,255,0.5);
+        }
+        .grid-cell.built {
+            border-color: rgba(100,180,255,0.3);
+        }
+        .grid-cell.built:hover {
+            box-shadow: 0 0 15px rgba(100,180,255,0.2);
+        }
+        .cell-emoji {
+            font-size: 28px;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        .cell-name {
+            font-size: 8px;
+            color: rgba(180,200,230,0.8);
+            text-align: center;
+            line-height: 1.1;
+            margin-top: 2px;
+            max-width: 65px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .cell-level {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 8px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .cell-income-pop {
+            position: absolute;
+            color: #4aff6a;
+            font-size: 11px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: incomePop 1.2s ease-out forwards;
+            z-index: 5;
+            text-shadow: 0 0 4px rgba(0,0,0,0.8);
+        }
+        @keyframes incomePop {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        /* Building colors */
+        .building-roller-coaster { background: linear-gradient(135deg, rgba(255,50,50,0.25), rgba(200,30,30,0.15)) !important; border-color: rgba(255,80,80,0.35) !important; }
+        .building-ferris-wheel { background: linear-gradient(135deg, rgba(100,200,255,0.25), rgba(60,140,220,0.15)) !important; border-color: rgba(100,200,255,0.35) !important; }
+        .building-bumper-cars { background: linear-gradient(135deg, rgba(255,200,50,0.25), rgba(200,150,30,0.15)) !important; border-color: rgba(255,200,50,0.35) !important; }
+        .building-haunted-house { background: linear-gradient(135deg, rgba(150,50,200,0.25), rgba(100,30,160,0.15)) !important; border-color: rgba(150,50,200,0.35) !important; }
+        .building-water-slide { background: linear-gradient(135deg, rgba(0,180,255,0.25), rgba(0,120,200,0.15)) !important; border-color: rgba(0,180,255,0.35) !important; }
+        .building-carousel { background: linear-gradient(135deg, rgba(255,150,200,0.25), rgba(200,100,160,0.15)) !important; border-color: rgba(255,150,200,0.35) !important; }
+        .building-food-stand { background: linear-gradient(135deg, rgba(255,140,50,0.25), rgba(200,100,30,0.15)) !important; border-color: rgba(255,140,50,0.35) !important; }
+        .building-ice-cream-shop { background: linear-gradient(135deg, rgba(200,220,255,0.25), rgba(160,180,220,0.15)) !important; border-color: rgba(200,220,255,0.35) !important; }
+        .building-gift-shop { background: linear-gradient(135deg, rgba(255,100,150,0.25), rgba(200,60,120,0.15)) !important; border-color: rgba(255,100,150,0.35) !important; }
+        .building-restroom { background: linear-gradient(135deg, rgba(100,180,100,0.25), rgba(60,130,60,0.15)) !important; border-color: rgba(100,180,100,0.35) !important; }
+        .building-garden { background: linear-gradient(135deg, rgba(50,200,80,0.25), rgba(30,160,50,0.15)) !important; border-color: rgba(50,200,80,0.35) !important; }
+        .building-arcade { background: linear-gradient(135deg, rgba(200,50,255,0.25), rgba(150,30,200,0.15)) !important; border-color: rgba(200,50,255,0.35) !important; }
+        .building-drop-tower { background: linear-gradient(135deg, rgba(255,80,0,0.25), rgba(200,60,0,0.15)) !important; border-color: rgba(255,80,0,0.35) !important; }
+        .building-pirate-ship { background: linear-gradient(135deg, rgba(80,60,40,0.4), rgba(60,40,20,0.25)) !important; border-color: rgba(160,120,80,0.35) !important; }
+
+        /* Broken building overlay */
+        .grid-cell.broken::before {
+            content: '\26A0';
+            position: absolute;
+            top: 1px;
+            left: 4px;
+            font-size: 12px;
+            z-index: 3;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Side panel - build menu */
+        .side-panel {
+            background: rgba(10,18,35,0.7);
+            border: 1px solid rgba(100,150,255,0.12);
+            border-radius: 16px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            width: 240px;
+            max-height: 480px;
+            overflow-y: auto;
+        }
+        .side-panel::-webkit-scrollbar { width: 4px; }
+        .side-panel::-webkit-scrollbar-track { background: transparent; }
+        .side-panel::-webkit-scrollbar-thumb { background: rgba(100,150,255,0.2); border-radius: 2px; }
+
+        .panel-title {
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #aabbdd;
+            text-align: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(100,150,255,0.1);
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .cat-tab {
+            flex: 1;
+            background: rgba(30,50,100,0.3);
+            border: 1px solid rgba(80,130,255,0.1);
+            border-radius: 6px;
+            color: #6688aa;
+            padding: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .cat-tab:hover { background: rgba(40,70,160,0.4); color: #99bbdd; }
+        .cat-tab.active { background: rgba(60,100,200,0.3); border-color: rgba(100,180,255,0.3); color: #aaddff; }
+
+        .build-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            border: 1px solid transparent;
+        }
+        .build-item:hover {
+            background: rgba(40,60,100,0.4);
+            border-color: rgba(100,150,255,0.2);
+        }
+        .build-item.cant-afford { opacity: 0.4; cursor: not-allowed; }
+        .build-item .bi-emoji { font-size: 22px; }
+        .build-item .bi-info { flex: 1; }
+        .build-item .bi-name { font-size: 11px; font-weight: bold; color: #bbccee; }
+        .build-item .bi-cost { font-size: 10px; color: #ffd700; }
+        .build-item .bi-desc { font-size: 9px; color: #667788; margin-top: 1px; }
+
+        /* Build mode indicator */
+        .build-mode-indicator {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,200,50,0.15);
+            border: 1px solid rgba(255,200,50,0.4);
+            border-radius: 12px;
+            padding: 8px 20px;
+            color: #ffd700;
+            font-size: 13px;
+            font-weight: bold;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+        }
+        .build-mode-indicator.show { display: block; animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255,200,50,0.2); }
+            50% { box-shadow: 0 0 20px rgba(255,200,50,0.4); }
+        }
+
+        /* Popup / Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 150;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-panel {
+            background: rgba(12,20,42,0.95);
+            border: 1px solid rgba(100,150,255,0.2);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            min-width: 300px;
+            max-width: 400px;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            background: none;
+            border: none;
+            color: #667;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal-close:hover { color: #ff6666; }
+        .modal-title {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #ddeeff;
+            margin-bottom: 12px;
+        }
+        .modal-emoji { font-size: 40px; text-align: center; margin-bottom: 8px; }
+        .modal-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .modal-stat {
+            background: rgba(20,30,60,0.6);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        .modal-stat .ms-label { color: #667788; font-size: 9px; }
+        .modal-stat .ms-value { color: #aabbee; font-weight: bold; }
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .modal-btn.upgrade {
+            background: rgba(50,150,50,0.2);
+            border-color: rgba(50,200,50,0.3);
+            color: #66ff88;
+        }
+        .modal-btn.upgrade:hover { background: rgba(50,150,50,0.4); }
+        .modal-btn.upgrade:disabled { opacity: 0.4; cursor: not-allowed; }
+        .modal-btn.demolish {
+            background: rgba(150,50,50,0.2);
+            border-color: rgba(200,50,50,0.3);
+            color: #ff6666;
+        }
+        .modal-btn.demolish:hover { background: rgba(150,50,50,0.4); }
+        .modal-btn.repair {
+            background: rgba(200,150,50,0.2);
+            border-color: rgba(255,200,50,0.3);
+            color: #ffdd66;
+        }
+        .modal-btn.repair:hover { background: rgba(200,150,50,0.4); }
+
+        /* Event banner */
+        .event-banner {
+            position: fixed;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15,25,50,0.95);
+            border: 1px solid rgba(255,200,50,0.3);
+            border-radius: 12px;
+            padding: 10px 24px;
+            color: #ffd700;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 80;
+            backdrop-filter: blur(10px);
+            transition: top 0.5s ease;
+            white-space: nowrap;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .event-banner.show { top: 60px; }
+
+        /* Achievement toast */
+        .achievement-toast {
+            position: fixed;
+            right: -350px;
+            bottom: 80px;
+            background: rgba(15,25,50,0.95);
+            border: 1px solid rgba(255,200,50,0.4);
+            border-radius: 12px;
+            padding: 12px 18px;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+            transition: right 0.5s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            max-width: 300px;
+        }
+        .achievement-toast.show { right: 20px; }
+        .achievement-toast .at-title {
+            color: #ffd700;
+            font-family: 'Cinzel', serif;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .achievement-toast .at-text {
+            color: #aabbdd;
+            font-size: 12px;
+        }
+
+        /* Money float animation */
+        .money-float {
+            position: fixed;
+            color: #4aff6a;
+            font-size: 16px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 60;
+            animation: moneyFloat 1.5s ease-out forwards;
+            text-shadow: 0 0 6px rgba(0,0,0,0.8);
+        }
+        @keyframes moneyFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .park-grid {
+                grid-template-columns: repeat(8, 56px);
+                grid-template-rows: repeat(6, 56px);
+            }
+            .grid-cell { width: 56px; height: 56px; }
+            .cell-emoji { font-size: 22px; }
+            .cell-name { font-size: 7px; }
+            .side-panel { width: 200px; }
+        }
+        @media (max-width: 700px) {
+            .game-container { flex-direction: column; align-items: center; }
+            .side-panel { width: 100%; max-width: 500px; max-height: none; }
+            .park-grid {
+                grid-template-columns: repeat(8, 48px);
+                grid-template-rows: repeat(6, 48px);
+            }
+            .grid-cell { width: 48px; height: 48px; }
+            .cell-emoji { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<a href="index.html" class="back-btn">&larr; Back to Gallery</a>
+
+<!-- Particles -->
+<div id="particles"></div>
+
+<!-- Name Input Overlay -->
+<div id="nameOverlay">
+    <h2>Theme Park<br>Tycoon</h2>
+    <p>Name your theme park to begin</p>
+    <input type="text" id="nameInput" placeholder="Wonderland Park" maxlength="24" autofocus>
+    <button id="startBtn">Open Park</button>
+</div>
+
+<!-- Header -->
+<div class="header">
+    <h1>Theme Park Tycoon</h1>
+</div>
+
+<!-- HUD Bar -->
+<div class="hud-bar">
+    <div class="hud-item hud-park-name" id="hudParkName">My Park</div>
+    <div class="hud-item hud-money">
+        <span class="label">Money</span>
+        <span class="value" id="hudMoney">$5,000</span>
+    </div>
+    <div class="hud-item hud-visitors">
+        <span class="label">Visitors</span>
+        <span class="value" id="hudVisitors">0</span>
+    </div>
+    <div class="hud-item hud-happiness">
+        <span class="label">Happy</span>
+        <span class="value" id="hudHappiness">50%</span>
+    </div>
+    <div class="hud-item">
+        <span class="label">Rating</span>
+        <span class="stars" id="hudRating">
+            <span class="star-empty">&#9734;</span><span class="star-empty">&#9734;</span><span class="star-empty">&#9734;</span><span class="star-empty">&#9734;</span><span class="star-empty">&#9734;</span>
+        </span>
+    </div>
+    <div class="hud-item hud-day">
+        <span class="label">Day</span>
+        <span class="value" id="hudDay">1</span>
+    </div>
+    <div class="hud-item">
+        <div class="speed-controls">
+            <button class="speed-btn" data-speed="0" title="Pause">&#9646;&#9646;</button>
+            <button class="speed-btn active" data-speed="1" title="1x">1x</button>
+            <button class="speed-btn" data-speed="2" title="2x">2x</button>
+            <button class="speed-btn" data-speed="3" title="3x">3x</button>
+        </div>
+    </div>
+</div>
+
+<!-- Game Area -->
+<div class="game-container">
+    <!-- Park Grid -->
+    <div class="park-grid-wrapper">
+        <div class="park-grid" id="parkGrid"></div>
+    </div>
+    <!-- Build Menu -->
+    <div class="side-panel" id="buildPanel">
+        <div class="panel-title">Build Menu</div>
+        <div class="category-tabs" id="categoryTabs">
+            <div class="cat-tab active" data-cat="rides">Rides</div>
+            <div class="cat-tab" data-cat="food">Food</div>
+            <div class="cat-tab" data-cat="shops">Shops</div>
+            <div class="cat-tab" data-cat="deco">Deco</div>
+        </div>
+        <div id="buildList"></div>
+    </div>
+</div>
+
+<!-- Build Mode Indicator -->
+<div class="build-mode-indicator" id="buildModeIndicator">
+    <span id="buildModeText">Click a tile to place</span> &mdash; <span style="text-decoration:underline;">Cancel</span>
+</div>
+
+<!-- Building Info Modal -->
+<div class="modal-overlay" id="buildingModal">
+    <div class="modal-panel">
+        <button class="modal-close" id="modalClose">&times;</button>
+        <div class="modal-emoji" id="modalEmoji"></div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-stats" id="modalStats"></div>
+        <div class="modal-actions" id="modalActions"></div>
+    </div>
+</div>
+
+<!-- Event Banner -->
+<div class="event-banner" id="eventBanner"></div>
+
+<!-- Achievement Toast -->
+<div class="achievement-toast" id="achievementToast">
+    <div class="at-title">Achievement Unlocked!</div>
+    <div class="at-text" id="achievementText"></div>
+</div>
+
+<script>
+// ======== AUDIO ENGINE ========
+const AudioEngine = {
+    ctx: null,
+    volume: 0.3,
+    init() {
+        if (this.ctx) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    },
+    play(type) {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const g = this.ctx.createGain();
+        g.connect(this.ctx.destination);
+        g.gain.setValueAtTime(this.volume, now);
+
+        switch(type) {
+            case 'build': {
+                const o = this.ctx.createOscillator();
+                o.connect(g);
+                o.type = 'sine';
+                o.frequency.setValueAtTime(440, now);
+                o.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                o.start(now); o.stop(now + 0.2);
+                break;
+            }
+            case 'upgrade': {
+                const o = this.ctx.createOscillator();
+                o.connect(g);
+                o.type = 'sine';
+                o.frequency.setValueAtTime(523, now);
+                o.frequency.setValueAtTime(659, now + 0.08);
+                o.frequency.setValueAtTime(784, now + 0.16);
+                o.frequency.setValueAtTime(1047, now + 0.24);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                o.start(now); o.stop(now + 0.4);
+                break;
+            }
+            case 'demolish': {
+                const o = this.ctx.createOscillator();
+                o.connect(g);
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(300, now);
+                o.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                o.start(now); o.stop(now + 0.35);
+                break;
+            }
+            case 'money': {
+                const o = this.ctx.createOscillator();
+                o.connect(g);
+                o.type = 'sine';
+                g.gain.setValueAtTime(this.volume * 0.5, now);
+                o.frequency.setValueAtTime(1200, now);
+                o.frequency.exponentialRampToValueAtTime(1600, now + 0.06);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                o.start(now); o.stop(now + 0.1);
+                break;
+            }
+            case 'event': {
+                const o = this.ctx.createOscillator();
+                o.connect(g);
+                o.type = 'triangle';
+                o.frequency.setValueAtTime(600, now);
+                o.frequency.setValueAtTime(800, now + 0.1);
+                o.frequency.setValueAtTime(600, now + 0.2);
+                o.frequency.setValueAtTime(800, now + 0.3);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                o.start(now); o.stop(now + 0.45);
+                break;
+            }
+            case 'achievement': {
+                const o = this.ctx.createOscillator();
+                o.connect(g);
+                o.type = 'sine';
+                g.gain.setValueAtTime(this.volume * 0.6, now);
+                [523, 659, 784, 1047, 1319].forEach((f, i) => {
+                    o.frequency.setValueAtTime(f, now + i * 0.1);
+                });
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+                o.start(now); o.stop(now + 0.7);
+                break;
+            }
+            case 'click': {
+                const o = this.ctx.createOscillator();
+                o.connect(g);
+                o.type = 'sine';
+                g.gain.setValueAtTime(this.volume * 0.3, now);
+                o.frequency.setValueAtTime(800, now);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                o.start(now); o.stop(now + 0.05);
+                break;
+            }
+            case 'error': {
+                const o = this.ctx.createOscillator();
+                o.connect(g);
+                o.type = 'square';
+                g.gain.setValueAtTime(this.volume * 0.4, now);
+                o.frequency.setValueAtTime(200, now);
+                o.frequency.setValueAtTime(150, now + 0.1);
+                g.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                o.start(now); o.stop(now + 0.2);
+                break;
+            }
+        }
+    }
+};
+
+// ======== BUILDING DATA ========
+const BUILDINGS = {
+    'roller-coaster':  { name: 'Roller Coaster', emoji: '\uD83C\uDFA2', cat: 'rides', cost: 800, income: 45, fun: 30, maintenance: 15, desc: 'High thrill, high reward' },
+    'ferris-wheel':    { name: 'Ferris Wheel',   emoji: '\uD83C\uDFA1', cat: 'rides', cost: 500, income: 28, fun: 18, maintenance: 8,  desc: 'Classic steady earner' },
+    'bumper-cars':     { name: 'Bumper Cars',     emoji: '\uD83D\uDE97', cat: 'rides', cost: 300, income: 18, fun: 15, maintenance: 6,  desc: 'Cheap fun for all ages' },
+    'haunted-house':   { name: 'Haunted House',   emoji: '\uD83D\uDC7B', cat: 'rides', cost: 600, income: 32, fun: 25, maintenance: 10, desc: 'Spooky thrills galore' },
+    'water-slide':     { name: 'Water Slide',     emoji: '\uD83C\uDF0A', cat: 'rides', cost: 750, income: 40, fun: 28, maintenance: 12, desc: 'Splash-tastic fun' },
+    'carousel':        { name: 'Carousel',        emoji: '\uD83C\uDFA0', cat: 'rides', cost: 200, income: 12, fun: 10, maintenance: 4,  desc: 'Gentle and charming' },
+    'drop-tower':      { name: 'Drop Tower',      emoji: '\uD83D\uDDFC', cat: 'rides', cost: 900, income: 50, fun: 35, maintenance: 18, desc: 'For thrill seekers only' },
+    'pirate-ship':     { name: 'Pirate Ship',     emoji: '\uD83C\uDFF4\u200D\u2620\uFE0F', cat: 'rides', cost: 550, income: 30, fun: 22, maintenance: 9, desc: 'Ahoy, matey!' },
+    'food-stand':      { name: 'Food Stand',      emoji: '\uD83C\uDF54', cat: 'food', cost: 250, income: 20, fun: 5,  maintenance: 5,  desc: 'Hungry visitors love it' },
+    'ice-cream-shop':  { name: 'Ice Cream Shop',  emoji: '\uD83C\uDF66', cat: 'food', cost: 300, income: 22, fun: 8,  maintenance: 6,  desc: 'Sweet treat income' },
+    'gift-shop':       { name: 'Gift Shop',       emoji: '\uD83C\uDF81', cat: 'shops', cost: 350, income: 25, fun: 5,  maintenance: 5,  desc: 'Souvenirs sell well' },
+    'restroom':        { name: 'Restroom',         emoji: '\uD83D\uDEBB', cat: 'shops', cost: 150, income: 0,  fun: 0,  maintenance: 3,  desc: 'Keeps visitors happy' },
+    'garden':          { name: 'Garden',           emoji: '\uD83C\uDF33', cat: 'deco', cost: 100, income: 0,  fun: 8,  maintenance: 1,  desc: 'Beautiful greenery' },
+    'arcade':          { name: 'Arcade',           emoji: '\uD83D\uDD79\uFE0F', cat: 'shops', cost: 450, income: 28, fun: 18, maintenance: 7, desc: 'Retro gaming income' }
+};
+
+// ======== EVENTS ========
+const EVENTS = [
+    { text: '\u2B50 A celebrity visited your park! +500 visitors!', effect: g => { g.visitors += 500; } },
+    { text: '\uD83D\uDD27 A ride broke down! Repair needed.', effect: g => {
+        const built = g.grid.filter(c => c && !c.broken);
+        if (built.length > 0) {
+            const b = built[Math.floor(Math.random() * built.length)];
+            b.broken = true;
+        }
+    }},
+    { text: '\uD83C\uDF1F Food critic gave a great review! +1 park rating boost!', effect: g => { g.ratingBoost = Math.min((g.ratingBoost || 0) + 1, 2); setTimeout(() => g.ratingBoost = Math.max((g.ratingBoost || 0) - 1, 0), 30000); } },
+    { text: '\uD83C\uDF27\uFE0F Rainy day! -30% visitors today.', effect: g => { g.weatherPenalty = 0.7; setTimeout(() => g.weatherPenalty = 1, 15000); } },
+    { text: '\uD83C\uDF89 Holiday weekend! Double visitor income!', effect: g => { g.incomeMultiplier = 2; setTimeout(() => g.incomeMultiplier = 1, 20000); } },
+    { text: '\uD83D\uDCF0 Park featured in newspaper! +300 visitors!', effect: g => { g.visitors += 300; } },
+    { text: '\uD83C\uDFC6 Won "Best Park" award! +200 visitors & $500 bonus!', effect: g => { g.visitors += 200; g.money += 500; } },
+    { text: '\uD83D\uDCA8 Strong winds! Some visitors left early.', effect: g => { g.visitors = Math.max(0, g.visitors - Math.floor(g.visitors * 0.15)); } },
+    { text: '\uD83C\uDF82 Birthday party group! +150 visitors & $300!', effect: g => { g.visitors += 150; g.money += 300; } },
+    { text: '\uD83C\uDF1E Perfect sunny day! +20% happiness boost!', effect: g => { g.happinessBoost = 20; setTimeout(() => g.happinessBoost = 0, 20000); } },
+];
+
+// ======== ACHIEVEMENTS ========
+const ACHIEVEMENTS = [
+    { id: 'first_ride', text: 'Grand Opening! Built your first ride!', check: g => g.grid.filter(c=>c).length >= 1 },
+    { id: 'five_buildings', text: 'Growing Park! Built 5 structures!', check: g => g.grid.filter(c=>c).length >= 5 },
+    { id: 'ten_buildings', text: 'Expanding Empire! 10 structures built!', check: g => g.grid.filter(c=>c).length >= 10 },
+    { id: 'full_park', text: 'No Vacancy! Filled every tile!', check: g => g.grid.filter(c=>c).length >= 48 },
+    { id: 'visitors_100', text: 'Getting Popular! 100 visitors!', check: g => g.visitors >= 100 },
+    { id: 'visitors_500', text: 'Crowd Pleaser! 500 visitors!', check: g => g.visitors >= 500 },
+    { id: 'visitors_1000', text: 'Mega Park! 1,000 visitors!', check: g => g.visitors >= 1000 },
+    { id: 'visitors_5000', text: 'World Famous! 5,000 visitors!', check: g => g.visitors >= 5000 },
+    { id: 'money_10k', text: 'Making Bank! Earned $10,000!', check: g => g.totalEarned >= 10000 },
+    { id: 'money_50k', text: 'Tycoon! Earned $50,000!', check: g => g.totalEarned >= 50000 },
+    { id: 'money_100k', text: 'Mogul! Earned $100,000!', check: g => g.totalEarned >= 100000 },
+    { id: 'five_star', text: 'Five Star Park! Maximum rating!', check: g => g.currentRating >= 5 },
+    { id: 'max_happy', text: 'Happiest Place! 100% happiness!', check: g => g.happiness >= 100 },
+    { id: 'upgrade_max', text: 'Fully Upgraded! A building reached Level 3!', check: g => g.grid.some(c => c && c.level >= 3) },
+    { id: 'variety', text: 'Variety Pack! Built one of each type!', check: g => {
+        const types = new Set(g.grid.filter(c=>c).map(c=>c.type));
+        return types.size >= 10;
+    }},
+    { id: 'day_30', text: 'Veteran! Survived 30 days!', check: g => g.day >= 30 },
+    { id: 'day_100', text: 'Legend! 100 days and counting!', check: g => g.day >= 100 },
+];
+
+// ======== GAME STATE ========
+const GRID_COLS = 8;
+const GRID_ROWS = 6;
+
+let game = {
+    parkName: 'My Park',
+    money: 5000,
+    visitors: 0,
+    happiness: 50,
+    day: 1,
+    speed: 1,
+    totalEarned: 0,
+    currentRating: 1,
+    ratingBoost: 0,
+    weatherPenalty: 1,
+    incomeMultiplier: 1,
+    happinessBoost: 0,
+    grid: new Array(GRID_COLS * GRID_ROWS).fill(null),
+    achievements: [],
+    selectedBuilding: null,
+    tickAccum: 0,
+    dayProgress: 0,
+    started: false,
+    eventCooldown: 0,
+};
+
+// ======== DOM REFS ========
+const $ = id => document.getElementById(id);
+const parkGrid = $('parkGrid');
+const buildList = $('buildList');
+const hudMoney = $('hudMoney');
+const hudVisitors = $('hudVisitors');
+const hudHappiness = $('hudHappiness');
+const hudRating = $('hudRating');
+const hudDay = $('hudDay');
+const hudParkName = $('hudParkName');
+const buildModeIndicator = $('buildModeIndicator');
+const buildModeText = $('buildModeText');
+const buildingModal = $('buildingModal');
+const eventBanner = $('eventBanner');
+const achievementToast = $('achievementToast');
+const achievementText = $('achievementText');
+
+// ======== PARTICLES ========
+function createParticles() {
+    const container = $('particles');
+    const colors = ['rgba(255,200,50,0.4)', 'rgba(100,180,255,0.3)', 'rgba(255,100,150,0.3)', 'rgba(100,255,150,0.3)', 'rgba(200,150,255,0.3)'];
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = 2 + Math.random() * 4;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.animationDuration = (8 + Math.random() * 12) + 's';
+        p.style.animationDelay = (Math.random() * 15) + 's';
+        container.appendChild(p);
+    }
+}
+
+// ======== GRID RENDERING ========
+function initGrid() {
+    parkGrid.innerHTML = '';
+    for (let i = 0; i < GRID_COLS * GRID_ROWS; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell empty';
+        cell.dataset.idx = i;
+        cell.addEventListener('click', () => onCellClick(i));
+        parkGrid.appendChild(cell);
+    }
+}
+
+function renderGrid() {
+    const cells = parkGrid.children;
+    for (let i = 0; i < game.grid.length; i++) {
+        const cell = cells[i];
+        const bld = game.grid[i];
+        if (bld) {
+            const bdata = BUILDINGS[bld.type];
+            cell.className = 'grid-cell built building-' + bld.type;
+            if (bld.broken) cell.classList.add('broken');
+            cell.innerHTML = `<span class="cell-emoji">${bdata.emoji}</span><span class="cell-name">${bdata.name}</span>`;
+            if (bld.level > 1) {
+                cell.innerHTML += `<span class="cell-level">Lv${bld.level}</span>`;
+            }
+        } else {
+            cell.className = 'grid-cell empty';
+            cell.innerHTML = '';
+        }
+    }
+}
+
+// ======== BUILD MENU ========
+let currentCategory = 'rides';
+
+function renderBuildMenu() {
+    const items = Object.entries(BUILDINGS).filter(([k,v]) => v.cat === currentCategory);
+    buildList.innerHTML = '';
+    items.forEach(([key, b]) => {
+        const canAfford = game.money >= b.cost;
+        const div = document.createElement('div');
+        div.className = 'build-item' + (canAfford ? '' : ' cant-afford');
+        div.innerHTML = `
+            <span class="bi-emoji">${b.emoji}</span>
+            <div class="bi-info">
+                <div class="bi-name">${b.name}</div>
+                <div class="bi-cost">$${b.cost.toLocaleString()}</div>
+                <div class="bi-desc">${b.desc}</div>
+            </div>
+        `;
+        div.addEventListener('click', () => {
+            if (!canAfford) {
+                AudioEngine.play('error');
+                return;
+            }
+            AudioEngine.play('click');
+            selectBuilding(key);
+        });
+        buildList.appendChild(div);
+    });
+}
+
+document.querySelectorAll('.cat-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentCategory = tab.dataset.cat;
+        AudioEngine.play('click');
+        renderBuildMenu();
+    });
+});
+
+// ======== BUILD MODE ========
+function selectBuilding(type) {
+    game.selectedBuilding = type;
+    const b = BUILDINGS[type];
+    buildModeText.textContent = `Place ${b.emoji} ${b.name} ($${b.cost})`;
+    buildModeIndicator.classList.add('show');
+}
+
+function cancelBuildMode() {
+    game.selectedBuilding = null;
+    buildModeIndicator.classList.remove('show');
+}
+
+buildModeIndicator.addEventListener('click', cancelBuildMode);
+
+function onCellClick(idx) {
+    AudioEngine.init();
+    if (game.grid[idx]) {
+        // Show building info
+        showBuildingModal(idx);
+        return;
+    }
+    if (!game.selectedBuilding) return;
+
+    const type = game.selectedBuilding;
+    const bdata = BUILDINGS[type];
+
+    if (game.money < bdata.cost) {
+        AudioEngine.play('error');
+        cancelBuildMode();
+        return;
+    }
+
+    game.money -= bdata.cost;
+    game.grid[idx] = { type: type, level: 1, broken: false };
+
+    AudioEngine.play('build');
+    cancelBuildMode();
+    renderGrid();
+    renderBuildMenu();
+    updateHUD();
+    showIncomePop(idx, `-$${bdata.cost}`, '#ff6666');
+    checkAchievements();
+}
+
+// ======== BUILDING MODAL ========
+let modalIdx = -1;
+
+function showBuildingModal(idx) {
+    const bld = game.grid[idx];
+    if (!bld) return;
+    modalIdx = idx;
+    const bdata = BUILDINGS[bld.type];
+    const levelMult = 1 + (bld.level - 1) * 0.5;
+    const income = Math.floor(bdata.income * levelMult);
+    const fun = Math.floor(bdata.fun * levelMult);
+    const maint = Math.floor(bdata.maintenance * levelMult * 0.8);
+    const upgradeCost = Math.floor(bdata.cost * bld.level * 0.8);
+
+    $('modalEmoji').textContent = bdata.emoji;
+    $('modalTitle').textContent = `${bdata.name} (Level ${bld.level})`;
+
+    $('modalStats').innerHTML = `
+        <div class="modal-stat"><div class="ms-label">Income/day</div><div class="ms-value" style="color:#4aff6a">+$${income}</div></div>
+        <div class="modal-stat"><div class="ms-label">Fun Rating</div><div class="ms-value" style="color:#ffab40">${fun}</div></div>
+        <div class="modal-stat"><div class="ms-label">Maintenance</div><div class="ms-value" style="color:#ff6666">-$${maint}/day</div></div>
+        <div class="modal-stat"><div class="ms-label">Status</div><div class="ms-value" style="color:${bld.broken ? '#ff4444' : '#4aff6a'}">${bld.broken ? 'BROKEN' : 'Operating'}</div></div>
+    `;
+
+    let actions = '';
+    if (bld.broken) {
+        const repairCost = Math.floor(bdata.cost * 0.3);
+        actions += `<button class="modal-btn repair" onclick="repairBuilding(${idx}, ${repairCost})">Repair ($${repairCost})</button>`;
+    }
+    if (bld.level < 3) {
+        actions += `<button class="modal-btn upgrade" onclick="upgradeBuilding(${idx}, ${upgradeCost})" ${game.money < upgradeCost ? 'disabled' : ''}>Upgrade to Lv${bld.level+1} ($${upgradeCost.toLocaleString()})</button>`;
+    } else {
+        actions += `<button class="modal-btn upgrade" disabled>Max Level</button>`;
+    }
+    actions += `<button class="modal-btn demolish" onclick="demolishBuilding(${idx})">Demolish (+$${Math.floor(bdata.cost * 0.3)})</button>`;
+
+    $('modalActions').innerHTML = actions;
+    buildingModal.classList.add('show');
+    AudioEngine.play('click');
+}
+
+$('modalClose').addEventListener('click', () => {
+    buildingModal.classList.remove('show');
+    modalIdx = -1;
+});
+buildingModal.addEventListener('click', (e) => {
+    if (e.target === buildingModal) {
+        buildingModal.classList.remove('show');
+        modalIdx = -1;
+    }
+});
+
+window.upgradeBuilding = function(idx, cost) {
+    const bld = game.grid[idx];
+    if (!bld || bld.level >= 3 || game.money < cost) {
+        AudioEngine.play('error');
+        return;
+    }
+    game.money -= cost;
+    bld.level++;
+    AudioEngine.play('upgrade');
+    renderGrid();
+    renderBuildMenu();
+    updateHUD();
+    showIncomePop(idx, `Upgraded! Lv${bld.level}`, '#ffd700');
+    buildingModal.classList.remove('show');
+    checkAchievements();
+};
+
+window.repairBuilding = function(idx, cost) {
+    const bld = game.grid[idx];
+    if (!bld || !bld.broken) return;
+    if (game.money < cost) {
+        AudioEngine.play('error');
+        return;
+    }
+    game.money -= cost;
+    bld.broken = false;
+    AudioEngine.play('build');
+    renderGrid();
+    renderBuildMenu();
+    updateHUD();
+    showIncomePop(idx, 'Repaired!', '#4aff6a');
+    buildingModal.classList.remove('show');
+};
+
+window.demolishBuilding = function(idx) {
+    const bld = game.grid[idx];
+    if (!bld) return;
+    const bdata = BUILDINGS[bld.type];
+    const refund = Math.floor(bdata.cost * 0.3);
+    game.money += refund;
+    game.grid[idx] = null;
+    AudioEngine.play('demolish');
+    renderGrid();
+    renderBuildMenu();
+    updateHUD();
+    showIncomePop(idx, `+$${refund}`, '#ffd700');
+    buildingModal.classList.remove('show');
+};
+
+// ======== INCOME POP ON CELLS ========
+function showIncomePop(idx, text, color) {
+    const cell = parkGrid.children[idx];
+    if (!cell) return;
+    const pop = document.createElement('div');
+    pop.className = 'cell-income-pop';
+    pop.textContent = text;
+    pop.style.color = color || '#4aff6a';
+    cell.appendChild(pop);
+    setTimeout(() => pop.remove(), 1200);
+}
+
+// ======== HUD UPDATE ========
+let displayMoney = 5000;
+let displayVisitors = 0;
+
+function updateHUD() {
+    hudParkName.textContent = game.parkName;
+    hudDay.textContent = game.day;
+
+    // Animated money counter
+    const moneyEl = hudMoney;
+    moneyEl.textContent = '$' + Math.floor(displayMoney).toLocaleString();
+
+    // Animated visitor counter
+    hudVisitors.textContent = Math.floor(displayVisitors).toLocaleString();
+
+    // Happiness
+    const hap = Math.max(0, Math.min(100, Math.floor(game.happiness)));
+    hudHappiness.textContent = hap + '%';
+    if (hap >= 75) hudHappiness.style.color = '#4aff6a';
+    else if (hap >= 40) hudHappiness.style.color = '#ffdd44';
+    else hudHappiness.style.color = '#ff6644';
+
+    // Rating stars
+    const rating = Math.max(1, Math.min(5, Math.floor(game.currentRating)));
+    let starsHtml = '';
+    for (let i = 0; i < 5; i++) {
+        if (i < rating) starsHtml += '\u2605';
+        else starsHtml += '<span class="star-empty">\u2606</span>';
+    }
+    hudRating.innerHTML = starsHtml;
+
+    renderBuildMenu();
+}
+
+function animateCounters() {
+    const lerpSpeed = 0.12;
+    displayMoney += (game.money - displayMoney) * lerpSpeed;
+    if (Math.abs(displayMoney - game.money) < 1) displayMoney = game.money;
+
+    displayVisitors += (game.visitors - displayVisitors) * lerpSpeed;
+    if (Math.abs(displayVisitors - game.visitors) < 1) displayVisitors = game.visitors;
+
+    hudMoney.textContent = '$' + Math.floor(displayMoney).toLocaleString();
+    hudVisitors.textContent = Math.floor(displayVisitors).toLocaleString();
+}
+
+// ======== SPEED CONTROLS ========
+document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        AudioEngine.init();
+        AudioEngine.play('click');
+        document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        game.speed = parseInt(btn.dataset.speed);
+    });
+});
+
+// ======== GAME CALCULATION ========
+function calculateRating() {
+    const built = game.grid.filter(c => c);
+    if (built.length === 0) { game.currentRating = 1; return; }
+
+    const types = new Set(built.map(c => c.type));
+    const variety = Math.min(types.size / 8, 1); // 0-1
+
+    const totalFun = built.reduce((s, c) => {
+        const bd = BUILDINGS[c.type];
+        const lm = 1 + (c.level - 1) * 0.5;
+        return s + (c.broken ? 0 : bd.fun * lm);
+    }, 0);
+    const funScore = Math.min(totalFun / 150, 1); // 0-1
+
+    const hasFood = built.some(c => BUILDINGS[c.type].cat === 'food');
+    const hasRestroom = built.some(c => c.type === 'restroom');
+    const hasGarden = built.some(c => c.type === 'garden');
+    const amenityScore = ((hasFood ? 0.33 : 0) + (hasRestroom ? 0.33 : 0) + (hasGarden ? 0.34 : 0));
+
+    const brokenCount = built.filter(c => c.broken).length;
+    const brokenPenalty = brokenCount * 0.3;
+
+    let raw = 1 + (variety * 1.5) + (funScore * 1.5) + (amenityScore * 1) + (game.ratingBoost || 0);
+    raw -= brokenPenalty;
+    game.currentRating = Math.max(1, Math.min(5, raw));
+}
+
+function calculateHappiness() {
+    const built = game.grid.filter(c => c);
+    if (built.length === 0) { game.happiness = 50; return; }
+
+    let base = 40;
+
+    // Fun contributes
+    const totalFun = built.reduce((s, c) => {
+        const bd = BUILDINGS[c.type];
+        const lm = 1 + (c.level - 1) * 0.5;
+        return s + (c.broken ? 0 : bd.fun * lm);
+    }, 0);
+    base += Math.min(totalFun / 3, 25);
+
+    // Variety
+    const types = new Set(built.map(c => c.type));
+    base += Math.min(types.size * 1.5, 12);
+
+    // Amenities
+    const hasFood = built.some(c => BUILDINGS[c.type].cat === 'food');
+    const hasRestroom = built.some(c => c.type === 'restroom');
+    const gardenCount = built.filter(c => c.type === 'garden').length;
+
+    if (!hasFood && game.visitors > 50) base -= 10;
+    if (!hasRestroom && game.visitors > 100) base -= 15;
+    base += gardenCount * 3;
+
+    // Broken rides
+    const brokenCount = built.filter(c => c.broken).length;
+    base -= brokenCount * 5;
+
+    // Weather/event boost
+    base += (game.happinessBoost || 0);
+
+    game.happiness = Math.max(0, Math.min(100, base));
+}
+
+function calculateVisitors() {
+    const built = game.grid.filter(c => c && !c.broken);
+    if (built.length === 0) {
+        game.visitors = Math.max(0, game.visitors - 2);
+        return;
+    }
+
+    const attractiveness = game.currentRating * 15 + built.length * 3 + (game.happiness / 100) * 20;
+    const targetVisitors = Math.floor(attractiveness * (1 + game.day * 0.02));
+    const weatherMult = game.weatherPenalty || 1;
+
+    const diff = (targetVisitors * weatherMult) - game.visitors;
+    const change = Math.ceil(diff * 0.08);
+    game.visitors = Math.max(0, game.visitors + change);
+}
+
+function processDayIncome() {
+    const built = game.grid.filter(c => c);
+    let totalIncome = 0;
+    let totalMaint = 0;
+
+    built.forEach((bld, bIdx) => {
+        const bd = BUILDINGS[bld.type];
+        const lm = 1 + (bld.level - 1) * 0.5;
+
+        // Maintenance always applies
+        totalMaint += Math.floor(bd.maintenance * lm * 0.8);
+
+        // Income only if not broken
+        if (!bld.broken) {
+            const visitorMult = Math.min(game.visitors / 50, 3);
+            const happyMult = game.happiness / 100;
+            const inc = Math.floor(bd.income * lm * visitorMult * happyMult * (game.incomeMultiplier || 1));
+            totalIncome += inc;
+        }
+    });
+
+    const netIncome = totalIncome - totalMaint;
+    game.money += netIncome;
+    game.totalEarned += Math.max(0, totalIncome);
+
+    // Show income pops on random buildings
+    if (netIncome > 0 && built.length > 0) {
+        const showCount = Math.min(5, built.length);
+        const indices = [];
+        for (let i = 0; i < game.grid.length; i++) {
+            if (game.grid[i] && !game.grid[i].broken) indices.push(i);
+        }
+        // shuffle and pick
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        for (let i = 0; i < Math.min(showCount, indices.length); i++) {
+            const idx = indices[i];
+            const bd = BUILDINGS[game.grid[idx].type];
+            const lm = 1 + (game.grid[idx].level - 1) * 0.5;
+            const visitorMult = Math.min(game.visitors / 50, 3);
+            const happyMult = game.happiness / 100;
+            const inc = Math.floor(bd.income * lm * visitorMult * happyMult * (game.incomeMultiplier || 1));
+            if (inc > 0) {
+                setTimeout(() => showIncomePop(idx, `+$${inc}`, '#4aff6a'), i * 150);
+            }
+        }
+        AudioEngine.play('money');
+    }
+
+    // Show floating total near money HUD
+    if (netIncome !== 0) {
+        const moneyRect = hudMoney.getBoundingClientRect();
+        const floater = document.createElement('div');
+        floater.className = 'money-float';
+        floater.textContent = (netIncome >= 0 ? '+' : '') + '$' + netIncome.toLocaleString();
+        floater.style.color = netIncome >= 0 ? '#4aff6a' : '#ff6666';
+        floater.style.left = moneyRect.left + 'px';
+        floater.style.top = (moneyRect.bottom + 5) + 'px';
+        document.body.appendChild(floater);
+        setTimeout(() => floater.remove(), 1500);
+    }
+}
+
+// ======== RANDOM EVENTS ========
+function tryRandomEvent() {
+    if (game.eventCooldown > 0) { game.eventCooldown--; return; }
+    if (Math.random() > 0.15) return; // 15% chance per day
+
+    const evt = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+    evt.effect(game);
+    showEventBanner(evt.text);
+    AudioEngine.play('event');
+    game.eventCooldown = 3; // min 3 days between events
+}
+
+function showEventBanner(text) {
+    eventBanner.textContent = text;
+    eventBanner.classList.add('show');
+    setTimeout(() => eventBanner.classList.remove('show'), 4000);
+}
+
+// ======== ACHIEVEMENTS ========
+function checkAchievements() {
+    ACHIEVEMENTS.forEach(a => {
+        if (game.achievements.includes(a.id)) return;
+        if (a.check(game)) {
+            game.achievements.push(a.id);
+            showAchievement(a.text);
+            AudioEngine.play('achievement');
+        }
+    });
+}
+
+let achievementQueue = [];
+let achievementShowing = false;
+
+function showAchievement(text) {
+    achievementQueue.push(text);
+    if (!achievementShowing) processAchievementQueue();
+}
+
+function processAchievementQueue() {
+    if (achievementQueue.length === 0) {
+        achievementShowing = false;
+        return;
+    }
+    achievementShowing = true;
+    const text = achievementQueue.shift();
+    achievementText.textContent = text;
+    achievementToast.classList.add('show');
+    setTimeout(() => {
+        achievementToast.classList.remove('show');
+        setTimeout(() => processAchievementQueue(), 500);
+    }, 3500);
+}
+
+// ======== MAIN GAME LOOP ========
+const TICK_RATE = 60;
+const DAY_DURATION_TICKS = 300; // 5 seconds at 1x
+
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    if (!game.started) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    if (!lastTime) lastTime = timestamp;
+    const dt = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+
+    if (game.speed > 0) {
+        game.dayProgress += dt * game.speed * (TICK_RATE / DAY_DURATION_TICKS) * TICK_RATE;
+
+        // Continuous calcs
+        calculateRating();
+        calculateHappiness();
+        calculateVisitors();
+
+        // Day completed
+        if (game.dayProgress >= TICK_RATE) {
+            game.dayProgress -= TICK_RATE;
+            game.day++;
+            processDayIncome();
+            tryRandomEvent();
+            checkAchievements();
+        }
+    }
+
+    animateCounters();
+    updateHUD();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// ======== NAME INPUT / START ========
+$('startBtn').addEventListener('click', startGame);
+$('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startGame();
+});
+
+function startGame() {
+    AudioEngine.init();
+    const name = $('nameInput').value.trim() || 'Wonderland Park';
+    game.parkName = name;
+    $('nameOverlay').style.display = 'none';
+    game.started = true;
+    AudioEngine.play('achievement');
+    updateHUD();
+}
+
+// ======== INIT ========
+function init() {
+    createParticles();
+    initGrid();
+    renderBuildMenu();
+    updateHUD();
+    requestAnimationFrame(gameLoop);
+}
+
+init();
+</script>
+</body>
+</html>
