@@ -922,7 +922,7 @@ const achievementText = $('achievementText');
 function createParticles() {
     const container = $('particles');
     const colors = ['rgba(255,200,50,0.4)', 'rgba(100,180,255,0.3)', 'rgba(255,100,150,0.3)', 'rgba(100,255,150,0.3)', 'rgba(200,150,255,0.3)'];
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 15; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
         const size = 2 + Math.random() * 4;
@@ -948,11 +948,19 @@ function initGrid() {
     }
 }
 
+// Track last rendered state to avoid unnecessary DOM updates
+let lastGridState = new Array(GRID_COLS * GRID_ROWS).fill('');
+
 function renderGrid() {
     const cells = parkGrid.children;
     for (let i = 0; i < game.grid.length; i++) {
-        const cell = cells[i];
         const bld = game.grid[i];
+        // Build a state key to detect changes
+        const stateKey = bld ? `${bld.type}-${bld.level}-${bld.broken}` : '';
+        if (stateKey === lastGridState[i]) continue; // skip if unchanged
+        lastGridState[i] = stateKey;
+
+        const cell = cells[i];
         if (bld) {
             const bdata = BUILDINGS[bld.type];
             cell.className = 'grid-cell built building-' + bld.type;
@@ -970,8 +978,15 @@ function renderGrid() {
 
 // ======== BUILD MENU ========
 let currentCategory = 'rides';
+let lastBuildMenuMoney = -1;
+let lastBuildMenuCat = '';
 
-function renderBuildMenu() {
+function renderBuildMenu(force) {
+    // Only rebuild if money crossed an affordability threshold or category changed
+    if (!force && currentCategory === lastBuildMenuCat && lastBuildMenuMoney === Math.floor(game.money)) return;
+    lastBuildMenuMoney = Math.floor(game.money);
+    lastBuildMenuCat = currentCategory;
+
     const items = Object.entries(BUILDINGS).filter(([k,v]) => v.cat === currentCategory);
     buildList.innerHTML = '';
     items.forEach(([key, b]) => {
@@ -987,7 +1002,7 @@ function renderBuildMenu() {
             </div>
         `;
         div.addEventListener('click', () => {
-            if (!canAfford) {
+            if (game.money < b.cost) {
                 AudioEngine.play('error');
                 return;
             }
@@ -1004,7 +1019,7 @@ document.querySelectorAll('.cat-tab').forEach(tab => {
         tab.classList.add('active');
         currentCategory = tab.dataset.cat;
         AudioEngine.play('click');
-        renderBuildMenu();
+        renderBuildMenu(true);
     });
 });
 
@@ -1155,49 +1170,62 @@ window.demolishBuilding = function(idx) {
 };
 
 // ======== INCOME POP ON CELLS ========
+let activePopCount = 0;
+const MAX_POPS = 10;
+
 function showIncomePop(idx, text, color) {
+    if (activePopCount >= MAX_POPS) return; // limit simultaneous pops
     const cell = parkGrid.children[idx];
     if (!cell) return;
+    activePopCount++;
     const pop = document.createElement('div');
     pop.className = 'cell-income-pop';
     pop.textContent = text;
     pop.style.color = color || '#4aff6a';
     cell.appendChild(pop);
-    setTimeout(() => pop.remove(), 1200);
+    setTimeout(() => { pop.remove(); activePopCount--; }, 1200);
 }
 
 // ======== HUD UPDATE ========
 let displayMoney = 5000;
 let displayVisitors = 0;
+let lastHudDay = -1;
+let lastHudHap = -1;
+let lastHudRating = -1;
+let lastHudName = '';
 
 function updateHUD() {
-    hudParkName.textContent = game.parkName;
-    hudDay.textContent = game.day;
-
-    // Animated money counter
-    const moneyEl = hudMoney;
-    moneyEl.textContent = '$' + Math.floor(displayMoney).toLocaleString();
-
-    // Animated visitor counter
-    hudVisitors.textContent = Math.floor(displayVisitors).toLocaleString();
-
-    // Happiness
-    const hap = Math.max(0, Math.min(100, Math.floor(game.happiness)));
-    hudHappiness.textContent = hap + '%';
-    if (hap >= 75) hudHappiness.style.color = '#4aff6a';
-    else if (hap >= 40) hudHappiness.style.color = '#ffdd44';
-    else hudHappiness.style.color = '#ff6644';
-
-    // Rating stars
-    const rating = Math.max(1, Math.min(5, Math.floor(game.currentRating)));
-    let starsHtml = '';
-    for (let i = 0; i < 5; i++) {
-        if (i < rating) starsHtml += '\u2605';
-        else starsHtml += '<span class="star-empty">\u2606</span>';
+    // Only update parts that changed
+    if (game.parkName !== lastHudName) {
+        hudParkName.textContent = game.parkName;
+        lastHudName = game.parkName;
     }
-    hudRating.innerHTML = starsHtml;
+    if (game.day !== lastHudDay) {
+        hudDay.textContent = game.day;
+        lastHudDay = game.day;
+    }
 
-    renderBuildMenu();
+    // Happiness - only update when value changes
+    const hap = Math.max(0, Math.min(100, Math.floor(game.happiness)));
+    if (hap !== lastHudHap) {
+        hudHappiness.textContent = hap + '%';
+        if (hap >= 75) hudHappiness.style.color = '#4aff6a';
+        else if (hap >= 40) hudHappiness.style.color = '#ffdd44';
+        else hudHappiness.style.color = '#ff6644';
+        lastHudHap = hap;
+    }
+
+    // Rating stars - only update when rating changes
+    const rating = Math.max(1, Math.min(5, Math.floor(game.currentRating)));
+    if (rating !== lastHudRating) {
+        let starsHtml = '';
+        for (let i = 0; i < 5; i++) {
+            if (i < rating) starsHtml += '\u2605';
+            else starsHtml += '<span class="star-empty">\u2606</span>';
+        }
+        hudRating.innerHTML = starsHtml;
+        lastHudRating = rating;
+    }
 }
 
 function animateCounters() {
@@ -1355,8 +1383,8 @@ function processDayIncome() {
         AudioEngine.play('money');
     }
 
-    // Show floating total near money HUD
-    if (netIncome !== 0) {
+    // Show floating total near money HUD (limit to avoid pile-up at high speed)
+    if (netIncome !== 0 && document.querySelectorAll('.money-float').length < 3) {
         const moneyRect = hudMoney.getBoundingClientRect();
         const floater = document.createElement('div');
         floater.className = 'money-float';
@@ -1427,6 +1455,8 @@ const TICK_RATE = 60;
 const DAY_DURATION_TICKS = 300; // 5 seconds at 1x
 
 let lastTime = 0;
+let calcAccum = 0;
+const CALC_INTERVAL = 0.25; // recalculate every 250ms instead of every frame
 
 function gameLoop(timestamp) {
     if (!game.started) {
@@ -1435,25 +1465,33 @@ function gameLoop(timestamp) {
     }
 
     if (!lastTime) lastTime = timestamp;
-    const dt = (timestamp - lastTime) / 1000;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1); // cap dt to prevent spiral
     lastTime = timestamp;
 
     if (game.speed > 0) {
         game.dayProgress += dt * game.speed * (TICK_RATE / DAY_DURATION_TICKS) * TICK_RATE;
 
-        // Continuous calcs
-        calculateRating();
-        calculateHappiness();
-        calculateVisitors();
+        // Throttle expensive calcs
+        calcAccum += dt;
+        if (calcAccum >= CALC_INTERVAL) {
+            calcAccum = 0;
+            calculateRating();
+            calculateHappiness();
+            calculateVisitors();
+            renderBuildMenu();
+        }
 
-        // Day completed
-        if (game.dayProgress >= TICK_RATE) {
+        // Day completed (handle multiple days at high speed, max 3 per frame)
+        let daysThisFrame = 0;
+        while (game.dayProgress >= TICK_RATE && daysThisFrame < 3) {
             game.dayProgress -= TICK_RATE;
             game.day++;
+            daysThisFrame++;
             processDayIncome();
             tryRandomEvent();
             checkAchievements();
         }
+        if (game.dayProgress >= TICK_RATE) game.dayProgress = 0; // prevent runaway
     }
 
     animateCounters();
@@ -1482,7 +1520,7 @@ function startGame() {
 function init() {
     createParticles();
     initGrid();
-    renderBuildMenu();
+    renderBuildMenu(true);
     updateHUD();
     requestAnimationFrame(gameLoop);
 }
