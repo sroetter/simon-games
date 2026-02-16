@@ -6,1901 +6,1177 @@
 <title>Dungeon Crawler - D&D Adventure</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a0f;color:#e0e0e0;font-family:'Cinzel',serif;overflow:hidden;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+body{background:#0a0a0f;color:#e0e0e0;font-family:'Cinzel',serif;overflow:hidden;height:100vh}
 #bg-particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .back-btn{position:fixed;top:18px;left:24px;color:#aaa;text-decoration:none;font-size:14px;z-index:100;font-family:'Cinzel',serif;transition:color .3s}.back-btn:hover{color:#fff}
-h1{font-family:'Cinzel',serif;font-weight:900;font-size:26px;text-align:center;margin-bottom:8px;z-index:2;text-shadow:0 0 20px rgba(180,140,60,.5);color:#f1c40f}
-
-#game-container{position:relative;z-index:2;display:flex;gap:12px;align-items:flex-start}
-
-canvas#dungeon{display:block;border-radius:10px;border:1px solid rgba(255,255,255,.08);box-shadow:0 0 40px rgba(0,0,0,.6);image-rendering:pixelated}
-
-#sidebar{width:240px;display:flex;flex-direction:column;gap:8px;font-size:12px}
+h1.title{font-family:'Cinzel',serif;font-weight:900;font-size:22px;text-align:center;padding:10px 0 6px;z-index:2;position:relative;text-shadow:0 0 20px rgba(180,140,60,.5);color:#f1c40f;letter-spacing:2px}
+#app{position:relative;z-index:2;display:flex;height:calc(100vh - 46px);gap:0;overflow:hidden}
+#main-col{flex:1;display:flex;flex-direction:column;padding:8px 12px;overflow:hidden;min-width:0}
+#narrative-box{flex:1;overflow-y:auto;border-radius:10px;padding:20px 24px;font-family:'Crimson Text',serif;font-size:17px;line-height:1.7;color:#d4c8a0;position:relative;
+  background:linear-gradient(135deg,rgba(30,25,18,.92),rgba(20,16,10,.95));
+  border:1px solid rgba(180,140,60,.2);box-shadow:inset 0 0 60px rgba(0,0,0,.5),0 0 30px rgba(0,0,0,.4)}
+#narrative-box::-webkit-scrollbar{width:8px}
+#narrative-box::-webkit-scrollbar-track{background:rgba(0,0,0,.3);border-radius:4px}
+#narrative-box::-webkit-scrollbar-thumb{background:rgba(180,140,60,.3);border-radius:4px}
+.dm-text{margin-bottom:12px;animation:fadeIn .5s ease}
+.dm-text em{color:#c9a84c;font-style:italic}
+.dm-text strong{color:#e8d5a3}
+.dm-label{color:#f1c40f;font-family:'Cinzel',serif;font-size:13px;font-weight:700;margin-bottom:4px;display:block}
+.roll-result{text-align:center;font-family:'Cinzel',serif;font-size:15px;color:#8cf;margin:8px 0;padding:8px;background:rgba(0,0,0,.3);border-radius:6px;border:1px solid rgba(100,160,255,.15)}
+.roll-result .die-val{font-size:28px;color:#f1c40f;display:inline-block;animation:diceRoll .4s ease}
+.combat-hit{color:#e74c3c;font-weight:600}
+.combat-miss{color:#888;font-style:italic}
+.combat-heal{color:#2ecc71;font-weight:600}
+.loot-text{color:#f1c40f;font-weight:600}
+.xp-text{color:#8cf}
+.gold-text{color:#f1c40f}
+#choices{padding:10px 0 4px;display:flex;flex-wrap:wrap;gap:8px;min-height:44px}
+#choices button{font-family:'Cinzel',serif;font-size:13px;padding:8px 18px;border-radius:6px;border:1px solid rgba(180,140,60,.3);background:linear-gradient(135deg,rgba(40,35,20,.9),rgba(30,25,15,.95));color:#d4c8a0;cursor:pointer;transition:all .2s;flex:1;min-width:140px;max-width:320px}
+#choices button:hover{background:linear-gradient(135deg,rgba(60,50,25,.95),rgba(45,38,20,.98));border-color:rgba(241,196,15,.5);color:#f1c40f;box-shadow:0 0 12px rgba(241,196,15,.15);transform:translateY(-1px)}
+#log-box{height:100px;overflow-y:auto;margin-top:6px;border-radius:8px;padding:8px 12px;font-family:'Crimson Text',serif;font-size:13px;line-height:1.5;color:#8a8a7a;
+  background:rgba(10,10,15,.8);border:1px solid rgba(255,255,255,.06)}
+#log-box::-webkit-scrollbar{width:6px}
+#log-box::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+.log-entry{margin:2px 0;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+#sidebar{width:280px;display:flex;flex-direction:column;gap:6px;padding:8px 10px 8px 0;overflow-y:auto;font-size:12px}
+#sidebar::-webkit-scrollbar{width:6px}
+#sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
 .panel{background:rgba(10,10,20,.75);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px}
 .panel h3{font-size:13px;color:#f1c40f;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:4px}
 .stat-row{display:flex;justify-content:space-between;margin:2px 0;font-size:11px}
 .stat-val{color:#8cf}
 .bar-outer{width:100%;height:12px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;margin:3px 0}
-.bar-inner{height:100%;border-radius:6px;transition:width .3s}
+.bar-inner{height:100%;border-radius:6px;transition:width .4s}
 .hp-bar{background:linear-gradient(90deg,#8b0000,#e74c3c)}
 .mana-bar{background:linear-gradient(90deg,#1a3a6a,#3498db)}
 .xp-bar{background:linear-gradient(90deg,#5a5a10,#f1c40f)}
-.gold-color{color:#f1c40f}
-.heal-color{color:#2ecc71}
-.dmg-color{color:#e74c3c}
-.mana-color{color:#3498db}
+.equip-slot{font-size:11px;color:#aaa;margin:2px 0;display:flex;justify-content:space-between}
+.equip-slot .item-name{color:#d4a;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv-item{font-size:11px;color:#bbb;margin:1px 0;cursor:default}
+.quest-item{font-size:11px;margin:3px 0;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.quest-item .q-name{color:#f1c40f}
+.quest-item .q-desc{color:#888;font-size:10px}
+.quest-done{text-decoration:line-through;opacity:.5}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes diceRoll{0%{transform:rotateZ(0) scale(1)}25%{transform:rotateZ(15deg) scale(1.2)}50%{transform:rotateZ(-10deg) scale(1.3)}75%{transform:rotateZ(5deg) scale(1.1)}100%{transform:rotateZ(0) scale(1)}}
+@keyframes pulseGlow{0%,100%{text-shadow:0 0 8px rgba(241,196,15,.3)}50%{text-shadow:0 0 20px rgba(241,196,15,.6)}}
 
-#inventory-list{max-height:180px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent}
-#inventory-list::-webkit-scrollbar{width:4px}
-#inventory-list::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
-.inv-item{padding:3px 4px;border-radius:4px;cursor:pointer;font-size:10px;margin:1px 0;display:flex;justify-content:space-between;align-items:center;transition:background .2s}
-.inv-item:hover{background:rgba(255,255,255,.1)}
-.inv-item.equipped{background:rgba(241,196,15,.15);border:1px solid rgba(241,196,15,.3)}
-.inv-item .item-name{flex:1}
-.inv-item .item-stat{color:#8cf;font-size:9px;margin-left:6px}
+/* Character Creation - Parchment Style */
+#char-create{max-width:620px;margin:0 auto;padding:30px 36px;
+  background:linear-gradient(145deg,#d4c8a0,#c4b48a,#d4c8a0);
+  border-radius:4px;border:2px solid #8b7355;
+  box-shadow:0 0 30px rgba(0,0,0,.6),inset 0 0 40px rgba(139,115,85,.2);
+  color:#2c1810;position:relative;font-family:'Crimson Text',serif}
+#char-create::before{content:'';position:absolute;top:8px;left:8px;right:8px;bottom:8px;
+  border:1px solid rgba(139,115,85,.3);border-radius:2px;pointer-events:none}
+#char-create h2{font-family:'Cinzel',serif;font-weight:900;color:#2c1810;text-align:center;margin-bottom:6px;font-size:24px;
+  text-shadow:1px 1px 0 rgba(212,200,160,.5);letter-spacing:3px}
+#char-create .sheet-subtitle{text-align:center;color:#5a4a3a;font-size:12px;font-family:'Cinzel',serif;margin-bottom:18px;
+  border-bottom:2px solid #8b7355;padding-bottom:10px;letter-spacing:1px}
+#char-create label{display:block;color:#5a4a3a;margin:12px 0 4px;font-size:13px;font-family:'Cinzel',serif;font-weight:700;letter-spacing:1px}
+#char-create input[type=text]{width:100%;padding:8px 12px;border-radius:2px;border:1px solid #8b7355;
+  background:rgba(255,250,240,.6);color:#2c1810;font-family:'Cinzel',serif;font-size:15px;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.1)}
+#char-create input[type=text]:focus{outline:none;border-color:#5a3a1a;box-shadow:inset 0 1px 3px rgba(0,0,0,.15),0 0 6px rgba(180,140,60,.3)}
+#char-create input[type=text]::placeholder{color:#9a8a7a}
+#char-create .class-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.class-card{padding:12px 10px;border-radius:4px;border:2px solid #a89878;background:rgba(255,250,240,.5);
+  cursor:pointer;text-align:center;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.class-card:hover{border-color:#5a3a1a;background:rgba(255,250,240,.8);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.15)}
+.class-card.selected{border-color:#2c1810;background:rgba(241,196,15,.2);box-shadow:0 0 10px rgba(180,140,60,.3)}
+.class-card .cc-icon{font-size:28px;display:block;margin-bottom:4px}
+.class-card .cc-name{color:#2c1810;font-size:14px;font-weight:700;font-family:'Cinzel',serif}
+.class-card .cc-desc{color:#6a5a4a;font-size:11px;margin-top:2px}
 
-#combat-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:none;z-index:50;flex-direction:column;align-items:center;justify-content:center}
-#combat-box{background:rgba(15,15,25,.95);border:1px solid rgba(241,196,15,.3);border-radius:12px;padding:24px;max-width:500px;width:90%;text-align:center;box-shadow:0 0 60px rgba(241,196,15,.1)}
-#combat-box h2{font-size:22px;color:#f1c40f;margin-bottom:12px}
-#combat-log{min-height:100px;max-height:200px;overflow-y:auto;text-align:left;font-size:12px;margin:10px 0;padding:8px;background:rgba(0,0,0,.4);border-radius:6px;line-height:1.6;scrollbar-width:thin;scrollbar-color:#333 transparent}
-#combat-log .roll{color:#f1c40f}
-#combat-log .hit{color:#e74c3c}
-#combat-log .miss{color:#888}
-#combat-log .heal{color:#2ecc71}
-#combat-log .info{color:#8cf}
-#combat-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
-#combat-actions button{padding:8px 20px;font-family:'Cinzel',serif;font-weight:700;font-size:13px;border:1px solid rgba(255,255,255,.2);border-radius:6px;cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s;color:#fff}
-#combat-actions button:hover{transform:scale(1.05)}
-.btn-attack{background:linear-gradient(135deg,#8b0000,#c0392b)!important}
-.btn-defend{background:linear-gradient(135deg,#1a3a6a,#2980b9)!important}
-.btn-spell{background:linear-gradient(135deg,#4a0080,#8e44ad)!important}
-.btn-flee{background:linear-gradient(135deg,#333,#555)!important}
-.btn-continue{background:linear-gradient(135deg,#1a6a1a,#27ae60)!important}
-.btn-attack:hover{box-shadow:0 4px 15px rgba(200,30,30,.4)}
-.btn-defend:hover{box-shadow:0 4px 15px rgba(41,128,185,.4)}
-.btn-spell:hover{box-shadow:0 4px 15px rgba(142,68,173,.4)}
-.btn-flee:hover{box-shadow:0 4px 15px rgba(100,100,100,.4)}
-button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+/* Stat Assignment Area */
+.stat-mode-toggle{display:flex;gap:8px;margin:10px 0}
+.stat-mode-btn{flex:1;padding:8px;border:2px solid #a89878;border-radius:4px;background:rgba(255,250,240,.4);
+  color:#5a4a3a;font-family:'Cinzel',serif;font-size:12px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s}
+.stat-mode-btn:hover{border-color:#5a3a1a;background:rgba(255,250,240,.7)}
+.stat-mode-btn.active{border-color:#2c1810;background:rgba(241,196,15,.25);color:#2c1810}
+.points-remaining{text-align:center;font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:#2c1810;
+  margin:8px 0;padding:8px;background:rgba(139,115,85,.1);border-radius:4px;border:1px solid #a89878}
+.points-remaining span{color:#8b0000;font-size:20px}
+#stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.stat-assign-row{display:flex;align-items:center;padding:6px 10px;background:rgba(255,250,240,.4);border-radius:4px;
+  border:1px solid #a89878;gap:6px}
+.stat-assign-row .sa-name{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:#5a4a3a;width:50px}
+.stat-assign-row .sa-val{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#2c1810;min-width:28px;text-align:center}
+.stat-assign-row .sa-mod{font-size:11px;color:#6a5a4a;min-width:30px;text-align:center}
+.stat-assign-row button{width:24px;height:24px;border:1px solid #8b7355;border-radius:3px;
+  background:rgba(255,250,240,.6);color:#2c1810;font-size:14px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0;line-height:1}
+.stat-assign-row button:hover{background:rgba(241,196,15,.3);border-color:#5a3a1a}
+.stat-assign-row button:disabled{opacity:.3;cursor:not-allowed}
+.stat-assign-row .sa-dice{font-size:10px;color:#6a5a4a;margin-left:auto}
 
-#char-select{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);backdrop-filter:blur(6px);display:flex;z-index:60;flex-direction:column;align-items:center;justify-content:center}
-#char-select h2{font-size:30px;color:#f1c40f;margin-bottom:6px;text-shadow:0 0 30px rgba(241,196,15,.4)}
-#char-select .subtitle{color:#888;font-size:13px;margin-bottom:20px}
-.class-cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
-.class-card{background:rgba(15,15,25,.9);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:20px;width:180px;cursor:pointer;transition:transform .2s,border-color .3s,box-shadow .3s;text-align:center}
-.class-card:hover{transform:translateY(-4px);border-color:rgba(241,196,15,.5);box-shadow:0 8px 30px rgba(241,196,15,.15)}
-.class-card .icon{font-size:48px;margin-bottom:8px}
-.class-card .name{font-size:16px;font-weight:700;color:#f1c40f;margin-bottom:6px}
-.class-card .desc{font-size:10px;color:#aaa;margin-bottom:8px;min-height:30px}
-.class-card .stats{font-size:10px;color:#8cf;text-align:left}
-
-#gameover-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);display:none;z-index:55;flex-direction:column;align-items:center;justify-content:center}
-#gameover-box{background:rgba(15,15,25,.95);border:1px solid rgba(200,30,30,.4);border-radius:12px;padding:30px;max-width:400px;width:90%;text-align:center;box-shadow:0 0 60px rgba(200,30,30,.15)}
-#gameover-box h2{font-size:28px;color:#e74c3c;margin-bottom:14px;text-shadow:0 0 20px rgba(200,30,30,.5)}
-#gameover-stats{font-size:13px;line-height:2}
-#gameover-box button{margin-top:18px;padding:10px 32px;font-family:'Cinzel',serif;font-weight:700;font-size:15px;background:linear-gradient(135deg,#8b0000,#c0392b);color:#fff;border:none;border-radius:6px;cursor:pointer;transition:transform .2s,box-shadow .2s}
-#gameover-box button:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(200,30,30,.5)}
-
-#msg-log{position:absolute;bottom:8px;left:8px;z-index:5;pointer-events:none;font-size:10px;max-width:300px}
-.msg{padding:2px 6px;margin:1px 0;border-radius:3px;background:rgba(0,0,0,.7);animation:msgFade 3s forwards;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@keyframes msgFade{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
-
-#minimap{position:absolute;top:8px;right:8px;border:1px solid rgba(255,255,255,.15);border-radius:4px;z-index:5}
-
-#tooltip{position:fixed;background:rgba(10,10,20,.95);border:1px solid rgba(241,196,15,.3);border-radius:6px;padding:8px 10px;font-size:11px;z-index:70;pointer-events:none;display:none;max-width:200px;font-family:'Cinzel',serif}
-#tooltip .tt-name{color:#f1c40f;font-weight:700;margin-bottom:3px}
-#tooltip .tt-stat{color:#8cf}
-#tooltip .tt-desc{color:#aaa;font-size:10px;margin-top:3px}
-
-#sidebar{max-height:640px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent}
-#sidebar::-webkit-scrollbar{width:4px}
-#sidebar::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
-
-.party-member{margin:4px 0;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)}
-.party-member:last-child{border-bottom:none}
-.party-member .pm-header{display:flex;justify-content:space-between;align-items:center;font-size:10px;margin-bottom:2px}
-.party-member .pm-name{color:#ccc}
-.party-member .pm-class{color:#888;font-size:9px}
-.party-member.pm-dead .pm-name{color:#555;text-decoration:line-through}
-.party-member.pm-dead .pm-class{color:#444}
-.party-member .bar-outer{height:8px;margin:1px 0}
-
-#combat-party-info{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
-.combat-pm{background:rgba(255,255,255,.05);border-radius:6px;padding:4px 8px;font-size:10px;min-width:100px;text-align:center}
-.combat-pm.dead{opacity:.4;text-decoration:line-through}
-.combat-pm .cpm-name{color:#ccc;font-weight:700}
-.combat-pm .cpm-hp{color:#e74c3c;font-size:9px}
-
-#charsheet-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:none;z-index:55;flex-direction:column;align-items:center;justify-content:center}
-#charsheet-box{background:linear-gradient(135deg,#2a2218,#1e1a14,#2a2218);border:2px solid #8b7355;border-radius:12px;padding:28px 32px;max-width:560px;width:92%;max-height:85vh;overflow-y:auto;box-shadow:0 0 60px rgba(139,115,85,.2),inset 0 0 80px rgba(0,0,0,.4);font-family:'Cinzel',serif;position:relative;scrollbar-width:thin;scrollbar-color:#5a4a3a transparent}
-#charsheet-box::-webkit-scrollbar{width:6px}
-#charsheet-box::-webkit-scrollbar-thumb{background:#5a4a3a;border-radius:3px}
-#charsheet-box::before{content:'';position:absolute;top:4px;left:4px;right:4px;bottom:4px;border:1px solid rgba(139,115,85,.3);border-radius:8px;pointer-events:none}
-#charsheet-box h2{font-size:22px;color:#f1c40f;margin-bottom:4px;text-align:center;text-shadow:0 0 15px rgba(241,196,15,.3)}
-#charsheet-box .cs-subtitle{text-align:center;color:#8b7355;font-size:11px;margin-bottom:16px;border-bottom:1px solid #5a4a3a;padding-bottom:8px}
-.cs-section{margin-bottom:14px}
-.cs-section h3{font-size:13px;color:#d4a855;margin-bottom:6px;border-bottom:1px solid rgba(139,115,85,.3);padding-bottom:3px}
-.cs-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 16px;font-size:11px}
-.cs-grid .cs-label{color:#8b7355}
-.cs-grid .cs-value{color:#e0d0b8;text-align:right}
-.cs-party-member{background:rgba(0,0,0,.25);border:1px solid rgba(139,115,85,.2);border-radius:6px;padding:8px;margin:4px 0;font-size:11px}
-.cs-party-member.dead{opacity:.5}
-.cs-party-member .cspm-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
-.cs-party-member .cspm-name{color:#d4a855;font-weight:700}
-.cs-party-member .cspm-status{font-size:9px}
-.cs-close-hint{text-align:center;color:#5a4a3a;font-size:10px;margin-top:12px}
+#start-btn{display:block;width:100%;padding:12px;margin:16px 0 4px;border-radius:4px;
+  border:2px solid #5a3a1a;background:linear-gradient(135deg,#8b7355,#6a5a3a);
+  color:#f5e6c8;font-family:'Cinzel',serif;font-size:16px;font-weight:900;cursor:pointer;
+  transition:all .2s;letter-spacing:2px;text-shadow:0 1px 2px rgba(0,0,0,.3);
+  box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#start-btn:hover:not(:disabled){background:linear-gradient(135deg,#9a8365,#7a6a4a);
+  box-shadow:0 4px 15px rgba(0,0,0,.4);transform:translateY(-1px)}
+#start-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 </style>
 </head>
 <body>
-<canvas id="bg-particles"></canvas>
 <a href="index.html" class="back-btn">&larr; Back to Gallery</a>
-<h1>&#x2694;&#xFE0F; Dungeon Crawler</h1>
-
-<div id="char-select">
-  <h2>&#x2694;&#xFE0F; Choose Your Hero</h2>
-  <p class="subtitle">Each class offers a unique playstyle</p>
-  <div class="class-cards">
-    <div class="class-card" onclick="selectClass('warrior')">
-      <div class="icon">&#x1F6E1;&#xFE0F;</div>
-      <div class="name">Warrior</div>
-      <div class="desc">A stalwart defender, strong in melee combat with heavy armor.</div>
-      <div class="stats">HP: 120 | ATK: 8 | DEF: 6<br>Mana: 20 | Spell: Shield Bash</div>
-    </div>
-    <div class="class-card" onclick="selectClass('mage')">
-      <div class="icon">&#x1F9D9;</div>
-      <div class="name">Mage</div>
-      <div class="desc">Master of arcane arts, devastating spells but fragile body.</div>
-      <div class="stats">HP: 70 | ATK: 4 | DEF: 3<br>Mana: 80 | Spell: Fireball</div>
-    </div>
-    <div class="class-card" onclick="selectClass('rogue')">
-      <div class="icon">&#x1F5E1;&#xFE0F;</div>
-      <div class="name">Rogue</div>
-      <div class="desc">Swift and cunning, striking from the shadows with deadly precision.</div>
-      <div class="stats">HP: 85 | ATK: 7 | DEF: 4<br>Mana: 40 | Spell: Backstab</div>
-    </div>
-  </div>
-</div>
-
-<div id="game-container" style="display:none">
-  <div style="position:relative">
-    <canvas id="dungeon" width="640" height="640"></canvas>
-    <div id="msg-log"></div>
-    <canvas id="minimap" width="100" height="100"></canvas>
-  </div>
-  <div id="sidebar">
-    <div class="panel">
-      <h3 id="player-name">Hero</h3>
-      <div class="stat-row"><span>Level</span><span class="stat-val" id="s-level">1</span></div>
-      <div class="stat-row"><span>Floor</span><span class="stat-val" id="s-floor">1</span></div>
-      <div class="stat-row"><span>Gold</span><span class="gold-color" id="s-gold">0</span></div>
-      <div style="margin-top:6px">
-        <div class="stat-row"><span>HP</span><span id="s-hp">120/120</span></div>
-        <div class="bar-outer"><div class="bar-inner hp-bar" id="bar-hp" style="width:100%"></div></div>
-        <div class="stat-row"><span>Mana</span><span id="s-mana">20/20</span></div>
-        <div class="bar-outer"><div class="bar-inner mana-bar" id="bar-mana" style="width:100%"></div></div>
-        <div class="stat-row"><span>XP</span><span id="s-xp">0/20</span></div>
-        <div class="bar-outer"><div class="bar-inner xp-bar" id="bar-xp" style="width:0%"></div></div>
-      </div>
-    </div>
-    <div class="panel">
-      <h3>Stats</h3>
-      <div class="stat-row"><span>Attack</span><span class="stat-val" id="s-atk">8</span></div>
-      <div class="stat-row"><span>Defense</span><span class="stat-val" id="s-def">6</span></div>
-      <div class="stat-row"><span>AC</span><span class="stat-val" id="s-ac">12</span></div>
-    </div>
-    <div class="panel">
-      <h3>Equipment</h3>
-      <div class="stat-row"><span>Weapon:</span><span class="stat-val" id="s-weapon">Fists</span></div>
-      <div class="stat-row"><span>Armor:</span><span class="stat-val" id="s-armor">Cloth</span></div>
-    </div>
-    <div class="panel">
-      <h3>Inventory</h3>
-      <div id="inventory-list"></div>
-    </div>
-    <div class="panel" id="party-panel" style="display:none">
-      <h3>Party</h3>
-      <div id="party-list"></div>
-    </div>
-    <div class="panel" style="font-size:10px;color:#666;text-align:center">
-      WASD/Arrows: Move | I: Use potion<br>E: Equip best | C: Character Sheet<br>Space: Wait
-    </div>
-  </div>
-</div>
-
-<div id="combat-overlay">
-  <div id="combat-box">
-    <h2 id="combat-title">Combat!</h2>
-    <div style="display:flex;justify-content:space-around;margin-bottom:10px">
-      <div id="combat-player-info" style="text-align:center"></div>
-      <div style="font-size:24px;align-self:center">&#x2694;&#xFE0F;</div>
-      <div id="combat-enemy-info" style="text-align:center"></div>
-    </div>
-    <div id="combat-party-info"></div>
-    <div id="combat-log"></div>
-    <div id="combat-actions"></div>
-  </div>
-</div>
-
-<div id="charsheet-overlay" onclick="if(event.target===this){toggleCharSheet()}">
-  <div id="charsheet-box">
-    <h2 id="cs-title">Character Sheet</h2>
-    <div class="cs-subtitle" id="cs-subtitle"></div>
-    <div id="cs-content"></div>
-    <div class="cs-close-hint">Press C or Escape to close</div>
-  </div>
-</div>
-
-<div id="gameover-overlay">
-  <div id="gameover-box">
-    <h2>&#x1F480; You Have Fallen</h2>
-    <div id="gameover-stats"></div>
-    <button onclick="location.reload()">Try Again</button>
-  </div>
-</div>
-
-<div id="tooltip"><div class="tt-name"></div><div class="tt-stat"></div><div class="tt-desc"></div></div>
-
+<canvas id="bg-particles"></canvas>
+<h1 class="title">&#9876; Realm of Shadows &#9876;</h1>
+<div id="app"></div>
 <script>
-// ==================== PARTICLES ====================
+// ========== PARTICLE BACKGROUND ==========
 (function(){
 const c=document.getElementById('bg-particles'),x=c.getContext('2d');
 function resize(){c.width=innerWidth;c.height=innerHeight}
-resize();window.addEventListener('resize',resize);
-const P=[];for(let i=0;i<60;i++)P.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*2+.5,dx:(Math.random()-.5)*.3,dy:(Math.random()-.5)*.3,a:Math.random()*.4+.1});
-function draw(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.x+=p.dx;p.y+=p.dy;if(p.x<0)p.x=c.width;if(p.x>c.width)p.x=0;if(p.y<0)p.y=c.height;if(p.y>c.height)p.y=0;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle=`rgba(241,196,15,${p.a})`;x.fill()});requestAnimationFrame(draw)}
+resize();addEventListener('resize',resize);
+const P=[];for(let i=0;i<80;i++)P.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*2+.5,dx:(Math.random()-.5)*.3,dy:(Math.random()-.5)*.3,a:Math.random()*.4+.1});
+function draw(){x.clearRect(0,0,c.width,c.height);for(const p of P){x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle=`rgba(180,140,60,${p.a})`;x.fill();p.x+=p.dx;p.y+=p.dy;if(p.x<0||p.x>c.width)p.dx*=-1;if(p.y<0||p.y>c.height)p.dy*=-1;}requestAnimationFrame(draw)}
 draw();
 })();
 
-// ==================== AUDIO ====================
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-const audioCtx = new AudioCtx();
+// ========== WEB AUDIO SOUND EFFECTS ==========
+const SFX=(function(){
+const ctx=new(window.AudioContext||window.webkitAudioContext)();
+function play(type){
+try{ctx.resume();
+const o=ctx.createOscillator(),g=ctx.createGain();
+o.connect(g);g.connect(ctx.destination);
+const t=ctx.currentTime;
+if(type==='dice'){o.type='square';o.frequency.setValueAtTime(800,t);o.frequency.exponentialRampToValueAtTime(200,t+.15);g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.2);}
+else if(type==='hit'){o.type='sawtooth';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(60,t+.2);g.gain.setValueAtTime(.15,t);g.gain.exponentialRampToValueAtTime(.001,t+.25);o.start(t);o.stop(t+.25);}
+else if(type==='miss'){o.type='sine';o.frequency.setValueAtTime(300,t);o.frequency.exponentialRampToValueAtTime(150,t+.15);g.gain.setValueAtTime(.06,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.2);}
+else if(type==='heal'){o.type='sine';o.frequency.setValueAtTime(400,t);o.frequency.exponentialRampToValueAtTime(800,t+.3);g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.001,t+.35);o.start(t);o.stop(t+.35);}
+else if(type==='loot'){o.type='sine';o.frequency.setValueAtTime(500,t);o.frequency.exponentialRampToValueAtTime(1000,t+.15);g.gain.setValueAtTime(.08,t);g.gain.exponentialRampToValueAtTime(.001,t+.25);const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.type='sine';o2.frequency.setValueAtTime(700,t+.15);o2.frequency.exponentialRampToValueAtTime(1200,t+.3);g2.gain.setValueAtTime(.08,t+.15);g2.gain.exponentialRampToValueAtTime(.001,t+.4);o.start(t);o.stop(t+.25);o2.start(t+.15);o2.stop(t+.4);}
+else if(type==='levelup'){o.type='sine';o.frequency.setValueAtTime(400,t);o.frequency.exponentialRampToValueAtTime(600,t+.15);g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.08,t+.15);const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.type='sine';o2.frequency.setValueAtTime(600,t+.2);o2.frequency.exponentialRampToValueAtTime(900,t+.4);g2.gain.setValueAtTime(.1,t+.2);g2.gain.exponentialRampToValueAtTime(.001,t+.5);o.start(t);o.stop(t+.2);o2.start(t+.2);o2.stop(t+.5);}
+else if(type==='death'){o.type='sawtooth';o.frequency.setValueAtTime(200,t);o.frequency.exponentialRampToValueAtTime(40,t+.6);g.gain.setValueAtTime(.15,t);g.gain.exponentialRampToValueAtTime(.001,t+.7);o.start(t);o.stop(t+.7);}
+else if(type==='click'){o.type='sine';o.frequency.setValueAtTime(600,t);g.gain.setValueAtTime(.05,t);g.gain.exponentialRampToValueAtTime(.001,t+.08);o.start(t);o.stop(t+.1);}
+}catch(e){}
+}
+return{play};
+})();
 
-function playSound(type) {
-  const g = audioCtx.createGain();
-  g.connect(audioCtx.destination);
-  const now = audioCtx.currentTime;
+// ========== UTILITIES ==========
+function d(n){return Math.floor(Math.random()*n)+1}
+function d20(){return d(20)}
+function roll4d6Drop(){const r=[d(6),d(6),d(6),d(6)];r.sort((a,b)=>a-b);return{rolls:r,total:r[1]+r[2]+r[3]}}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v))}
+function mod(stat){return Math.floor((stat-10)/2)}
+function modStr(stat){const m=mod(stat);return m>=0?'+'+m:''+m}
 
-  if (type === 'hit') {
-    const o = audioCtx.createOscillator();
-    o.type = 'sawtooth'; o.frequency.setValueAtTime(200, now);
-    o.frequency.exponentialRampToValueAtTime(80, now + 0.15);
-    g.gain.setValueAtTime(0.15, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-    o.connect(g); o.start(now); o.stop(now + 0.2);
-  } else if (type === 'miss') {
-    const o = audioCtx.createOscillator();
-    o.type = 'sine'; o.frequency.setValueAtTime(300, now);
-    o.frequency.exponentialRampToValueAtTime(150, now + 0.1);
-    g.gain.setValueAtTime(0.08, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-    o.connect(g); o.start(now); o.stop(now + 0.12);
-  } else if (type === 'crit') {
-    const o = audioCtx.createOscillator();
-    o.type = 'square'; o.frequency.setValueAtTime(400, now);
-    o.frequency.exponentialRampToValueAtTime(100, now + 0.25);
-    g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-    o.connect(g); o.start(now); o.stop(now + 0.3);
-  } else if (type === 'levelup') {
-    [523, 659, 784, 1047].forEach((f, i) => {
-      const o = audioCtx.createOscillator();
-      const g2 = audioCtx.createGain();
-      o.type = 'sine'; o.frequency.value = f;
-      g2.gain.setValueAtTime(0.12, now + i * 0.12);
-      g2.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.2);
-      o.connect(g2); g2.connect(audioCtx.destination);
-      o.start(now + i * 0.12); o.stop(now + i * 0.12 + 0.2);
-    });
-  } else if (type === 'stairs') {
-    [262, 330, 392, 523].forEach((f, i) => {
-      const o = audioCtx.createOscillator();
-      const g2 = audioCtx.createGain();
-      o.type = 'triangle'; o.frequency.value = f;
-      g2.gain.setValueAtTime(0.1, now + i * 0.1);
-      g2.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.15);
-      o.connect(g2); g2.connect(audioCtx.destination);
-      o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.15);
-    });
-  } else if (type === 'potion') {
-    const o = audioCtx.createOscillator();
-    o.type = 'sine'; o.frequency.setValueAtTime(400, now);
-    o.frequency.exponentialRampToValueAtTime(800, now + 0.2);
-    g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-    o.connect(g); o.start(now); o.stop(now + 0.25);
-  } else if (type === 'pickup') {
-    const o = audioCtx.createOscillator();
-    o.type = 'sine'; o.frequency.setValueAtTime(600, now);
-    o.frequency.exponentialRampToValueAtTime(900, now + 0.1);
-    g.gain.setValueAtTime(0.08, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-    o.connect(g); o.start(now); o.stop(now + 0.15);
-  } else if (type === 'death') {
-    [200, 180, 150, 100].forEach((f, i) => {
-      const o = audioCtx.createOscillator();
-      const g2 = audioCtx.createGain();
-      o.type = 'sawtooth'; o.frequency.value = f;
-      g2.gain.setValueAtTime(0.12, now + i * 0.2);
-      g2.gain.exponentialRampToValueAtTime(0.001, now + i * 0.2 + 0.3);
-      o.connect(g2); g2.connect(audioCtx.destination);
-      o.start(now + i * 0.2); o.stop(now + i * 0.2 + 0.3);
-    });
-  } else if (type === 'spell') {
-    const o = audioCtx.createOscillator();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(300, now);
-    o.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
-    o.frequency.exponentialRampToValueAtTime(200, now + 0.35);
-    g.gain.setValueAtTime(0.12, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-    o.connect(g); o.start(now); o.stop(now + 0.4);
-  } else if (type === 'defend') {
-    const o = audioCtx.createOscillator();
-    o.type = 'triangle'; o.frequency.setValueAtTime(150, now);
-    o.frequency.exponentialRampToValueAtTime(300, now + 0.1);
-    g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-    o.connect(g); o.start(now); o.stop(now + 0.15);
-  } else if (type === 'door') {
-    const o = audioCtx.createOscillator();
-    o.type = 'square'; o.frequency.setValueAtTime(120, now);
-    o.frequency.exponentialRampToValueAtTime(80, now + 0.15);
-    g.gain.setValueAtTime(0.06, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-    o.connect(g); o.start(now); o.stop(now + 0.2);
+// Point-buy cost: 1 point per level 8-13, 2 points per level 14-15
+function pointBuyCost(currentVal, direction){
+  if(direction===1){// increasing
+    if(currentVal>=15) return Infinity;
+    if(currentVal>=13) return 2;
+    return 1;
+  }else{// decreasing (refund)
+    if(currentVal<=8) return 0;
+    if(currentVal>13) return 2;
+    return 1;
   }
 }
 
-// ==================== GAME CONSTANTS ====================
-const TILE = 32;
-const MAP_W = 50, MAP_H = 50;
-const VIEW_TILES = 20; // tiles visible in canvas
-const CANVAS_SIZE = 640;
-const FOG_RADIUS = 5;
-
-const T = { WALL: 0, FLOOR: 1, DOOR: 2, STAIRS: 3, CORRIDOR: 4 };
-
-// ==================== CLASSES ====================
-const CLASSES = {
-  warrior: { name: 'Warrior', icon: '\u{1F6E1}\uFE0F', hp: 120, atk: 8, def: 6, mana: 20, manaMax: 20, spellName: 'Shield Bash', spellCost: 10, spellDesc: 'Stun + 1d8 damage' },
-  mage:    { name: 'Mage',    icon: '\u{1F9D9}', hp: 70,  atk: 4, def: 3, mana: 80, manaMax: 80, spellName: 'Fireball', spellCost: 15, spellDesc: '3d6 fire damage' },
-  rogue:   { name: 'Rogue',   icon: '\u{1F5E1}\uFE0F', hp: 85,  atk: 7, def: 4, mana: 40, manaMax: 40, spellName: 'Backstab', spellCost: 12, spellDesc: '2d8+DEX damage, high crit' }
+// ========== GAME DATA ==========
+const CLASS_DATA={
+Warrior:{icon:'&#9876;',desc:'Master of arms and armor',hpBase:12,manaBase:0,primaryStat:'str',skills:['Power Strike','Shield Bash','Rally'],equipment:{weapon:'Longsword (+3)',armor:'Chain Mail (AC 16)',shield:'Wooden Shield (+2)'}},
+Mage:{icon:'&#9733;',desc:'Wielder of arcane magic',hpBase:6,manaBase:20,primaryStat:'int',skills:['Fireball','Ice Shard','Arcane Shield'],equipment:{weapon:'Oak Staff (+1)',armor:'Cloth Robes (AC 11)',shield:'---'}},
+Rogue:{icon:'&#9760;',desc:'Shadow and subtlety',hpBase:8,manaBase:5,primaryStat:'dex',skills:['Backstab','Poison Blade','Vanish'],equipment:{weapon:'Twin Daggers (+2)',armor:'Leather Armor (AC 13)',shield:'---'}},
+Cleric:{icon:'&#10010;',desc:'Divine healer and protector',hpBase:8,manaBase:15,primaryStat:'wis',skills:['Heal','Smite','Bless'],equipment:{weapon:'Mace (+2)',armor:'Scale Mail (AC 14)',shield:'Holy Symbol'}}
 };
 
-// ==================== MONSTERS ====================
-const MONSTER_TYPES = [
-  { name: 'Rat',       icon: '\u{1F400}', hp: 8,   atk: 2,  def: 1,  ac: 8,  xp: 5,   gold: [1, 5],   minFloor: 1 },
-  { name: 'Goblin',    icon: '\u{1F47A}', hp: 15,  atk: 4,  def: 2,  ac: 10, xp: 10,  gold: [2, 8],   minFloor: 1 },
-  { name: 'Skeleton',  icon: '\u{1F480}', hp: 22,  atk: 5,  def: 3,  ac: 11, xp: 15,  gold: [3, 12],  minFloor: 2 },
-  { name: 'Orc',       icon: '\u{1F479}', hp: 35,  atk: 7,  def: 4,  ac: 13, xp: 25,  gold: [5, 20],  minFloor: 3 },
-  { name: 'Dark Elf',  icon: '\u{1F9DD}', hp: 28,  atk: 8,  def: 3,  ac: 14, xp: 30,  gold: [8, 25],  minFloor: 4 },
-  { name: 'Troll',     icon: '\u{1F9CC}', hp: 50,  atk: 9,  def: 6,  ac: 12, xp: 40,  gold: [10, 30], minFloor: 5 },
-  { name: 'Wraith',    icon: '\u{1F47B}', hp: 40,  atk: 10, def: 4,  ac: 15, xp: 45,  gold: [12, 35], minFloor: 6 },
-  { name: 'Minotaur',  icon: '\u{1F402}', hp: 65,  atk: 12, def: 7,  ac: 14, xp: 60,  gold: [15, 45], minFloor: 7 },
-  { name: 'Dragon',    icon: '\u{1F409}', hp: 100, atk: 15, def: 10, ac: 17, xp: 100, gold: [30, 80], minFloor: 9 },
-  { name: 'Demon Lord',icon: '\u{1F608}', hp: 130, atk: 18, def: 12, ac: 18, xp: 150, gold: [50,120], minFloor: 11},
+const MONSTER_DATA=[
+{name:'Goblin',hp:7,ac:12,atk:3,xp:25,gold:5,tier:1},
+{name:'Kobold',hp:5,ac:12,atk:2,xp:15,gold:3,tier:1},
+{name:'Giant Rat',hp:4,ac:10,atk:2,xp:10,gold:1,tier:1},
+{name:'Skeleton',hp:13,ac:13,atk:4,xp:50,gold:10,tier:1},
+{name:'Wolf Pack',hp:11,ac:13,atk:5,xp:40,gold:0,tier:1},
+{name:'Bandit',hp:16,ac:14,atk:5,xp:60,gold:15,tier:2},
+{name:'Orc Warrior',hp:22,ac:14,atk:7,xp:80,gold:20,tier:2},
+{name:'Giant Spider',hp:18,ac:13,atk:6,xp:70,gold:5,tier:2},
+{name:'Zombie Horde',hp:30,ac:8,atk:4,xp:65,gold:8,tier:2},
+{name:'Wraith',hp:25,ac:15,atk:8,xp:100,gold:0,tier:2},
+{name:'Ogre',hp:40,ac:12,atk:10,xp:120,gold:30,tier:3},
+{name:'Troll',hp:45,ac:13,atk:9,xp:140,gold:25,tier:3},
+{name:'Dark Mage',hp:30,ac:14,atk:11,xp:150,gold:40,tier:3},
+{name:'Minotaur',hp:50,ac:15,atk:12,xp:180,gold:35,tier:3},
+{name:'Vampire',hp:55,ac:16,atk:11,xp:200,gold:50,tier:4},
+{name:'Wyvern',hp:65,ac:15,atk:13,xp:250,gold:45,tier:4},
+{name:'Lich',hp:60,ac:17,atk:14,xp:300,gold:80,tier:4},
+{name:'Young Dragon',hp:80,ac:18,atk:15,xp:400,gold:100,tier:5},
+{name:'Ancient Dragon',hp:120,ac:20,atk:18,xp:600,gold:200,tier:5},
+{name:'Demon Lord',hp:100,ac:19,atk:16,xp:500,gold:150,tier:5}
 ];
 
-// ==================== LOOT TABLES ====================
-const WEAPONS = [
-  { name: 'Rusty Dagger',   atk: 2,  minFloor: 1, rarity: 'common' },
-  { name: 'Short Sword',    atk: 3,  minFloor: 1, rarity: 'common' },
-  { name: 'Mace',           atk: 4,  minFloor: 2, rarity: 'common' },
-  { name: 'Longsword',      atk: 5,  minFloor: 3, rarity: 'uncommon' },
-  { name: 'Battle Axe',     atk: 7,  minFloor: 4, rarity: 'uncommon' },
-  { name: 'Warhammer',      atk: 8,  minFloor: 5, rarity: 'rare' },
-  { name: 'Flame Blade',    atk: 10, minFloor: 6, rarity: 'rare' },
-  { name: 'Vorpal Sword',   atk: 13, minFloor: 8, rarity: 'epic' },
-  { name: 'Holy Avenger',   atk: 16, minFloor: 10, rarity: 'legendary' },
+const LOOT_WEAPONS=[
+{name:'Rusty Sword (+1)',bonus:1,tier:1},{name:'Short Bow (+2)',bonus:2,tier:1},
+{name:'War Axe (+3)',bonus:3,tier:2},{name:'Enchanted Blade (+4)',bonus:4,tier:2},
+{name:'Flaming Sword (+5)',bonus:5,tier:3},{name:'Vorpal Blade (+6)',bonus:6,tier:3},
+{name:'Staff of Thunder (+5)',bonus:5,tier:3},{name:'Shadow Dagger (+4)',bonus:4,tier:2},
+{name:'Holy Avenger (+7)',bonus:7,tier:4},{name:'Dragonslayer (+8)',bonus:8,tier:5}
+];
+const LOOT_ARMOR=[
+{name:'Padded Armor (AC 12)',ac:12,tier:1},{name:'Studded Leather (AC 14)',ac:14,tier:2},
+{name:'Half Plate (AC 16)',ac:16,tier:3},{name:'Full Plate (AC 18)',ac:18,tier:4},
+{name:'Mithril Chain (AC 17)',ac:17,tier:3},{name:'Dragon Scale (AC 19)',ac:19,tier:5}
 ];
 
-const ARMORS = [
-  { name: 'Leather Vest',    def: 2,  minFloor: 1, rarity: 'common' },
-  { name: 'Studded Leather', def: 3,  minFloor: 2, rarity: 'common' },
-  { name: 'Chain Shirt',     def: 4,  minFloor: 3, rarity: 'uncommon' },
-  { name: 'Scale Mail',      def: 5,  minFloor: 4, rarity: 'uncommon' },
-  { name: 'Half Plate',      def: 7,  minFloor: 5, rarity: 'rare' },
-  { name: 'Full Plate',      def: 9,  minFloor: 7, rarity: 'rare' },
-  { name: 'Mithril Armor',   def: 11, minFloor: 9, rarity: 'epic' },
-  { name: 'Dragon Scale',    def: 14, minFloor: 11, rarity: 'legendary' },
+const QUEST_TEMPLATES=[
+{name:'Defeat the {monster} of {place}',type:'kill',desc:'A fearsome {monster} terrorizes {place}. Slay it!'},
+{name:'Find the Lost {item}',type:'fetch',desc:'The legendary {item} was lost in the wilds. Recover it.'},
+{name:'Save the Village of {place}',type:'rescue',desc:'The people of {place} cry for help. Answer their call.'},
+{name:'Clear the {place} Dungeon',type:'dungeon',desc:'Dark creatures infest the {place} dungeon. Purge them.'},
+{name:'Escort the Merchant to {place}',type:'escort',desc:'A merchant needs safe passage to {place}.'}
 ];
+const Q_MONSTERS=['Dragon','Lich','Ogre King','Vampire Lord','Demon','Troll Chieftain','Wyvern','Dark Sorcerer'];
+const Q_PLACES=['Ashenvale','Grimhollow','Thornfield','Ravenspire','Duskwood','Ironforge','Crystalpeak','Shadowmere','Stormhaven','Eldergrove'];
+const Q_ITEMS=['Amulet of Ages','Crown of Stars','Sword of Dawn','Orb of Shadows','Ring of Power','Staff of Elements','Tome of Secrets'];
 
-const RARITY_COLORS = { common: '#aaa', uncommon: '#2ecc71', rare: '#3498db', epic: '#9b59b6', legendary: '#f1c40f' };
+const TOWN_NAMES=['Millhaven','Crossroads Inn','Ironvale','Thornwall','Brightwater','Dunholm','Ashford','Ravensrest'];
+const WILDERNESS_DESCS=['a dense, fog-shrouded forest','rocky mountain passes','a vast, windswept plain','murky swamplands','an ancient, crumbling road','a dark ravine','sun-dappled woodland','a frozen tundra'];
 
-// ==================== COMPANION NAMES ====================
-const COMPANION_NAMES = [
-  'Aldric', 'Brennan', 'Cassian', 'Dorian', 'Elara', 'Fenris',
-  'Gwendolyn', 'Hadrian', 'Isolde', 'Jareth', 'Keira', 'Lysander',
-  'Morgana', 'Nolan', 'Ophelia', 'Percival', 'Quinn', 'Rowan',
-  'Seraphina', 'Theron', 'Ursula', 'Valen', 'Wren', 'Xander',
-  'Yara', 'Zephyr', 'Astrid', 'Baldric', 'Cordelia', 'Darian'
-];
+// ========== GAME STATE ==========
+let G={phase:'create',player:null,quests:[],turn:0,encounter:null,location:'wilderness',combatLog:[],events:0};
 
-// ==================== GAME STATE ====================
-let player = null;
-let party = []; // AI-controlled party members
-let charSheetOpen = false;
-let map = null;
-let monsters = [];
-let items = []; // items on the ground
-let explored = null; // fog of war
-let floor = 1;
-let maxFloorReached = 1;
-let gameActive = false;
-let inCombat = false;
-let combatEnemy = null;
-let combatPlayerDefending = false;
-let combatWaitingForTurns = false; // true while party/enemy turns are processing
-let totalKills = 0;
-let totalGoldEarned = 0;
-let totalDamageDealt = 0;
-let moveCount = 0;
+// ========== RENDERING ==========
+const app=document.getElementById('app');
 
-const canvas = document.getElementById('dungeon');
-const ctx = canvas.getContext('2d');
-const miniCanvas = document.getElementById('minimap');
-const miniCtx = miniCanvas.getContext('2d');
+function renderCreate(){
+const STAT_NAMES=['Strength','Dexterity','Constitution','Intelligence','Wisdom','Charisma'];
+const STAT_KEYS=['str','dex','con','int','wis','cha'];
 
-// ==================== DICE ROLLING ====================
-function d(n) { return Math.floor(Math.random() * n) + 1; }
-function rollDice(count, sides) {
-  let total = 0;
-  const rolls = [];
-  for (let i = 0; i < count; i++) { const r = d(sides); rolls.push(r); total += r; }
-  return { total, rolls, str: `${count}d${sides}[${rolls.join(',')}]=${total}` };
-}
+app.innerHTML=`<div id="main-col"><div id="narrative-box"><div id="char-create">
+<h2>&#9876; Character Sheet &#9876;</h2>
+<div class="sheet-subtitle">Realm of Shadows -- Adventurer Registry</div>
 
-// ==================== CHARACTER CREATION ====================
-function selectClass(cls) {
-  const c = CLASSES[cls];
-  player = {
-    classId: cls,
-    className: c.name,
-    icon: c.icon,
-    x: 0, y: 0,
-    hp: c.hp, maxHp: c.hp,
-    mana: c.mana, maxMana: c.manaMax,
-    baseAtk: c.atk, baseDef: c.def,
-    get atk() { return this.baseAtk + (this.weapon ? this.weapon.atk : 0); },
-    get def() { return this.baseDef + (this.armor ? this.armor.def : 0); },
-    get ac() { return 10 + this.def; },
-    xp: 0, xpNext: 20, level: 1,
-    gold: 0,
-    weapon: null, armor: null,
-    inventory: [],
-    spellName: c.spellName,
-    spellCost: c.spellCost,
-    spellDesc: c.spellDesc,
-    potions: 2,
-  };
-  // Give starting equipment
-  if (cls === 'warrior') {
-    player.weapon = { name: 'Iron Sword', atk: 3, type: 'weapon', rarity: 'common' };
-    player.armor = { name: 'Chain Mail', def: 3, type: 'armor', rarity: 'common' };
-  } else if (cls === 'mage') {
-    player.weapon = { name: 'Oak Staff', atk: 2, type: 'weapon', rarity: 'common' };
-    player.armor = { name: 'Cloth Robe', def: 1, type: 'armor', rarity: 'common' };
-  } else {
-    player.weapon = { name: 'Twin Daggers', atk: 3, type: 'weapon', rarity: 'common' };
-    player.armor = { name: 'Leather Armor', def: 2, type: 'armor', rarity: 'common' };
-  }
-  player.inventory.push({ name: 'Health Potion', type: 'potion', healType: 'hp', amount: 25, rarity: 'common' });
-  player.inventory.push({ name: 'Health Potion', type: 'potion', healType: 'hp', amount: 25, rarity: 'common' });
+<label>Character Name</label>
+<input type="text" id="cc-name" placeholder="Enter your name..." maxlength="20" value="">
 
-  // Generate party members
-  generateParty(cls);
+<label>Choose Your Class</label>
+<div class="class-grid">
+${Object.entries(CLASS_DATA).map(([k,v])=>`<div class="class-card" data-cls="${k}"><span class="cc-icon">${v.icon}</span><span class="cc-name">${k}</span><div class="cc-desc">${v.desc}</div></div>`).join('')}
+</div>
 
-  document.getElementById('char-select').style.display = 'none';
-  document.getElementById('game-container').style.display = 'flex';
-  document.getElementById('player-name').textContent = `${c.icon} ${c.name}`;
-  document.getElementById('party-panel').style.display = 'block';
-  gameActive = true;
-  generateFloor();
-  render();
-}
+<label>Ability Scores</label>
+<div class="stat-mode-toggle">
+  <div class="stat-mode-btn active" data-mode="pointbuy">Point Buy (27 pts)</div>
+  <div class="stat-mode-btn" data-mode="roll">Roll Random (4d6)</div>
+</div>
+<div id="points-display" class="points-remaining">Points Remaining: <span id="pts-left">27</span> / 27</div>
+<div id="stat-grid"></div>
 
-// ==================== PARTY GENERATION ====================
-function generateParty(playerClassId) {
-  party = [];
-  const classIds = Object.keys(CLASSES);
-  // Prefer classes different from the player
-  const otherClasses = classIds.filter(c => c !== playerClassId);
-  const partyClasses = [];
-  // First two get different classes, third picks from any non-player if possible
-  for (let i = 0; i < 3; i++) {
-    if (i < otherClasses.length) {
-      partyClasses.push(otherClasses[i]);
-    } else {
-      partyClasses.push(otherClasses[Math.floor(Math.random() * otherClasses.length)]);
+<button id="start-btn" disabled>&#9876; Start Adventure &#9876;</button>
+</div></div></div>`;
+
+let selClass=null;
+let statMode='pointbuy';
+let stats={str:8,dex:8,con:8,int:8,wis:8,cha:8};
+let pointsUsed=0;
+const TOTAL_POINTS=27;
+let statsAssigned=false;
+let rollDice={}; // store dice results for display
+
+function calcPointsUsed(){
+  let used=0;
+  STAT_KEYS.forEach(k=>{
+    const v=stats[k];
+    // cost from 8 to current value
+    for(let i=8;i<v;i++){
+      if(i>=13) used+=2;
+      else used+=1;
     }
-  }
-  // Shuffle party classes
-  for (let i = partyClasses.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [partyClasses[i], partyClasses[j]] = [partyClasses[j], partyClasses[i]];
-  }
-
-  const usedNames = new Set();
-  for (let i = 0; i < 3; i++) {
-    let name;
-    do {
-      name = COMPANION_NAMES[Math.floor(Math.random() * COMPANION_NAMES.length)];
-    } while (usedNames.has(name));
-    usedNames.add(name);
-
-    const cls = partyClasses[i];
-    const c = CLASSES[cls];
-    const STAT_SCALE = 0.8; // 80% of player stats
-
-    party.push({
-      name: name,
-      classId: cls,
-      className: c.name,
-      icon: c.icon,
-      x: 0, y: 0,
-      hp: Math.floor(c.hp * STAT_SCALE),
-      maxHp: Math.floor(c.hp * STAT_SCALE),
-      atk: Math.floor(c.atk * STAT_SCALE),
-      def: Math.floor(c.def * STAT_SCALE),
-      get ac() { return 10 + this.def; },
-      alive: true,
-      // Trail positions for following
-      trailX: 0,
-      trailY: 0,
-    });
-  }
-}
-
-// ==================== DUNGEON GENERATION ====================
-function generateFloor() {
-  map = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(T.WALL));
-  explored = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(false));
-  monsters = [];
-  items = [];
-
-  const rooms = [];
-  const numRooms = 7 + Math.min(floor, 8);
-  let attempts = 0;
-
-  while (rooms.length < numRooms && attempts < 300) {
-    attempts++;
-    const w = 4 + Math.floor(Math.random() * 5);
-    const h = 4 + Math.floor(Math.random() * 5);
-    const x = 2 + Math.floor(Math.random() * (MAP_W - w - 4));
-    const y = 2 + Math.floor(Math.random() * (MAP_H - h - 4));
-
-    let overlap = false;
-    for (const r of rooms) {
-      if (x - 1 < r.x + r.w && x + w + 1 > r.x && y - 1 < r.y + r.h && y + h + 1 > r.y) {
-        overlap = true; break;
-      }
-    }
-    if (overlap) continue;
-
-    rooms.push({ x, y, w, h, cx: Math.floor(x + w / 2), cy: Math.floor(y + h / 2) });
-    for (let ry = y; ry < y + h; ry++)
-      for (let rx = x; rx < x + w; rx++)
-        map[ry][rx] = T.FLOOR;
-  }
-
-  // Connect rooms with corridors
-  for (let i = 1; i < rooms.length; i++) {
-    const a = rooms[i - 1], b = rooms[i];
-    carveCorridor(a.cx, a.cy, b.cx, b.cy);
-  }
-  // Extra connections for loops
-  for (let i = 0; i < Math.floor(rooms.length / 3); i++) {
-    const a = rooms[Math.floor(Math.random() * rooms.length)];
-    const b = rooms[Math.floor(Math.random() * rooms.length)];
-    if (a !== b) carveCorridor(a.cx, a.cy, b.cx, b.cy);
-  }
-
-  // Place doors at room entrances
-  for (const room of rooms) {
-    for (let rx = room.x; rx < room.x + room.w; rx++) {
-      checkDoor(rx, room.y - 1, room);
-      checkDoor(rx, room.y + room.h, room);
-    }
-    for (let ry = room.y; ry < room.y + room.h; ry++) {
-      checkDoor(room.x - 1, ry, room);
-      checkDoor(room.x + room.w, ry, room);
-    }
-  }
-
-  // Player start in first room
-  player.x = rooms[0].cx;
-  player.y = rooms[0].cy;
-
-  // Position party members near player
-  const partyOffsets = [[0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1]];
-  let offsetIdx = 0;
-  for (const pm of party) {
-    if (!pm.alive) continue;
-    let placed = false;
-    while (offsetIdx < partyOffsets.length && !placed) {
-      const ox = player.x + partyOffsets[offsetIdx][0];
-      const oy = player.y + partyOffsets[offsetIdx][1];
-      if (ox >= 0 && ox < MAP_W && oy >= 0 && oy < MAP_H && map[oy][ox] !== T.WALL) {
-        pm.x = ox;
-        pm.y = oy;
-        pm.trailX = ox;
-        pm.trailY = oy;
-        placed = true;
-      }
-      offsetIdx++;
-    }
-    if (!placed) {
-      pm.x = player.x;
-      pm.y = player.y;
-      pm.trailX = player.x;
-      pm.trailY = player.y;
-    }
-  }
-
-  // Stairs in last room
-  const lastRoom = rooms[rooms.length - 1];
-  map[lastRoom.cy][lastRoom.cx] = T.STAIRS;
-
-  // Place monsters
-  const monsterCount = 5 + floor * 2 + Math.floor(Math.random() * 3);
-  for (let i = 0; i < monsterCount; i++) {
-    const room = rooms[1 + Math.floor(Math.random() * (rooms.length - 1))]; // not first room
-    const mx = room.x + 1 + Math.floor(Math.random() * (room.w - 2));
-    const my = room.y + 1 + Math.floor(Math.random() * (room.h - 2));
-    const onPartyMember = party.some(pm => pm.alive && pm.x === mx && pm.y === my);
-    if (map[my][mx] === T.FLOOR && !(mx === player.x && my === player.y) && !onPartyMember) {
-      const eligible = MONSTER_TYPES.filter(m => m.minFloor <= floor);
-      // Weight toward harder monsters on deeper floors
-      const weights = eligible.map(m => {
-        const diff = floor - m.minFloor;
-        return diff <= 2 ? 3 : (diff <= 5 ? 2 : 1);
-      });
-      const totalW = weights.reduce((a, b) => a + b, 0);
-      let r = Math.random() * totalW;
-      let mType = eligible[0];
-      for (let j = 0; j < eligible.length; j++) {
-        r -= weights[j];
-        if (r <= 0) { mType = eligible[j]; break; }
-      }
-      const scaling = 1 + (floor - 1) * 0.12;
-      monsters.push({
-        ...mType,
-        x: mx, y: my,
-        hp: Math.floor(mType.hp * scaling),
-        maxHp: Math.floor(mType.hp * scaling),
-        atk: Math.floor(mType.atk * scaling),
-        def: Math.floor(mType.def * scaling),
-        ac: mType.ac + Math.floor((floor - 1) / 3),
-        xp: Math.floor(mType.xp * scaling),
-        gold: [Math.floor(mType.gold[0] * scaling), Math.floor(mType.gold[1] * scaling)],
-      });
-    }
-  }
-
-  // Place ground items
-  const itemCount = 3 + Math.floor(Math.random() * 3) + Math.floor(floor / 2);
-  for (let i = 0; i < itemCount; i++) {
-    const room = rooms[1 + Math.floor(Math.random() * (rooms.length - 1))];
-    const ix = room.x + 1 + Math.floor(Math.random() * (room.w - 2));
-    const iy = room.y + 1 + Math.floor(Math.random() * (room.h - 2));
-    if (map[iy][ix] === T.FLOOR) {
-      const r = Math.random();
-      if (r < 0.4) {
-        // Gold pile
-        const amt = d(10) + floor * 3;
-        items.push({ x: ix, y: iy, type: 'gold', amount: amt, icon: '\u{1FA99}', name: `${amt} Gold` });
-      } else if (r < 0.65) {
-        // Health Potion
-        const amt = 20 + floor * 5;
-        items.push({ x: ix, y: iy, type: 'potion', healType: 'hp', amount: amt, icon: '\u{1F9EA}', name: 'Health Potion', rarity: 'common' });
-      } else if (r < 0.78) {
-        // Mana Potion
-        const amt = 15 + floor * 3;
-        items.push({ x: ix, y: iy, type: 'potion', healType: 'mana', amount: amt, icon: '\u{1F4A7}', name: 'Mana Potion', rarity: 'common' });
-      } else if (r < 0.9) {
-        // Weapon
-        const eligible = WEAPONS.filter(w => w.minFloor <= floor + 1);
-        const w = eligible[Math.floor(Math.random() * eligible.length)];
-        const bonus = Math.floor(Math.random() * Math.ceil(floor / 3));
-        items.push({ x: ix, y: iy, type: 'weapon', atk: w.atk + bonus, icon: '\u2694\uFE0F', name: bonus > 0 ? `${w.name} +${bonus}` : w.name, rarity: w.rarity });
-      } else {
-        // Armor
-        const eligible = ARMORS.filter(a => a.minFloor <= floor + 1);
-        const a = eligible[Math.floor(Math.random() * eligible.length)];
-        const bonus = Math.floor(Math.random() * Math.ceil(floor / 3));
-        items.push({ x: ix, y: iy, type: 'armor', def: a.def + bonus, icon: '\u{1F6E1}\uFE0F', name: bonus > 0 ? `${a.name} +${bonus}` : a.name, rarity: a.rarity });
-      }
-    }
-  }
-
-  revealFog();
-  updateHUD();
-  addMessage(`Entered Floor ${floor}. Beware!`);
-}
-
-function carveCorridor(x1, y1, x2, y2) {
-  let x = x1, y = y1;
-  while (x !== x2) {
-    if (map[y][x] === T.WALL) map[y][x] = T.CORRIDOR;
-    x += x < x2 ? 1 : -1;
-  }
-  while (y !== y2) {
-    if (map[y][x] === T.WALL) map[y][x] = T.CORRIDOR;
-    y += y < y2 ? 1 : -1;
-  }
-  if (map[y][x] === T.WALL) map[y][x] = T.CORRIDOR;
-}
-
-function checkDoor(x, y, room) {
-  if (x < 1 || x >= MAP_W - 1 || y < 1 || y >= MAP_H - 1) return;
-  if (map[y][x] === T.CORRIDOR) {
-    // Check if it's a transition from room to corridor
-    const adjFloor = (map[y-1] && (map[y-1][x] === T.FLOOR)) || (map[y+1] && (map[y+1][x] === T.FLOOR)) ||
-                     (map[y][x-1] === T.FLOOR) || (map[y][x+1] === T.FLOOR);
-    if (adjFloor && Math.random() < 0.4) {
-      map[y][x] = T.DOOR;
-    }
-  }
-}
-
-// ==================== FOG OF WAR ====================
-function revealFog() {
-  const px = player.x, py = player.y;
-  const r = FOG_RADIUS;
-  for (let dy = -r; dy <= r; dy++) {
-    for (let dx = -r; dx <= r; dx++) {
-      const nx = px + dx, ny = py + dy;
-      if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H) {
-        if (dx * dx + dy * dy <= r * r) {
-          // Raycasting for line of sight
-          if (hasLineOfSight(px, py, nx, ny)) {
-            explored[ny][nx] = true;
-          }
-        }
-      }
-    }
-  }
-}
-
-function hasLineOfSight(x0, y0, x1, y1) {
-  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
-  const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
-  let err = dx - dy;
-  let x = x0, y = y0;
-  while (true) {
-    if (x === x1 && y === y1) return true;
-    if (map[y][x] === T.WALL && !(x === x0 && y === y0)) return false;
-    const e2 = 2 * err;
-    if (e2 > -dy) { err -= dy; x += sx; }
-    if (e2 < dx)  { err += dx; y += sy; }
-  }
-}
-
-function isVisible(x, y) {
-  const dx = x - player.x, dy = y - player.y;
-  return dx * dx + dy * dy <= FOG_RADIUS * FOG_RADIUS;
-}
-
-// ==================== RENDERING ====================
-const TILE_COLORS = {
-  [T.WALL]:     '#1a1a2e',
-  [T.FLOOR]:    '#2a2a3e',
-  [T.DOOR]:     '#3a3020',
-  [T.STAIRS]:   '#2a3a2a',
-  [T.CORRIDOR]: '#252535',
-};
-
-const WALL_COLOR_VISIBLE = '#2a2a4e';
-const WALL_BORDER = '#3a3a5e';
-
-function render() {
-  if (!gameActive) return;
-  ctx.fillStyle = '#0a0a0f';
-  ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
-  // Camera centered on player
-  const camX = player.x - Math.floor(VIEW_TILES / 2);
-  const camY = player.y - Math.floor(VIEW_TILES / 2);
-
-  for (let vy = 0; vy < VIEW_TILES; vy++) {
-    for (let vx = 0; vx < VIEW_TILES; vx++) {
-      const mx = camX + vx, my = camY + vy;
-      if (mx < 0 || mx >= MAP_W || my < 0 || my >= MAP_H) continue;
-
-      const px = vx * TILE, py = vy * TILE;
-      const vis = isVisible(mx, my);
-      const exp = explored[my][mx];
-
-      if (!exp) continue;
-
-      const tile = map[my][mx];
-      const alpha = vis ? 1 : 0.35;
-
-      ctx.globalAlpha = alpha;
-
-      // Draw tile
-      if (tile === T.WALL) {
-        ctx.fillStyle = WALL_COLOR_VISIBLE;
-        ctx.fillRect(px, py, TILE, TILE);
-        ctx.strokeStyle = WALL_BORDER;
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
-        // Wall top shading
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(px, py, TILE, TILE / 3);
-      } else if (tile === T.FLOOR || tile === T.CORRIDOR) {
-        ctx.fillStyle = TILE_COLORS[tile];
-        ctx.fillRect(px, py, TILE, TILE);
-        // Subtle grid
-        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(px, py, TILE, TILE);
-      } else if (tile === T.DOOR) {
-        ctx.fillStyle = TILE_COLORS[T.FLOOR];
-        ctx.fillRect(px, py, TILE, TILE);
-        ctx.fillStyle = '#6a5030';
-        ctx.fillRect(px + 4, py + 2, TILE - 8, TILE - 4);
-        ctx.fillStyle = '#f1c40f';
-        ctx.fillRect(px + TILE / 2 - 1, py + TILE / 2 - 1, 3, 3);
-      } else if (tile === T.STAIRS) {
-        ctx.fillStyle = TILE_COLORS[T.STAIRS];
-        ctx.fillRect(px, py, TILE, TILE);
-        ctx.font = `${TILE - 6}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('\u{1FA9C}', px + TILE / 2, py + TILE / 2 + 2);
-      }
-
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  // Draw items on ground
-  for (const item of items) {
-    if (!isVisible(item.x, item.y)) continue;
-    const sx = (item.x - camX) * TILE, sy = (item.y - camY) * TILE;
-    if (sx < -TILE || sx > CANVAS_SIZE || sy < -TILE || sy > CANVAS_SIZE) continue;
-    ctx.font = `${TILE - 10}px serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(item.icon, sx + TILE / 2, sy + TILE / 2 + 2);
-  }
-
-  // Draw monsters
-  for (const m of monsters) {
-    if (!isVisible(m.x, m.y)) continue;
-    const sx = (m.x - camX) * TILE, sy = (m.y - camY) * TILE;
-    if (sx < -TILE || sx > CANVAS_SIZE || sy < -TILE || sy > CANVAS_SIZE) continue;
-    ctx.font = `${TILE - 6}px serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(m.icon, sx + TILE / 2, sy + TILE / 2 + 2);
-    // HP bar above monster
-    const hpPct = m.hp / m.maxHp;
-    const barW = TILE - 4;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(sx + 2, sy - 2, barW, 4);
-    ctx.fillStyle = hpPct > 0.5 ? '#2ecc71' : hpPct > 0.25 ? '#f39c12' : '#e74c3c';
-    ctx.fillRect(sx + 2, sy - 2, barW * hpPct, 4);
-  }
-
-  // Draw party members
-  for (const pm of party) {
-    if (!pm.alive) continue;
-    if (!isVisible(pm.x, pm.y)) continue;
-    const sx = (pm.x - camX) * TILE, sy = (pm.y - camY) * TILE;
-    if (sx < -TILE || sx > CANVAS_SIZE || sy < -TILE || sy > CANVAS_SIZE) continue;
-    // Subtle blue glow for companions
-    ctx.shadowColor = '#3498db';
-    ctx.shadowBlur = 6;
-    ctx.font = `${TILE - 6}px serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(pm.icon, sx + TILE / 2, sy + TILE / 2 + 2);
-    ctx.shadowBlur = 0;
-    // Small HP bar above companion
-    const hpPct = pm.hp / pm.maxHp;
-    const barW = TILE - 4;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(sx + 2, sy - 2, barW, 4);
-    ctx.fillStyle = hpPct > 0.5 ? '#3498db' : hpPct > 0.25 ? '#f39c12' : '#e74c3c';
-    ctx.fillRect(sx + 2, sy - 2, barW * hpPct, 4);
-  }
-
-  // Draw player
-  {
-    const sx = (player.x - camX) * TILE, sy = (player.y - camY) * TILE;
-    // Glow effect
-    ctx.shadowColor = '#f1c40f';
-    ctx.shadowBlur = 10;
-    ctx.font = `${TILE - 4}px serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(player.icon, sx + TILE / 2, sy + TILE / 2 + 2);
-    ctx.shadowBlur = 0;
-  }
-
-  // Fog of war darkening
-  for (let vy = 0; vy < VIEW_TILES; vy++) {
-    for (let vx = 0; vx < VIEW_TILES; vx++) {
-      const mx = camX + vx, my = camY + vy;
-      if (mx < 0 || mx >= MAP_W || my < 0 || my >= MAP_H) continue;
-      if (!explored[my][mx]) {
-        ctx.fillStyle = '#0a0a0f';
-        ctx.fillRect(vx * TILE, vy * TILE, TILE, TILE);
-      }
-    }
-  }
-
-  renderMinimap();
-}
-
-function renderMinimap() {
-  const mw = miniCanvas.width, mh = miniCanvas.height;
-  miniCtx.fillStyle = 'rgba(0,0,0,0.8)';
-  miniCtx.fillRect(0, 0, mw, mh);
-  const sx = mw / MAP_W, sy = mh / MAP_H;
-
-  for (let y = 0; y < MAP_H; y++) {
-    for (let x = 0; x < MAP_W; x++) {
-      if (!explored[y][x]) continue;
-      const tile = map[y][x];
-      if (tile === T.WALL) continue;
-      miniCtx.fillStyle = tile === T.STAIRS ? '#2ecc71' : tile === T.DOOR ? '#6a5030' : '#445';
-      miniCtx.fillRect(x * sx, y * sy, Math.max(sx, 1.5), Math.max(sy, 1.5));
-    }
-  }
-
-  // Monsters on minimap
-  for (const m of monsters) {
-    if (!explored[m.y][m.x]) continue;
-    miniCtx.fillStyle = '#e74c3c';
-    miniCtx.fillRect(m.x * sx, m.y * sy, Math.max(sx * 1.5, 2), Math.max(sy * 1.5, 2));
-  }
-
-  // Party members on minimap
-  for (const pm of party) {
-    if (!pm.alive) continue;
-    if (!explored[pm.y] || !explored[pm.y][pm.x]) continue;
-    miniCtx.fillStyle = '#3498db';
-    miniCtx.fillRect(pm.x * sx, pm.y * sy, Math.max(sx * 1.5, 2), Math.max(sy * 1.5, 2));
-  }
-
-  // Player
-  miniCtx.fillStyle = '#f1c40f';
-  miniCtx.fillRect(player.x * sx - 1, player.y * sy - 1, Math.max(sx * 2, 3), Math.max(sy * 2, 3));
-}
-
-// ==================== HUD ====================
-function updateHUD() {
-  document.getElementById('s-level').textContent = player.level;
-  document.getElementById('s-floor').textContent = floor;
-  document.getElementById('s-gold').textContent = player.gold;
-  document.getElementById('s-hp').textContent = `${player.hp}/${player.maxHp}`;
-  document.getElementById('s-mana').textContent = `${player.mana}/${player.maxMana}`;
-  document.getElementById('s-xp').textContent = `${player.xp}/${player.xpNext}`;
-  document.getElementById('s-atk').textContent = player.atk;
-  document.getElementById('s-def').textContent = player.def;
-  document.getElementById('s-ac').textContent = player.ac;
-  document.getElementById('s-weapon').textContent = player.weapon ? player.weapon.name : 'Fists';
-  document.getElementById('s-armor').textContent = player.armor ? player.armor.name : 'None';
-  document.getElementById('bar-hp').style.width = `${(player.hp / player.maxHp) * 100}%`;
-  document.getElementById('bar-mana').style.width = `${(player.mana / player.maxMana) * 100}%`;
-  document.getElementById('bar-xp').style.width = `${(player.xp / player.xpNext) * 100}%`;
-  renderInventory();
-  renderPartyPanel();
-}
-
-function renderInventory() {
-  const el = document.getElementById('inventory-list');
-  let html = '';
-  // Show potions count
-  const hpPots = player.inventory.filter(i => i.type === 'potion' && i.healType === 'hp');
-  const manaPots = player.inventory.filter(i => i.type === 'potion' && i.healType === 'mana');
-  if (hpPots.length > 0) {
-    html += `<div class="inv-item" onclick="usePotion('hp')" title="Click or press I to use"><span class="item-name">\u{1F9EA} Health Potion x${hpPots.length}</span><span class="item-stat heal-color">+${hpPots[0].amount} HP</span></div>`;
-  }
-  if (manaPots.length > 0) {
-    html += `<div class="inv-item" onclick="usePotion('mana')" title="Click to use"><span class="item-name">\u{1F4A7} Mana Potion x${manaPots.length}</span><span class="item-stat mana-color">+${manaPots[0].amount} MP</span></div>`;
-  }
-
-  // Equipment in inventory
-  const equips = player.inventory.filter(i => i.type === 'weapon' || i.type === 'armor');
-  equips.forEach((item, idx) => {
-    const equipped = (item === player.weapon || item === player.armor);
-    const color = RARITY_COLORS[item.rarity] || '#aaa';
-    const stat = item.type === 'weapon' ? `+${item.atk} ATK` : `+${item.def} DEF`;
-    const icon = item.type === 'weapon' ? '\u2694\uFE0F' : '\u{1F6E1}\uFE0F';
-    html += `<div class="inv-item${equipped ? ' equipped' : ''}" onclick="equipItem(${idx})" title="${equipped ? 'Equipped' : 'Click to equip'}" style="color:${color}">
-      <span class="item-name">${icon} ${item.name}${equipped ? ' [E]' : ''}</span><span class="item-stat">${stat}</span></div>`;
   });
-
-  if (!html) html = '<div style="color:#555;text-align:center;padding:8px">Empty</div>';
-  el.innerHTML = html;
+  return used;
 }
 
-function renderPartyPanel() {
-  const el = document.getElementById('party-list');
-  if (!el) return;
-  let html = '';
-  for (const pm of party) {
-    const hpPct = pm.alive ? Math.max(0, (pm.hp / pm.maxHp) * 100) : 0;
-    const barColor = !pm.alive ? '#555' : (hpPct > 50 ? '#3498db' : hpPct > 25 ? '#f39c12' : '#e74c3c');
-    html += `<div class="party-member${pm.alive ? '' : ' pm-dead'}">
-      <div class="pm-header">
-        <span class="pm-name">${pm.icon} ${pm.name}</span>
-        <span class="pm-class">${pm.className}${pm.alive ? '' : ' (Dead)'}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:#888">
-        <span>HP</span><span>${pm.alive ? pm.hp + '/' + pm.maxHp : 'Dead'}</span>
-      </div>
-      <div class="bar-outer"><div class="bar-inner" style="width:${hpPct}%;background:${barColor};border-radius:6px"></div></div>
-    </div>`;
-  }
-  el.innerHTML = html;
-}
-
-function usePotion(type) {
-  const idx = player.inventory.findIndex(i => i.type === 'potion' && i.healType === type);
-  if (idx === -1) { addMessage('No potions of that type!'); return; }
-  const pot = player.inventory[idx];
-  player.inventory.splice(idx, 1);
-  if (type === 'hp') {
-    const healed = Math.min(pot.amount, player.maxHp - player.hp);
-    player.hp += healed;
-    addMessage(`Used Health Potion. +${healed} HP`, 'heal-color');
-  } else {
-    const restored = Math.min(pot.amount, player.maxMana - player.mana);
-    player.mana += restored;
-    addMessage(`Used Mana Potion. +${restored} Mana`, 'mana-color');
-  }
-  playSound('potion');
-  updateHUD();
-  render();
-}
-
-function equipItem(invIdx) {
-  const equips = player.inventory.filter(i => i.type === 'weapon' || i.type === 'armor');
-  const item = equips[invIdx];
-  if (!item) return;
-  if (item.type === 'weapon') {
-    player.weapon = item;
-    addMessage(`Equipped ${item.name}`);
-  } else {
-    player.armor = item;
-    addMessage(`Equipped ${item.name}`);
-  }
-  playSound('pickup');
-  updateHUD();
-  render();
-}
-
-function autoEquipBest() {
-  const weapons = player.inventory.filter(i => i.type === 'weapon');
-  const armors = player.inventory.filter(i => i.type === 'armor');
-  let changed = false;
-  if (weapons.length) {
-    const best = weapons.reduce((a, b) => a.atk >= b.atk ? a : b);
-    if (!player.weapon || best.atk > player.weapon.atk) { player.weapon = best; changed = true; }
-  }
-  if (armors.length) {
-    const best = armors.reduce((a, b) => a.def >= b.def ? a : b);
-    if (!player.armor || best.def > player.armor.def) { player.armor = best; changed = true; }
-  }
-  if (changed) { addMessage('Equipped best gear!'); playSound('pickup'); }
-  else addMessage('Already using best gear.');
-  updateHUD();
-  render();
-}
-
-// ==================== MESSAGES ====================
-function addMessage(text, cls) {
-  const log = document.getElementById('msg-log');
-  const div = document.createElement('div');
-  div.className = 'msg' + (cls ? ` ${cls}` : '');
-  div.textContent = text;
-  log.appendChild(div);
-  if (log.children.length > 5) log.removeChild(log.firstChild);
-  setTimeout(() => { if (div.parentNode) div.remove(); }, 3500);
-}
-
-// ==================== MOVEMENT ====================
-function tryMove(dx, dy) {
-  if (!gameActive || inCombat) return;
-  const nx = player.x + dx, ny = player.y + dy;
-  if (nx < 0 || nx >= MAP_W || ny < 0 || ny >= MAP_H) return;
-
-  const tile = map[ny][nx];
-  if (tile === T.WALL) return;
-
-  // Check for monster
-  const mon = monsters.find(m => m.x === nx && m.y === ny);
-  if (mon) {
-    startCombat(mon);
-    return;
-  }
-
-  // Move party members (trail behind player)
-  movePartyMembers(player.x, player.y);
-
-  // Move
-  player.x = nx;
-  player.y = ny;
-  moveCount++;
-
-  if (tile === T.DOOR) {
-    playSound('door');
-    map[ny][nx] = T.FLOOR; // Open the door
-    addMessage('You open a door.');
-  }
-
-  // Pick up items
-  const groundItems = items.filter(i => i.x === nx && i.y === ny);
-  for (const gi of groundItems) {
-    if (gi.type === 'gold') {
-      player.gold += gi.amount;
-      totalGoldEarned += gi.amount;
-      addMessage(`Found ${gi.amount} gold!`, 'gold-color');
-      playSound('pickup');
-    } else {
-      player.inventory.push(gi);
-      const color = RARITY_COLORS[gi.rarity] || '#aaa';
-      addMessage(`Found ${gi.name}!`);
-      playSound('pickup');
-    }
-    items.splice(items.indexOf(gi), 1);
-  }
-
-  // Stairs
-  if (tile === T.STAIRS) {
-    floor++;
-    if (floor > maxFloorReached) maxFloorReached = floor;
-    addMessage(`Descending to Floor ${floor}...`);
-    playSound('stairs');
-    // Small heal on floor change
-    const healAmt = Math.floor(player.maxHp * 0.1);
-    player.hp = Math.min(player.maxHp, player.hp + healAmt);
-    const manaAmt = Math.floor(player.maxMana * 0.15);
-    player.mana = Math.min(player.maxMana, player.mana + manaAmt);
-    // Heal living party members too
-    for (const pm of party) {
-      if (pm.alive) {
-        const pmHeal = Math.floor(pm.maxHp * 0.1);
-        pm.hp = Math.min(pm.maxHp, pm.hp + pmHeal);
-      }
-    }
-    generateFloor();
-  }
-
-  // Regenerate 1 mana per move
-  if (player.mana < player.maxMana) player.mana = Math.min(player.maxMana, player.mana + 1);
-
-  revealFog();
-  moveMonsters();
-  updateHUD();
-  render();
-}
-
-function movePartyMembers(targetX, targetY) {
-  // Party members chain-follow: first follows old player pos, second follows first's old pos, etc.
-  let leaderX = targetX;
-  let leaderY = targetY;
-  for (const pm of party) {
-    if (!pm.alive) continue;
-    const dist = Math.abs(pm.x - leaderX) + Math.abs(pm.y - leaderY);
-    if (dist > 1) {
-      // Move toward leader position
-      const dx = leaderX - pm.x;
-      const dy = leaderY - pm.y;
-      let mx = 0, my = 0;
-      if (Math.abs(dx) > Math.abs(dy)) mx = dx > 0 ? 1 : -1;
-      else if (dy !== 0) my = dy > 0 ? 1 : -1;
-      else if (dx !== 0) mx = dx > 0 ? 1 : -1;
-
-      const nx = pm.x + mx, ny = pm.y + my;
-      if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H &&
-          map[ny][nx] !== T.WALL &&
-          !(nx === player.x && ny === player.y) &&
-          !monsters.some(m => m.x === nx && m.y === ny) &&
-          !party.some(op => op !== pm && op.alive && op.x === nx && op.y === ny)) {
-        const oldX = pm.x, oldY = pm.y;
-        pm.x = nx;
-        pm.y = ny;
-        leaderX = oldX;
-        leaderY = oldY;
-      } else {
-        leaderX = pm.x;
-        leaderY = pm.y;
-      }
-    } else {
-      // Already adjacent, just chain
-      leaderX = pm.x;
-      leaderY = pm.y;
-    }
-  }
-}
-
-function moveMonsters() {
-  for (const m of monsters) {
-    const dx = player.x - m.x, dy = player.y - m.y;
-    const dist = Math.abs(dx) + Math.abs(dy);
-    if (dist <= 6 && dist > 1 && isVisible(m.x, m.y)) {
-      // Chase player
-      let mx = 0, my = 0;
-      if (Math.abs(dx) > Math.abs(dy)) mx = dx > 0 ? 1 : -1;
-      else my = dy > 0 ? 1 : -1;
-
-      const nx = m.x + mx, ny = m.y + my;
-      if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H &&
-          map[ny][nx] !== T.WALL &&
-          !(nx === player.x && ny === player.y) &&
-          !monsters.some(om => om !== m && om.x === nx && om.y === ny) &&
-          !party.some(pm => pm.alive && pm.x === nx && pm.y === ny)) {
-        m.x = nx;
-        m.y = ny;
-      }
-
-      // Check if adjacent to player now
-      if (Math.abs(m.x - player.x) + Math.abs(m.y - player.y) === 1) {
-        // Monster initiates combat
-        startCombat(m);
-        return;
-      }
-    }
-  }
-}
-
-// ==================== COMBAT ====================
-function startCombat(monster) {
-  inCombat = true;
-  combatEnemy = monster;
-  combatPlayerDefending = false;
-  const overlay = document.getElementById('combat-overlay');
-  overlay.style.display = 'flex';
-  document.getElementById('combat-title').textContent = `${monster.icon} ${monster.name} appears!`;
-  document.getElementById('combat-log').innerHTML = `<div class="info">A ${monster.name} blocks your path! (AC ${monster.ac})</div>`;
-  updateCombatInfo();
-  showCombatActions();
-}
-
-function updateCombatInfo() {
-  document.getElementById('combat-player-info').innerHTML = `
-    <div style="font-size:32px">${player.icon}</div>
-    <div style="color:#f1c40f">${player.className} Lv${player.level}</div>
-    <div>HP: ${player.hp}/${player.maxHp}</div>
-    <div style="color:#3498db">Mana: ${player.mana}/${player.maxMana}</div>
-    <div style="color:#888">ATK: ${player.atk} | AC: ${player.ac}</div>`;
-  document.getElementById('combat-enemy-info').innerHTML = `
-    <div style="font-size:32px">${combatEnemy.icon}</div>
-    <div style="color:#e74c3c">${combatEnemy.name}</div>
-    <div>HP: ${combatEnemy.hp}/${combatEnemy.maxHp}</div>
-    <div style="color:#888">AC: ${combatEnemy.ac}</div>`;
-
-  // Update combat party info
-  const partyEl = document.getElementById('combat-party-info');
-  let partyHtml = '';
-  for (const pm of party) {
-    partyHtml += `<div class="combat-pm${pm.alive ? '' : ' dead'}">
-      <div class="cpm-name">${pm.icon} ${pm.name}</div>
-      <div class="cpm-hp">${pm.alive ? pm.hp + '/' + pm.maxHp + ' HP' : 'Dead'}</div>
-    </div>`;
-  }
-  partyEl.innerHTML = partyHtml;
-}
-
-function showCombatActions() {
-  combatWaitingForTurns = false;
-  const acts = document.getElementById('combat-actions');
-  acts.innerHTML = `
-    <button class="btn-attack" onclick="combatAction('attack')">[1] &#x2694;&#xFE0F; Attack</button>
-    <button class="btn-defend" onclick="combatAction('defend')">[2] &#x1F6E1;&#xFE0F; Defend</button>
-    <button class="btn-spell" onclick="combatAction('spell')" ${player.mana < player.spellCost ? 'disabled title="Not enough mana"' : ''}>[3] &#x2728; ${player.spellName} (${player.spellCost} MP)</button>
-    <button class="btn-flee" onclick="combatAction('flee')">[4] &#x1F3C3; Flee</button>`;
-}
-
-function combatAction(action) {
-  if (combatWaitingForTurns) return; // Prevent actions during party/enemy turns
-  const log = document.getElementById('combat-log');
-  combatPlayerDefending = false;
-  let turnOver = false;
-
-  if (action === 'attack') {
-    // Player attacks: d20 + ATK vs enemy AC
-    const roll = d(20);
-    const total = roll + player.atk;
-    const crit = roll === 20;
-    const hit = crit || total >= combatEnemy.ac;
-
-    if (hit) {
-      let dmg;
-      if (crit) {
-        dmg = rollDice(2, 6).total + player.atk;
-        log.innerHTML += `<div class="roll">You rolled <b>NAT 20!</b> + ${player.atk} ATK = CRITICAL HIT!</div>`;
-        log.innerHTML += `<div class="hit">&#x1F4A5; CRIT! You deal <b>${dmg}</b> damage!</div>`;
-        playSound('crit');
-      } else {
-        dmg = rollDice(1, 8).total + Math.floor(player.atk / 2);
-        log.innerHTML += `<div class="roll">You rolled ${roll} + ${player.atk} ATK = ${total} vs AC ${combatEnemy.ac} - HIT!</div>`;
-        log.innerHTML += `<div class="hit">You deal <b>${dmg}</b> damage!</div>`;
-        playSound('hit');
-      }
-      combatEnemy.hp -= dmg;
-      totalDamageDealt += dmg;
-    } else {
-      log.innerHTML += `<div class="roll">You rolled ${roll} + ${player.atk} ATK = ${total} vs AC ${combatEnemy.ac} - MISS!</div>`;
-      log.innerHTML += `<div class="miss">Your attack misses!</div>`;
-      playSound('miss');
-    }
-    turnOver = true;
-  } else if (action === 'defend') {
-    combatPlayerDefending = true;
-    log.innerHTML += `<div class="info">&#x1F6E1;&#xFE0F; You raise your guard! (+5 AC this turn, heal 1d4)</div>`;
-    const heal = d(4);
-    player.hp = Math.min(player.maxHp, player.hp + heal);
-    log.innerHTML += `<div class="heal">You recover ${heal} HP while defending.</div>`;
-    playSound('defend');
-    turnOver = true;
-  } else if (action === 'spell') {
-    if (player.mana < player.spellCost) {
-      log.innerHTML += `<div class="miss">Not enough mana!</div>`;
-      return;
-    }
-    player.mana -= player.spellCost;
-    playSound('spell');
-
-    if (player.classId === 'warrior') {
-      // Shield Bash: 1d8 + DEF damage, stun (enemy skips turn)
-      const dmg = rollDice(1, 8).total + player.def;
-      combatEnemy.hp -= dmg;
-      totalDamageDealt += dmg;
-      log.innerHTML += `<div class="roll">&#x2728; Shield Bash! 1d8 + ${player.def} DEF = ${dmg} damage!</div>`;
-      log.innerHTML += `<div class="info">The enemy is stunned and loses their turn!</div>`;
-      // Check enemy death
-      if (combatEnemy.hp <= 0) { endCombat(true); return; }
-      // Party members still attack, but enemy turn is skipped
-      const livingParty = party.filter(pm => pm.alive);
-      if (livingParty.length > 0) {
-        combatWaitingForTurns = true;
-        const acts = document.getElementById('combat-actions');
-        const buttons = acts.querySelectorAll('button');
-        buttons.forEach(b => b.disabled = true);
-        let delay = 400;
-        for (let i = 0; i < livingParty.length; i++) {
-          const pm = livingParty[i];
-          setTimeout(() => {
-            if (combatEnemy.hp <= 0) return;
-            const roll2 = d(20);
-            const total2 = roll2 + pm.atk;
-            const crit2 = roll2 === 20;
-            const hit2 = crit2 || total2 >= combatEnemy.ac;
-            if (hit2) {
-              let dmg2;
-              if (crit2) {
-                dmg2 = rollDice(2, 6).total + pm.atk;
-                log.innerHTML += `<div class="roll">Companion ${pm.name} (${pm.className}) rolled <b>NAT 20!</b> + ${pm.atk} = CRITICAL HIT!</div>`;
-                log.innerHTML += `<div class="hit">Companion ${pm.name} deals <b>${dmg2}</b> damage!</div>`;
-                playSound('crit');
-              } else {
-                dmg2 = rollDice(1, 6).total + Math.floor(pm.atk / 2);
-                log.innerHTML += `<div class="roll">Companion ${pm.name} (${pm.className}) rolled ${roll2} + ${pm.atk} = ${total2} vs AC ${combatEnemy.ac} - HIT! ${dmg2} damage</div>`;
-                playSound('hit');
-              }
-              combatEnemy.hp -= dmg2;
-              totalDamageDealt += dmg2;
-            } else {
-              log.innerHTML += `<div class="roll">Companion ${pm.name} (${pm.className}) rolled ${roll2} + ${pm.atk} = ${total2} vs AC ${combatEnemy.ac} - MISS!</div>`;
-              playSound('miss');
-            }
-            updateCombatInfo();
-            log.scrollTop = log.scrollHeight;
-            if (i === livingParty.length - 1) {
-              if (combatEnemy.hp <= 0) { endCombat(true); return; }
-              // Enemy stunned, skip to player actions
-              updateCombatInfo();
-              showCombatActions();
-            }
-          }, delay);
-          delay += 350;
-        }
-      } else {
-        updateCombatInfo();
-        showCombatActions();
-      }
-      log.scrollTop = log.scrollHeight;
-      return;
-    } else if (player.classId === 'mage') {
-      // Fireball: 3d6 damage, auto-hit
-      const roll = rollDice(3, 6);
-      const dmg = roll.total;
-      combatEnemy.hp -= dmg;
-      totalDamageDealt += dmg;
-      log.innerHTML += `<div class="roll">&#x1F525; Fireball! ${roll.str} = ${dmg} fire damage!</div>`;
-    } else {
-      // Backstab: 2d8 + DEX, 30% crit
-      const crit = Math.random() < 0.3;
-      const roll = rollDice(crit ? 4 : 2, 8);
-      const dmg = roll.total + player.atk;
-      combatEnemy.hp -= dmg;
-      totalDamageDealt += dmg;
-      if (crit) {
-        log.innerHTML += `<div class="roll">&#x1F5E1;&#xFE0F; Backstab CRITICAL! ${roll.str} + ${player.atk} = ${dmg} damage!</div>`;
-        playSound('crit');
-      } else {
-        log.innerHTML += `<div class="roll">&#x1F5E1;&#xFE0F; Backstab! ${roll.str} + ${player.atk} = ${dmg} damage!</div>`;
-      }
-    }
-    turnOver = true;
-  } else if (action === 'flee') {
-    const roll = d(20);
-    if (roll >= 10) {
-      log.innerHTML += `<div class="roll">Flee roll: ${roll} - Success! You escape!</div>`;
-      inCombat = false;
-      document.getElementById('combat-overlay').style.display = 'none';
-      // Move player back
-      const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
-      for (const [dx, dy] of dirs) {
-        const nx = player.x + dx, ny = player.y + dy;
-        if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H && map[ny][nx] !== T.WALL && !monsters.some(m => m.x === nx && m.y === ny)) {
-          player.x = nx; player.y = ny; break;
-        }
-      }
-      addMessage('You fled from battle!');
-      updateHUD();
-      render();
-      return;
-    } else {
-      log.innerHTML += `<div class="roll">Flee roll: ${roll} - Failed! You can\'t escape!</div>`;
-      turnOver = true;
-    }
-  }
-
-  // Check enemy death
-  if (combatEnemy.hp <= 0) {
-    endCombat(true);
-    return;
-  }
-
-  // Party members attack, then enemy turn
-  if (turnOver) {
-    // Disable actions during party/enemy turns
-    combatWaitingForTurns = true;
-    const acts = document.getElementById('combat-actions');
-    const buttons = acts.querySelectorAll('button');
-    buttons.forEach(b => b.disabled = true);
-
-    setTimeout(() => partyMembersTurn(), 400);
-  }
-
-  updateCombatInfo();
-  log.scrollTop = log.scrollHeight;
-}
-
-function partyMembersTurn() {
-  const log = document.getElementById('combat-log');
-  const livingParty = party.filter(pm => pm.alive);
-  let delay = 0;
-
-  for (let i = 0; i < livingParty.length; i++) {
-    const pm = livingParty[i];
-    setTimeout(() => {
-      if (combatEnemy.hp <= 0) return; // Already dead
-
-      const roll = d(20);
-      const total = roll + pm.atk;
-      const crit = roll === 20;
-      const hit = crit || total >= combatEnemy.ac;
-
-      if (hit) {
-        let dmg;
-        if (crit) {
-          dmg = rollDice(2, 6).total + pm.atk;
-          log.innerHTML += `<div class="roll">Companion ${pm.name} (${pm.className}) rolled <b>NAT 20!</b> + ${pm.atk} = CRITICAL HIT!</div>`;
-          log.innerHTML += `<div class="hit">Companion ${pm.name} deals <b>${dmg}</b> damage!</div>`;
-          playSound('crit');
-        } else {
-          dmg = rollDice(1, 6).total + Math.floor(pm.atk / 2);
-          log.innerHTML += `<div class="roll">Companion ${pm.name} (${pm.className}) rolled ${roll} + ${pm.atk} = ${total} vs AC ${combatEnemy.ac} - HIT! ${dmg} damage</div>`;
-          playSound('hit');
-        }
-        combatEnemy.hp -= dmg;
-        totalDamageDealt += dmg;
-      } else {
-        log.innerHTML += `<div class="roll">Companion ${pm.name} (${pm.className}) rolled ${roll} + ${pm.atk} = ${total} vs AC ${combatEnemy.ac} - MISS!</div>`;
-        playSound('miss');
-      }
-
-      updateCombatInfo();
-      log.scrollTop = log.scrollHeight;
-
-      // If this is the last party member, check enemy death then do enemy turn
-      if (i === livingParty.length - 1) {
-        if (combatEnemy.hp <= 0) {
-          endCombat(true);
-        } else {
-          setTimeout(() => enemyTurn(), 400);
-        }
-      }
-    }, delay);
-    delay += 350;
-  }
-
-  // If no living party members, go straight to enemy turn
-  if (livingParty.length === 0) {
-    setTimeout(() => enemyTurn(), 400);
-  }
-}
-
-function enemyTurn() {
-  const log = document.getElementById('combat-log');
-
-  // Choose random target: player or living party member
-  const livingParty = party.filter(pm => pm.alive);
-  const targets = [{ isPlayer: true, name: 'You', obj: player }];
-  for (const pm of livingParty) {
-    targets.push({ isPlayer: false, name: pm.name, obj: pm });
-  }
-  const target = targets[Math.floor(Math.random() * targets.length)];
-
-  const roll = d(20);
-  const targetAC = target.isPlayer ? (player.ac + (combatPlayerDefending ? 5 : 0)) : target.obj.ac;
-  const total = roll + combatEnemy.atk;
-  const crit = roll === 20;
-  const hit = crit || total >= targetAC;
-
-  const targetLabel = target.isPlayer ? 'you' : target.name;
-  const targetLabelCap = target.isPlayer ? 'You' : target.name;
-
-  if (hit) {
-    let dmg;
-    const defReduction = target.isPlayer ? Math.floor(player.def / 3) : Math.floor(target.obj.def / 3);
-    if (crit) {
-      dmg = rollDice(2, 6).total + combatEnemy.atk;
-      log.innerHTML += `<div class="roll">${combatEnemy.name} targets ${targetLabel} - rolled <b>NAT 20!</b> CRITICAL HIT!</div>`;
-      log.innerHTML += `<div class="hit">${combatEnemy.name} deals <b>${dmg}</b> damage to ${targetLabel}!</div>`;
-      playSound('crit');
-    } else {
-      dmg = Math.max(1, rollDice(1, 6).total + Math.floor(combatEnemy.atk / 2) - defReduction);
-      log.innerHTML += `<div class="roll">${combatEnemy.name} targets ${targetLabel} - rolled ${roll} + ${combatEnemy.atk} ATK = ${total} vs AC ${targetAC} - HIT!</div>`;
-      log.innerHTML += `<div class="hit">${combatEnemy.name} deals <b>${dmg}</b> damage to ${targetLabel}!</div>`;
-      playSound('hit');
-    }
-
-    if (target.isPlayer) {
-      player.hp -= dmg;
-    } else {
-      target.obj.hp -= dmg;
-      // Check companion death
-      if (target.obj.hp <= 0) {
-        target.obj.hp = 0;
-        target.obj.alive = false;
-        log.innerHTML += `<div class="hit"><b>${target.obj.icon} ${target.name} has fallen!</b></div>`;
-        playSound('death');
-      }
-    }
-  } else {
-    log.innerHTML += `<div class="roll">${combatEnemy.name} targets ${targetLabel} - rolled ${roll} + ${combatEnemy.atk} ATK = ${total} vs AC ${targetAC} - MISS!</div>`;
-    log.innerHTML += `<div class="miss">${combatEnemy.name}'s attack misses ${targetLabel}!</div>`;
-    playSound('miss');
-  }
-
-  // Check player death
-  if (player.hp <= 0) {
-    player.hp = 0;
-    updateCombatInfo();
-    log.innerHTML += `<div class="hit"><b>You have been slain!</b></div>`;
-    log.scrollTop = log.scrollHeight;
-    const acts = document.getElementById('combat-actions');
-    acts.innerHTML = '';
-    setTimeout(() => {
-      document.getElementById('combat-overlay').style.display = 'none';
-      gameOver();
-    }, 1500);
-    return;
-  }
-
-  updateCombatInfo();
-  showCombatActions();
-  log.scrollTop = log.scrollHeight;
-}
-
-function endCombat(victory) {
-  combatWaitingForTurns = false;
-  const log = document.getElementById('combat-log');
-  if (victory) {
-    const xpGain = combatEnemy.xp;
-    const goldGain = combatEnemy.gold[0] + Math.floor(Math.random() * (combatEnemy.gold[1] - combatEnemy.gold[0] + 1));
-    player.xp += xpGain;
-    player.gold += goldGain;
-    totalGoldEarned += goldGain;
-    totalKills++;
-
-    log.innerHTML += `<div class="info"><b>${combatEnemy.name} defeated!</b></div>`;
-    log.innerHTML += `<div class="info">+${xpGain} XP | +${goldGain} Gold</div>`;
-
-    // Loot drop chance
-    const lootRoll = Math.random();
-    if (lootRoll < 0.25) {
-      // Drop a random item
-      const r = Math.random();
-      let droppedItem;
-      if (r < 0.35) {
-        const amt = 15 + floor * 5;
-        droppedItem = { type: 'potion', healType: 'hp', amount: amt, name: 'Health Potion', rarity: 'common' };
-      } else if (r < 0.5) {
-        const amt = 10 + floor * 3;
-        droppedItem = { type: 'potion', healType: 'mana', amount: amt, name: 'Mana Potion', rarity: 'common' };
-      } else if (r < 0.75) {
-        const eligible = WEAPONS.filter(w => w.minFloor <= floor + 1);
-        const w = eligible[Math.floor(Math.random() * eligible.length)];
-        const bonus = Math.floor(Math.random() * Math.ceil(floor / 2));
-        droppedItem = { type: 'weapon', atk: w.atk + bonus, name: bonus > 0 ? `${w.name} +${bonus}` : w.name, rarity: w.rarity };
-      } else {
-        const eligible = ARMORS.filter(a => a.minFloor <= floor + 1);
-        const a = eligible[Math.floor(Math.random() * eligible.length)];
-        const bonus = Math.floor(Math.random() * Math.ceil(floor / 2));
-        droppedItem = { type: 'armor', def: a.def + bonus, name: bonus > 0 ? `${a.name} +${bonus}` : a.name, rarity: a.rarity };
-      }
-      player.inventory.push(droppedItem);
-      const color = RARITY_COLORS[droppedItem.rarity] || '#aaa';
-      log.innerHTML += `<div class="info" style="color:${color}">&#x1F381; Dropped: ${droppedItem.name}!</div>`;
-      playSound('pickup');
-    }
-
-    // Check level up
-    while (player.xp >= player.xpNext) {
-      player.xp -= player.xpNext;
-      player.level++;
-      player.xpNext = Math.floor(player.xpNext * 1.5);
-      // Stat increases
-      const hpGain = player.classId === 'warrior' ? 12 : player.classId === 'mage' ? 6 : 8;
-      const manaGain = player.classId === 'mage' ? 12 : player.classId === 'rogue' ? 6 : 4;
-      player.maxHp += hpGain;
-      player.hp = player.maxHp; // Full heal on level up
-      player.maxMana += manaGain;
-      player.mana = player.maxMana;
-      player.baseAtk += (player.classId === 'mage' ? 1 : 2);
-      player.baseDef += 1;
-      log.innerHTML += `<div class="heal"><b>&#x2B50; LEVEL UP! Now level ${player.level}!</b> +${hpGain} HP, +${manaGain} MP, +ATK, +DEF</div>`;
-      playSound('levelup');
-    }
-
-    // Remove monster from map
-    monsters.splice(monsters.indexOf(combatEnemy), 1);
-
-    const acts = document.getElementById('combat-actions');
-    acts.innerHTML = `<button class="btn-continue" onclick="closeCombat()">Continue</button>`;
-    log.scrollTop = log.scrollHeight;
-    updateCombatInfo();
-  }
-}
-
-function closeCombat() {
-  inCombat = false;
-  combatEnemy = null;
-  combatWaitingForTurns = false;
-  document.getElementById('combat-overlay').style.display = 'none';
-  updateHUD();
-  render();
-}
-
-// ==================== GAME OVER ====================
-function gameOver() {
-  gameActive = false;
-  inCombat = false;
-  playSound('death');
-  document.getElementById('gameover-overlay').style.display = 'flex';
-  const survivingParty = party.filter(pm => pm.alive).length;
-  document.getElementById('gameover-stats').innerHTML = `
-    <div>Class: <span class="gold-color">${player.className}</span></div>
-    <div>Level: <span class="gold-color">${player.level}</span></div>
-    <div>Floor Reached: <span class="gold-color">${maxFloorReached}</span></div>
-    <div>Monsters Slain: <span class="gold-color">${totalKills}</span></div>
-    <div>Gold Earned: <span class="gold-color">${totalGoldEarned}</span></div>
-    <div>Damage Dealt: <span class="gold-color">${totalDamageDealt}</span></div>
-    <div>Steps Taken: <span class="gold-color">${moveCount}</span></div>
-    <div>Companions Survived: <span class="gold-color">${survivingParty} / ${party.length}</span></div>
-  `;
-}
-
-// ==================== CHARACTER SHEET ====================
-function toggleCharSheet() {
-  charSheetOpen = !charSheetOpen;
-  const overlay = document.getElementById('charsheet-overlay');
-  if (charSheetOpen) {
-    overlay.style.display = 'flex';
-    renderCharSheet();
-  } else {
-    overlay.style.display = 'none';
-  }
-}
-
-function renderCharSheet() {
-  const title = document.getElementById('cs-title');
-  title.innerHTML = `${player.icon} ${player.className} - Character Sheet`;
-
-  const subtitle = document.getElementById('cs-subtitle');
-  subtitle.textContent = `Level ${player.level} ${player.className} | Floor ${floor}`;
-
-  const content = document.getElementById('cs-content');
-  let html = '';
-
-  // Core Stats
-  html += `<div class="cs-section">
-    <h3>Attributes</h3>
-    <div class="cs-grid">
-      <span class="cs-label">Hit Points</span><span class="cs-value">${player.hp} / ${player.maxHp}</span>
-      <span class="cs-label">Mana</span><span class="cs-value">${player.mana} / ${player.maxMana}</span>
-      <span class="cs-label">Experience</span><span class="cs-value">${player.xp} / ${player.xpNext}</span>
-      <span class="cs-label">Level</span><span class="cs-value">${player.level}</span>
-      <span class="cs-label">Base Attack</span><span class="cs-value">${player.baseAtk}</span>
-      <span class="cs-label">Base Defense</span><span class="cs-value">${player.baseDef}</span>
-      <span class="cs-label">Total Attack</span><span class="cs-value" style="color:#e74c3c">${player.atk}</span>
-      <span class="cs-label">Total Defense</span><span class="cs-value" style="color:#3498db">${player.def}</span>
-      <span class="cs-label">Armor Class</span><span class="cs-value" style="color:#f1c40f">${player.ac}</span>
-      <span class="cs-label">Gold</span><span class="cs-value" style="color:#f1c40f">${player.gold}</span>
-    </div>
-  </div>`;
-
-  // Equipment
-  html += `<div class="cs-section">
-    <h3>Equipment</h3>
-    <div class="cs-grid">
-      <span class="cs-label">Weapon</span><span class="cs-value">${player.weapon ? player.weapon.name + ' (+' + player.weapon.atk + ' ATK)' : 'Fists'}</span>
-      <span class="cs-label">Armor</span><span class="cs-value">${player.armor ? player.armor.name + ' (+' + player.armor.def + ' DEF)' : 'None'}</span>
-    </div>
-  </div>`;
-
-  // Spell
-  html += `<div class="cs-section">
-    <h3>Spell</h3>
-    <div class="cs-grid">
-      <span class="cs-label">${player.spellName}</span><span class="cs-value">${player.spellCost} Mana</span>
-      <span class="cs-label">Effect</span><span class="cs-value">${player.spellDesc}</span>
-    </div>
-  </div>`;
-
-  // Party Members
-  html += `<div class="cs-section">
-    <h3>Party Members</h3>`;
-  if (party.length === 0) {
-    html += `<div style="color:#555;font-size:11px;text-align:center;padding:4px">No companions</div>`;
-  } else {
-    for (const pm of party) {
-      const hpPct = pm.alive ? Math.max(0, (pm.hp / pm.maxHp) * 100) : 0;
-      const statusColor = pm.alive ? '#2ecc71' : '#e74c3c';
-      const statusText = pm.alive ? 'Alive' : 'Dead';
-      html += `<div class="cs-party-member${pm.alive ? '' : ' dead'}">
-        <div class="cspm-header">
-          <span class="cspm-name">${pm.icon} ${pm.name} - ${pm.className}</span>
-          <span class="cspm-status" style="color:${statusColor}">${statusText}</span>
-        </div>
-        <div class="cs-grid">
-          <span class="cs-label">HP</span><span class="cs-value">${pm.alive ? pm.hp + '/' + pm.maxHp : '0/' + pm.maxHp}</span>
-          <span class="cs-label">Attack</span><span class="cs-value">${pm.atk}</span>
-          <span class="cs-label">Defense</span><span class="cs-value">${pm.def}</span>
-          <span class="cs-label">AC</span><span class="cs-value">${pm.ac}</span>
-        </div>
+function renderStats(){
+  const sg=document.getElementById('stat-grid');
+  if(!sg)return;
+  let html='';
+  if(statMode==='pointbuy'){
+    const ptsLeft=TOTAL_POINTS-calcPointsUsed();
+    document.getElementById('points-display').style.display='block';
+    document.getElementById('pts-left').textContent=ptsLeft;
+    STAT_KEYS.forEach((k,i)=>{
+      const v=stats[k];
+      const m=mod(v);
+      const mStr=m>=0?'+'+m:''+m;
+      const costUp=pointBuyCost(v,1);
+      const canInc=v<15 && costUp<=ptsLeft;
+      const canDec=v>8;
+      html+=`<div class="stat-assign-row">
+        <span class="sa-name">${STAT_NAMES[i].substring(0,3).toUpperCase()}</span>
+        <button class="stat-dec" data-key="${k}" ${canDec?'':'disabled'}>-</button>
+        <span class="sa-val">${v}</span>
+        <button class="stat-inc" data-key="${k}" ${canInc?'':'disabled'}>+</button>
+        <span class="sa-mod">(${mStr})</span>
       </div>`;
-    }
+    });
+    statsAssigned=(calcPointsUsed()>0);
+  }else{
+    document.getElementById('points-display').style.display='none';
+    STAT_KEYS.forEach((k,i)=>{
+      const v=stats[k];
+      const m=mod(v);
+      const mStr=m>=0?'+'+m:''+m;
+      const diceStr=rollDice[k]?`[${rollDice[k].join(', ')}]`:'--';
+      html+=`<div class="stat-assign-row">
+        <span class="sa-name">${STAT_NAMES[i].substring(0,3).toUpperCase()}</span>
+        <span class="sa-val">${v}</span>
+        <span class="sa-mod">(${mStr})</span>
+        <span class="sa-dice">${diceStr}</span>
+      </div>`;
+    });
   }
-  html += `</div>`;
+  sg.innerHTML=html;
 
-  // Adventure Statistics
-  html += `<div class="cs-section">
-    <h3>Adventure Statistics</h3>
-    <div class="cs-grid">
-      <span class="cs-label">Monsters Slain</span><span class="cs-value">${totalKills}</span>
-      <span class="cs-label">Total Gold Earned</span><span class="cs-value" style="color:#f1c40f">${totalGoldEarned}</span>
-      <span class="cs-label">Floors Explored</span><span class="cs-value">${maxFloorReached}</span>
-      <span class="cs-label">Current Floor</span><span class="cs-value">${floor}</span>
-      <span class="cs-label">Total Damage Dealt</span><span class="cs-value" style="color:#e74c3c">${totalDamageDealt}</span>
-      <span class="cs-label">Steps Taken</span><span class="cs-value">${moveCount}</span>
-    </div>
-  </div>`;
-
-  content.innerHTML = html;
+  // bind +/- buttons for point buy
+  if(statMode==='pointbuy'){
+    sg.querySelectorAll('.stat-inc').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const key=btn.dataset.key;
+        const cost=pointBuyCost(stats[key],1);
+        const ptsLeft=TOTAL_POINTS-calcPointsUsed();
+        if(stats[key]<15 && cost<=ptsLeft){
+          stats[key]++;
+          SFX.play('click');
+          renderStats();
+          checkReady();
+        }
+      });
+    });
+    sg.querySelectorAll('.stat-dec').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const key=btn.dataset.key;
+        if(stats[key]>8){
+          stats[key]--;
+          SFX.play('click');
+          renderStats();
+          checkReady();
+        }
+      });
+    });
+  }
 }
 
-// ==================== INPUT ====================
-document.addEventListener('keydown', (e) => {
-  // Handle character sheet toggle (even when in combat)
-  if (gameActive && (e.key === 'c' || e.key === 'C') && !inCombat) {
-    toggleCharSheet();
-    return;
-  }
-  if (charSheetOpen && (e.key === 'Escape' || e.key === 'c' || e.key === 'C')) {
-    charSheetOpen = false;
-    document.getElementById('charsheet-overlay').style.display = 'none';
-    return;
-  }
-  if (charSheetOpen) return; // Block other input while char sheet is open
+renderStats();
 
-  if (!gameActive) return;
+// Class selection
+document.querySelectorAll('.class-card').forEach(c=>{c.addEventListener('click',()=>{
+  SFX.play('click');document.querySelectorAll('.class-card').forEach(x=>x.classList.remove('selected'));
+  c.classList.add('selected');selClass=c.dataset.cls;checkReady();})});
 
-  if (inCombat) {
-    if (combatWaitingForTurns) return; // Block input during party/enemy turns
-    // Combat hotkeys (number keys only to avoid WASD confusion)
-    if (e.key === '1') combatAction('attack');
-    else if (e.key === '2') combatAction('defend');
-    else if (e.key === '3') combatAction('spell');
-    else if (e.key === '4') combatAction('flee');
-    else if (e.key === 'Enter' || e.key === ' ') {
-      const contBtn = document.querySelector('.btn-continue');
-      if (contBtn) contBtn.click();
+// Stat mode toggle
+document.querySelectorAll('.stat-mode-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    SFX.play('click');
+    document.querySelectorAll('.stat-mode-btn').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    statMode=btn.dataset.mode;
+    if(statMode==='pointbuy'){
+      stats={str:8,dex:8,con:8,int:8,wis:8,cha:8};
+      rollDice={};
+      statsAssigned=false;
+    }else{
+      // Roll all stats immediately
+      SFX.play('dice');
+      STAT_KEYS.forEach(k=>{
+        const r=roll4d6Drop();
+        stats[k]=r.total;
+        rollDice[k]=r.rolls;
+      });
+      statsAssigned=true;
     }
-    return;
-  }
-
-  switch (e.key) {
-    case 'ArrowUp':    case 'w': case 'W': tryMove(0, -1); e.preventDefault(); break;
-    case 'ArrowDown':  case 's': case 'S': tryMove(0, 1);  e.preventDefault(); break;
-    case 'ArrowLeft':  case 'a': case 'A': tryMove(-1, 0); e.preventDefault(); break;
-    case 'ArrowRight': case 'd': case 'D': tryMove(1, 0);  e.preventDefault(); break;
-    case 'i': case 'I': usePotion('hp'); break;
-    case 'm': case 'M': usePotion('mana'); break;
-    case 'e': case 'E': autoEquipBest(); break;
-    case ' ': // Wait turn
-      moveCount++;
-      if (player.mana < player.maxMana) player.mana = Math.min(player.maxMana, player.mana + 1);
-      moveMonsters();
-      updateHUD();
-      render();
-      e.preventDefault();
-      break;
-  }
+    renderStats();
+    checkReady();
+  });
 });
 
-// ==================== TOOLTIP ====================
-canvas.addEventListener('mousemove', (e) => {
-  if (!gameActive || inCombat) { document.getElementById('tooltip').style.display = 'none'; return; }
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  const camX = player.x - Math.floor(VIEW_TILES / 2);
-  const camY = player.y - Math.floor(VIEW_TILES / 2);
-  const tx = Math.floor(mx / TILE) + camX, ty = Math.floor(my / TILE) + camY;
+// Name input listener
+document.getElementById('cc-name').addEventListener('input',()=>checkReady());
 
-  if (tx < 0 || tx >= MAP_W || ty < 0 || ty >= MAP_H || !explored[ty][tx]) {
-    document.getElementById('tooltip').style.display = 'none';
-    return;
-  }
+function checkReady(){
+  const nameVal=document.getElementById('cc-name').value.trim();
+  const ready=nameVal.length>0 && selClass && statsAssigned;
+  document.getElementById('start-btn').disabled=!ready;
+}
 
-  let tipName = '', tipStat = '', tipDesc = '';
-  const mon = monsters.find(m => m.x === tx && m.y === ty && isVisible(tx, ty));
-  const item = items.find(i => i.x === tx && i.y === ty && isVisible(tx, ty));
-
-  const comp = party.find(pm => pm.alive && pm.x === tx && pm.y === ty && isVisible(tx, ty));
-
-  if (mon) {
-    tipName = `${mon.icon} ${mon.name}`;
-    tipStat = `HP: ${mon.hp}/${mon.maxHp} | AC: ${mon.ac} | ATK: ${mon.atk}`;
-    tipDesc = `XP: ${mon.xp}`;
-  } else if (comp) {
-    tipName = `${comp.icon} ${comp.name} (${comp.className})`;
-    tipStat = `HP: ${comp.hp}/${comp.maxHp} | ATK: ${comp.atk} | AC: ${comp.ac}`;
-    tipDesc = 'Party companion';
-  } else if (item) {
-    tipName = `${item.icon} ${item.name}`;
-    if (item.type === 'weapon') tipStat = `+${item.atk} Attack`;
-    else if (item.type === 'armor') tipStat = `+${item.def} Defense`;
-    else if (item.type === 'potion') tipStat = item.healType === 'hp' ? `+${item.amount} HP` : `+${item.amount} Mana`;
-  } else if (tx === player.x && ty === player.y) {
-    tipName = `${player.icon} ${player.className}`;
-    tipStat = `Lv${player.level} | HP: ${player.hp}/${player.maxHp}`;
-  } else if (map[ty][tx] === T.STAIRS) {
-    tipName = '\u{1FA9C} Stairs Down';
-    tipDesc = 'Descend to the next floor';
-  } else {
-    document.getElementById('tooltip').style.display = 'none';
-    return;
-  }
-
-  const tt = document.getElementById('tooltip');
-  tt.style.display = 'block';
-  tt.style.left = (e.clientX + 12) + 'px';
-  tt.style.top = (e.clientY + 12) + 'px';
-  tt.querySelector('.tt-name').textContent = tipName;
-  tt.querySelector('.tt-stat').textContent = tipStat;
-  tt.querySelector('.tt-desc').textContent = tipDesc;
+document.getElementById('start-btn').addEventListener('click',()=>{
+  const name=document.getElementById('cc-name').value.trim();
+  if(!name||!selClass||!statsAssigned)return;
+  SFX.play('levelup');
+  startGame(name,selClass,stats);
 });
+}
 
-canvas.addEventListener('mouseleave', () => {
-  document.getElementById('tooltip').style.display = 'none';
+function startGame(name,cls,stats){
+const cd=CLASS_DATA[cls];
+G.player={name,class:cls,level:1,xp:0,xpNext:100,
+hp:cd.hpBase+mod(stats.con),maxHp:cd.hpBase+mod(stats.con),
+mana:cd.manaBase+mod(stats.int),maxMana:cd.manaBase+mod(stats.int),
+stats:{...stats},ac:parseInt((cd.equipment.armor.match(/AC (\d+)/)||[0,10])[1]),
+equipment:{weapon:cd.equipment.weapon,armor:cd.equipment.armor,shield:cd.equipment.shield},
+weaponBonus:parseInt((cd.equipment.weapon.match(/\+(\d+)/)||[0,0])[1]),
+skills:cd.skills,gold:15,inventory:['Health Potion','Health Potion','Ration']};
+// starting quest
+G.quests=[];addQuest();
+G.phase='adventure';G.turn=0;G.events=0;
+renderGame();
+narrate(`<em>The flickering torchlight casts long shadows across the ancient map spread before you. You pull your cloak tighter against the cold night air, breath misting as you study the road ahead.</em>\n\n<strong>"${name},"</strong> you murmur to yourself, tracing a finger along the worn parchment. <strong>"This is where it begins."</strong>\n\nYou check your gear one final time -- ${cd.equipment.weapon} at your side, ${cd.equipment.armor} secured -- and step forward into the unknown.\n\n<em>And so your adventure begins. The world of Eldaria stretches before you -- a land of ancient ruins, dark forests, and forgotten dungeons. A lone ${cls.toLowerCase()} against the darkness. What legends will you forge?</em>`);
+setTimeout(()=>presentAdventure(),100);
+}
+
+function addQuest(){
+const t=pick(QUEST_TEMPLATES);
+const m=pick(Q_MONSTERS),p=pick(Q_PLACES),it=pick(Q_ITEMS);
+G.quests.push({name:t.name.replace('{monster}',m).replace('{place}',p).replace('{item}',it),
+desc:t.desc.replace('{monster}',m).replace('{place}',p).replace('{item}',it),
+type:t.type,progress:0,goal:d(3)+2,done:false});
+}
+
+// ========== MAIN GAME RENDERING ==========
+function renderGame(){
+app.innerHTML=`<div id="main-col">
+<div id="narrative-box"></div>
+<div id="choices"></div>
+<div id="log-box"></div>
+</div>
+<div id="sidebar">
+<div class="panel" id="p-char"></div>
+<div class="panel" id="p-equip"></div>
+<div class="panel" id="p-inv"></div>
+<div class="panel" id="p-quests"></div>
+</div>`;
+updateSidebar();
+}
+
+function updateSidebar(){
+if(G.phase==='create')return;
+const p=G.player;
+// character panel
+document.getElementById('p-char').innerHTML=`<h3>${p.name} - Lvl ${p.level} ${p.class}</h3>
+<div class="stat-row"><span>HP</span><span class="stat-val">${p.hp}/${p.maxHp}</span></div>
+<div class="bar-outer"><div class="bar-inner hp-bar" style="width:${(p.hp/p.maxHp*100)}%"></div></div>
+${p.maxMana>0?`<div class="stat-row"><span>Mana</span><span class="stat-val">${p.mana}/${p.maxMana}</span></div>
+<div class="bar-outer"><div class="bar-inner mana-bar" style="width:${(p.mana/p.maxMana*100)}%"></div></div>`:''}
+<div class="stat-row"><span>XP</span><span class="stat-val">${p.xp}/${p.xpNext}</span></div>
+<div class="bar-outer"><div class="bar-inner xp-bar" style="width:${(p.xp/p.xpNext*100)}%"></div></div>
+<div class="stat-row"><span>Gold</span><span style="color:#f1c40f">${p.gold} gp</span></div>
+<div class="stat-row"><span>AC</span><span class="stat-val">${p.ac}</span></div>
+<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,.06);padding-top:4px">
+${['str','dex','con','int','wis','cha'].map(k=>`<div class="stat-row"><span>${k.toUpperCase()}</span><span class="stat-val">${p.stats[k]} (${modStr(p.stats[k])})</span></div>`).join('')}
+</div>`;
+// equipment
+document.getElementById('p-equip').innerHTML=`<h3>Equipment</h3>
+<div class="equip-slot"><span>Weapon:</span><span class="item-name">${p.equipment.weapon}</span></div>
+<div class="equip-slot"><span>Armor:</span><span class="item-name">${p.equipment.armor}</span></div>
+<div class="equip-slot"><span>Off-hand:</span><span class="item-name">${p.equipment.shield}</span></div>`;
+// inventory
+document.getElementById('p-inv').innerHTML=`<h3>Inventory (${p.inventory.length})</h3>
+${p.inventory.length?p.inventory.map(i=>`<div class="inv-item">&#8226; ${i}</div>`).join(''):'<div style="color:#666;font-size:11px">Empty</div>'}`;
+// quests
+document.getElementById('p-quests').innerHTML=`<h3>Quests</h3>
+${G.quests.map(q=>`<div class="quest-item ${q.done?'quest-done':''}"><div class="q-name">${q.done?'&#10003;':'\u25CB'} ${q.name}</div><div class="q-desc">${q.desc} (${q.progress}/${q.goal})</div></div>`).join('')}`;
+}
+
+function narrate(html){
+const nb=document.getElementById('narrative-box');
+if(!nb)return;
+nb.innerHTML+=`<div class="dm-text">${html.replace(/\n/g,'<br>')}</div>`;
+nb.scrollTop=nb.scrollHeight;
+}
+
+function clearNarrative(){
+const nb=document.getElementById('narrative-box');
+if(nb)nb.innerHTML='';
+}
+
+function addLog(text){
+const lb=document.getElementById('log-box');
+if(!lb)return;
+lb.innerHTML+=`<div class="log-entry">${text}</div>`;
+lb.scrollTop=lb.scrollHeight;
+}
+
+function setChoices(choices){
+const cb=document.getElementById('choices');
+if(!cb)return;
+cb.innerHTML='';
+choices.forEach(ch=>{
+const b=document.createElement('button');
+b.textContent=ch.text;
+b.addEventListener('click',()=>{SFX.play('click');ch.action();});
+cb.appendChild(b);
 });
+}
 
-// ==================== INITIAL RENDER ====================
-// Game starts when class is selected
+// ========== ADVENTURE ENGINE ==========
+function presentAdventure(){
+G.turn++;G.events++;
+updateSidebar();
+if(G.player.hp<=0){gameOver();return;}
+// check quest progress -- add new quest if all done
+if(G.quests.every(q=>q.done)){addQuest();}
+// check level up
+checkLevelUp();
+// random event selection
+const roll=d(100);
+let tier=Math.ceil(G.player.level/2);
+if(roll<=25) encounterMonster(tier);
+else if(roll<=40) townEvent();
+else if(roll<=55) wildernessExploration();
+else if(roll<=65) trapEncounter();
+else if(roll<=75) treasureFind();
+else if(roll<=82) mysteriousStranger();
+else if(roll<=88) campEvent();
+else if(roll<=93) shrineEvent();
+else if(roll<=97) questEvent();
+else stormEvent();
+}
+
+// ========== ENCOUNTERS ==========
+function encounterMonster(tier){
+tier=clamp(tier,1,5);
+const possible=MONSTER_DATA.filter(m=>m.tier<=tier&&m.tier>=tier-1);
+const template=pick(possible.length?possible:MONSTER_DATA.filter(m=>m.tier===1));
+const scaling=1+((G.player.level-1)*0.15);
+const monster={...template,hp:Math.round(template.hp*scaling),maxHp:Math.round(template.hp*scaling),
+atk:Math.round(template.atk*scaling),xp:Math.round(template.xp*scaling),gold:Math.round(template.gold*scaling)};
+G.encounter=monster;
+const intros=[
+`<em>The ground trembles beneath your feet. From the shadows emerges a fearsome <strong>${monster.name}</strong>!</em>\n\nYou draw your weapon and set your stance. The creature snarls, its eyes gleaming with malice.`,
+`<em>A blood-curdling shriek pierces the air. A <strong>${monster.name}</strong> blocks your path, fangs bared and ready to strike!</em>\n\nYou grip your weapon tightly. "This one means business..."`,
+`<em>You round a bend and freeze. There, amid the bones of previous travelers, a <strong>${monster.name}</strong> rises to face you. Its ${pick(['red','yellow','pale','glowing'])} eyes fix upon you.</em>\n\n"Steady," you whisper, steeling your nerves. "I can handle this."`
+];
+clearNarrative();
+narrate(pick(intros));
+narrate(`\n<span class="dm-label">&#9876; COMBAT: ${monster.name} (HP: ${monster.hp} | AC: ${monster.ac})</span>`);
+addLog(`Combat started: ${monster.name} (HP:${monster.hp}, AC:${monster.ac})`);
+combatTurn();
+}
+
+function combatTurn(){
+const m=G.encounter;
+if(!m||m.hp<=0){combatVictory();return;}
+if(G.player.hp<=0){gameOver();return;}
+updateSidebar();
+const choices=[{text:'Attack (d20 + '+modStr(G.player.stats.str)+')',action:()=>playerAttack()},
+{text:'Defend (brace for impact)',action:()=>playerDefend()}];
+if(G.player.mana>=5){
+const skill=G.player.skills[0];
+choices.push({text:`${skill} (5 mana)`,action:()=>playerSkill(skill)});
+}
+if(G.player.inventory.includes('Health Potion')){
+choices.push({text:'Use Health Potion',action:()=>usePotion()});
+}
+choices.push({text:'Flee (DC 12 Dex check)',action:()=>playerFlee()});
+setChoices(choices);
+}
+
+function playerAttack(){
+const r=d20();const atkMod=mod(G.player.stats.str)+G.player.weaponBonus;
+const total=r+atkMod;
+const m=G.encounter;
+SFX.play('dice');
+narrate(`<div class="roll-result">Attack Roll: <span class="die-val">${r}</span> + ${atkMod} = ${total} vs AC ${m.ac}</div>`);
+if(total>=m.ac){
+const dmg=d(8)+mod(G.player.stats.str)+G.player.weaponBonus;
+m.hp=Math.max(0,m.hp-dmg);
+SFX.play('hit');
+narrate(`<span class="combat-hit">Hit! You strike the ${m.name} for ${dmg} damage!</span> (${m.name} HP: ${m.hp}/${m.maxHp})`);
+addLog(`You hit ${m.name} for ${dmg} dmg. (${m.hp} HP left)`);
+}else{
+SFX.play('miss');
+narrate(`<span class="combat-miss">Miss! Your attack fails to connect.</span>`);
+addLog(`You missed ${m.name}.`);
+}
+if(m.hp<=0){combatVictory();return;}
+monsterTurn();
+}
+
+function playerDefend(){
+narrate(`<em>You raise your guard, bracing for the enemy's assault. (+4 AC this round)</em>`);
+addLog('You defend. +4 AC this round.');
+G.player.ac+=4;
+monsterTurn();
+G.player.ac-=4;
+}
+
+function playerSkill(skill){
+G.player.mana-=5;
+const r=d20();
+let atkStat=G.player.class==='Mage'?'int':G.player.class==='Cleric'?'wis':'str';
+const atkMod=mod(G.player.stats[atkStat])+G.player.level;
+const total=r+atkMod;
+const m=G.encounter;
+SFX.play('dice');
+narrate(`<div class="roll-result">${skill} Roll: <span class="die-val">${r}</span> + ${atkMod} = ${total} vs AC ${m.ac}</div>`);
+if(total>=m.ac){
+const dmg=d(10)+mod(G.player.stats[atkStat])+G.player.level*2;
+m.hp=Math.max(0,m.hp-dmg);
+SFX.play('hit');
+narrate(`<span class="combat-hit">${skill} hits for ${dmg} damage!</span> (${m.name} HP: ${m.hp}/${m.maxHp})`);
+addLog(`${skill}: ${dmg} dmg to ${m.name}.`);
+if(skill==='Heal'||skill==='Bless'){
+const healAmt=d(8)+mod(G.player.stats.wis);
+G.player.hp=Math.min(G.player.maxHp,G.player.hp+healAmt);
+narrate(`<span class="combat-heal">You also heal ${healAmt} HP!</span>`);
+}
+}else{
+SFX.play('miss');narrate(`<span class="combat-miss">${skill} fizzles! No effect.</span>`);
+}
+if(m.hp<=0){combatVictory();return;}
+monsterTurn();
+}
+
+function usePotion(){
+const idx=G.player.inventory.indexOf('Health Potion');
+if(idx>=0)G.player.inventory.splice(idx,1);
+const heal=d(8)+4;
+G.player.hp=Math.min(G.player.maxHp,G.player.hp+heal);
+SFX.play('heal');
+narrate(`<span class="combat-heal">You drink a Health Potion and recover ${heal} HP! (HP: ${G.player.hp}/${G.player.maxHp})</span>`);
+addLog(`Used Health Potion: +${heal} HP.`);
+monsterTurn();
+}
+
+function playerFlee(){
+const r=d20();const total=r+mod(G.player.stats.dex);
+SFX.play('dice');
+narrate(`<div class="roll-result">Flee Check (DC 12): <span class="die-val">${r}</span> + ${mod(G.player.stats.dex)} = ${total}</div>`);
+if(total>=12){
+narrate(`<em>You disengage and slip away into the shadows!</em>`);
+addLog('Fled successfully.');
+G.encounter=null;
+setTimeout(()=>presentAdventure(),50);
+}else{
+narrate(`<span class="combat-miss">You fail to escape! The ${G.encounter.name} blocks your path.</span>`);
+addLog('Flee failed!');
+monsterTurn();
+}
+}
+
+function monsterTurn(){
+const m=G.encounter;
+if(!m||m.hp<=0)return;
+const r=d20()+Math.floor(m.atk/2);
+narrate(`\n<span class="dm-label">${m.name}'s Turn</span>`);
+if(r>=G.player.ac){
+const dmg=d(6)+Math.floor(m.atk/2);
+G.player.hp=Math.max(0,G.player.hp-dmg);
+SFX.play('hit');
+narrate(`<span class="combat-hit">The ${m.name} strikes you for ${dmg} damage!</span> (Your HP: ${G.player.hp}/${G.player.maxHp})`);
+addLog(`${m.name} hits you for ${dmg}.`);
+}else{
+SFX.play('miss');
+narrate(`<span class="combat-miss">The ${m.name} attacks you but misses!</span>`);
+}
+if(G.player.hp<=0){gameOver();return;}
+updateSidebar();
+combatTurn();
+}
+
+function combatVictory(){
+const m=G.encounter;
+SFX.play('loot');
+const xp=m.xp;const gold=m.gold+d(10);
+G.player.xp+=xp;G.player.gold+=gold;
+narrate(`\n<span class="loot-text">&#9876; VICTORY! The ${m.name} is defeated!</span>\n<span class="xp-text">+${xp} XP</span> | <span class="gold-text">+${gold} Gold</span>`);
+addLog(`Defeated ${m.name}. +${xp} XP, +${gold} gold.`);
+// quest progress
+G.quests.filter(q=>!q.done&&(q.type==='kill'||q.type==='dungeon')).forEach(q=>{
+q.progress++;if(q.progress>=q.goal){q.done=true;
+const qxp=100*G.player.level;const qgold=50*G.player.level;
+G.player.xp+=qxp;G.player.gold+=qgold;
+SFX.play('levelup');
+narrate(`<span class="loot-text">&#10003; QUEST COMPLETE: ${q.name}! +${qxp} XP, +${qgold} Gold</span>`);
+addLog(`Quest done: ${q.name}. +${qxp} XP, +${qgold} gp.`);
+addQuest();}
+});
+// random loot
+if(d(100)<=40){
+const loot=pick([...LOOT_WEAPONS.filter(l=>l.tier<=Math.ceil(G.player.level/2)+1),...LOOT_ARMOR.filter(l=>l.tier<=Math.ceil(G.player.level/2)+1)]);
+if(loot){
+G.player.inventory.push(loot.name);
+narrate(`<span class="loot-text">You find: ${loot.name}!</span>`);
+addLog(`Loot: ${loot.name}`);
+}
+}
+G.encounter=null;
+checkLevelUp();
+updateSidebar();
+setChoices([{text:'Continue your journey...',action:()=>{clearNarrative();presentAdventure();}}]);
+}
+
+// ========== NON-COMBAT EVENTS ==========
+function townEvent(){
+const town=pick(TOWN_NAMES);
+clearNarrative();
+const rumors=[
+`"They say a dragon nests in the mountains to the north... its hoard would set a man up for life."`,
+`"Travelers have gone missing on the eastern road. Something lurks in the shadows there."`,
+`"An old wizard in the tower seeks adventurers. The pay is good, but the task... dangerous."`,
+`"The dead don't rest easy in the old cemetery. Best avoid it after dark."`,
+`"A merchant caravan was raided last week. Bandits grow bolder by the day."`
+];
+narrate(`<em>After hours of travel, the welcome sight of <strong>${town}</strong> appears on the horizon. Warm light spills from windows, and the smell of cooking fire reaches your nose.</em>\n\n"Finally, civilization," you sigh. "I could use a warm meal and a soft bed."\n\n<em>The townsfolk eye you with a mixture of hope and wariness. A grizzled innkeeper waves you over.</em>\n\n"Welcome, traveler. ${pick(rumors)}"`);
+const choices=[
+{text:`Rest at the Inn (10 gp) - Full heal`,action:()=>{
+if(G.player.gold>=10){G.player.gold-=10;G.player.hp=G.player.maxHp;G.player.mana=G.player.maxMana;
+SFX.play('heal');
+narrate(`<em>You spend the night at the inn. The bed is surprisingly comfortable, and the ale flows freely. By morning, you are fully rested and refreshed.</em>`);
+addLog(`Rested at ${town}. Fully healed.`);
+updateSidebar();
+setChoices([{text:'Continue your journey...',action:()=>{clearNarrative();presentAdventure();}}]);
+}else{narrate(`<em>You pat your coin purse. Not enough gold...</em>`);}}},
+{text:'Visit the Shop',action:()=>shopEvent(town)},
+{text:'Hear Rumors (free)',action:()=>{
+narrate(`\n<em>You spend an hour listening to the locals. Between mugs of ale, you piece together useful information.</em>\n\n${pick(rumors)}\n\n`);
+const r=d20()+mod(G.player.stats.cha);
+narrate(`<div class="roll-result">Charisma Check: <span class="die-val">${d20()}</span> + ${mod(G.player.stats.cha)} -- ${r>=12?'The locals warm to you!':'They seem guarded.'}</div>`);
+if(r>=12){
+const bonusGold=d(10)+5;G.player.gold+=bonusGold;
+narrate(`<span class="gold-text">A grateful farmer slips you ${bonusGold} gold for your reputation.</span>`);
+}
+SFX.play('dice');updateSidebar();
+setChoices([{text:'Continue your journey...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Leave town',action:()=>{clearNarrative();presentAdventure();}}
+];
+setChoices(choices);
+}
+
+function shopEvent(town){
+clearNarrative();
+narrate(`<em>The shopkeeper spreads their wares before you. "Take a look, friend. Fair prices for brave adventurers."</em>\n\n<strong>Your gold: ${G.player.gold} gp</strong>`);
+const items=[
+{name:'Health Potion',cost:10,desc:'Restores d8+4 HP'},
+{name:'Greater Health Potion',cost:25,desc:'Restores 2d8+8 HP'},
+{name:'Mana Potion',cost:15,desc:'Restores 10 Mana'},
+{name:'Antidote',cost:8,desc:'Cures poison'},
+{name:'Ration',cost:3,desc:'Trail food'},
+{name:'Torch',cost:1,desc:'Lights the way'}
+];
+const choices=items.map(it=>({text:`Buy ${it.name} (${it.cost} gp)`,action:()=>{
+if(G.player.gold>=it.cost){G.player.gold-=it.cost;G.player.inventory.push(it.name);
+SFX.play('loot');narrate(`<span class="loot-text">Purchased: ${it.name}!</span> (Gold: ${G.player.gold} gp)`);updateSidebar();}
+else{narrate(`<em>Not enough gold for ${it.name}.</em>`);}
+}}));
+// sell equipment from inventory
+if(G.player.inventory.length>0){
+choices.push({text:'Sell an item (half value)',action:()=>{
+const item=G.player.inventory[0];
+const val=Math.max(1,d(6)+2);
+G.player.inventory.shift();G.player.gold+=val;
+SFX.play('loot');narrate(`<span class="gold-text">Sold ${item} for ${val} gold.</span>`);updateSidebar();
+}});
+}
+choices.push({text:'Leave shop',action:()=>{clearNarrative();presentAdventure();}});
+setChoices(choices);
+}
+
+function wildernessExploration(){
+clearNarrative();
+const desc=pick(WILDERNESS_DESCS);
+const events=[
+()=>{// Fork in the road
+narrate(`<em>You travel through ${desc}. The path splits before you -- one trail leads through a dark hollow, the other follows a ridge with a distant view.</em>\n\nYou study both paths. The hollow looks faster, but you don't like the feel of it.`);
+setChoices([
+{text:'Take the dark hollow (risky)',action:()=>{
+const r=d20()+mod(G.player.stats.wis);
+SFX.play('dice');
+narrate(`<div class="roll-result">Wisdom Check (DC 13): <span class="die-val">${r-mod(G.player.stats.wis)}</span> + ${mod(G.player.stats.wis)} = ${r}</div>`);
+if(r>=13){
+const gold=d(20)+10;G.player.gold+=gold;
+narrate(`<em>You navigate the hollow safely and discover an old stash hidden in a tree trunk!</em>\n<span class="gold-text">Found ${gold} gold!</span>`);
+SFX.play('loot');
+}else{
+const dmg=d(6)+2;G.player.hp=Math.max(1,G.player.hp-dmg);
+narrate(`<em>Poisonous thorns scratch your arms in the darkness. You take ${dmg} damage!</em>`);
+SFX.play('hit');
+}
+updateSidebar();
+setChoices([{text:'Press onward...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Take the ridge (safe)',action:()=>{
+narrate(`<em>The ridge path offers breathtaking views of the valley below. You travel safely, arriving at the next landmark in good spirits.</em>`);
+updateSidebar();
+setChoices([{text:'Press onward...',action:()=>{clearNarrative();presentAdventure();}}]);
+}}
+]);
+},
+()=>{// Abandoned campsite
+narrate(`<em>You stumble upon an abandoned campsite in ${desc}. The fire pit is cold, but supplies are scattered about as if the previous occupants left in a hurry.</em>\n\n"Looks like they left in a rush," you observe, scanning the area for danger.`);
+setChoices([
+{text:'Search the campsite',action:()=>{
+const r=d20()+mod(G.player.stats.int);
+SFX.play('dice');
+narrate(`<div class="roll-result">Investigation Check (DC 11): <span class="die-val">${r-mod(G.player.stats.int)}</span> + ${mod(G.player.stats.int)} = ${r}</div>`);
+if(r>=11){
+G.player.inventory.push('Health Potion');
+const gold=d(8)+3;G.player.gold+=gold;
+SFX.play('loot');narrate(`<span class="loot-text">You find a Health Potion and ${gold} gold hidden under a bedroll!</span>`);
+}else{narrate(`<em>You search thoroughly but find nothing of value. Whatever was here, someone else found it first.</em>`);}
+updateSidebar();
+setChoices([{text:'Continue onward...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Move on (safer)',action:()=>{clearNarrative();presentAdventure();}}
+]);
+},
+()=>{// River crossing
+narrate(`<em>A swollen river blocks your path through ${desc}. The current is strong, and the water looks dangerously deep. A fallen log offers a precarious bridge.</em>\n\nYou eye the log warily. "I don't trust that thing."`);
+setChoices([
+{text:'Cross the log (Dex check DC 12)',action:()=>{
+const r=d20()+mod(G.player.stats.dex);
+SFX.play('dice');
+narrate(`<div class="roll-result">Dexterity Check (DC 12): <span class="die-val">${r-mod(G.player.stats.dex)}</span> + ${mod(G.player.stats.dex)} = ${r}</div>`);
+if(r>=12){
+narrate(`<em>You balance carefully across the log. On the far bank, you spot something glinting in the mud.</em>`);
+const gold=d(12)+5;G.player.gold+=gold;
+SFX.play('loot');narrate(`<span class="gold-text">Found ${gold} gold coins washed downstream!</span>`);
+}else{
+const dmg=d(4)+1;G.player.hp=Math.max(1,G.player.hp-dmg);
+narrate(`<em>You slip halfway across and plunge into the icy water! You manage to swim to shore, but you're bruised and cold. ${dmg} damage taken.</em>`);
+SFX.play('hit');
+}
+updateSidebar();
+setChoices([{text:'Continue the journey...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Find another crossing (slow but safe)',action:()=>{
+narrate(`<em>You spend extra time searching and find a shallow ford downstream. Safe, but the detour costs time.</em>`);
+setChoices([{text:'Continue...',action:()=>{clearNarrative();presentAdventure();}}]);
+}}
+]);
+}
+];
+pick(events)();
+}
+
+function trapEncounter(){
+clearNarrative();
+const traps=[
+{name:'Pit Trap',desc:'The ground gives way beneath your feet!',stat:'dex',dc:13,dmg:()=>d(8)+2},
+{name:'Poison Dart Trap',desc:'Click! A volley of darts shoots from the wall!',stat:'dex',dc:14,dmg:()=>d(6)+3},
+{name:'Arcane Rune',desc:'A glowing rune flares to life as you step near it!',stat:'int',dc:12,dmg:()=>d(10)+2},
+{name:'Tripwire',desc:'A thin wire catches your ankle -- you hear a mechanism click!',stat:'dex',dc:11,dmg:()=>d(6)+1},
+{name:'Collapsing Ceiling',desc:'Cracks spider across the ceiling above you!',stat:'str',dc:14,dmg:()=>d(10)+4}
+];
+const trap=pick(traps);
+narrate(`<em>As you proceed cautiously, your instincts scream a warning!</em>\n\n<strong>"${trap.name}!"</strong>\n\n<em>${trap.desc}</em>`);
+narrate(`\n<span class="dm-label">Roll a ${trap.stat.toUpperCase()} saving throw! (DC ${trap.dc})</span>`);
+setChoices([{text:`Roll ${trap.stat.toUpperCase()} Save (DC ${trap.dc})`,action:()=>{
+const r=d20();const total=r+mod(G.player.stats[trap.stat]);
+SFX.play('dice');
+narrate(`<div class="roll-result">${trap.stat.toUpperCase()} Save: <span class="die-val">${r}</span> + ${mod(G.player.stats[trap.stat])} = ${total} vs DC ${trap.dc}</div>`);
+if(total>=trap.dc){
+narrate(`<em>You react just in time! The ${trap.name.toLowerCase()} narrowly misses you.</em>`);
+addLog(`Avoided ${trap.name}!`);
+const xp=15+G.player.level*5;G.player.xp+=xp;
+narrate(`<span class="xp-text">+${xp} XP for quick reflexes!</span>`);
+}else{
+const dmg=trap.dmg();
+G.player.hp=Math.max(1,G.player.hp-dmg);
+SFX.play('hit');
+narrate(`<span class="combat-hit">The ${trap.name.toLowerCase()} catches you! You take ${dmg} damage!</span>`);
+addLog(`Hit by ${trap.name}: -${dmg} HP.`);
+}
+updateSidebar();
+setChoices([{text:'Proceed carefully...',action:()=>{clearNarrative();presentAdventure();}}]);
+}}]);
+}
+
+function treasureFind(){
+clearNarrative();
+const scenarios=[
+`<em>A glint of metal catches your eye -- half-buried in the earth is an old iron chest! The lock is rusted but still holds.</em>`,
+`<em>Behind a waterfall, you discover a hidden alcove. Inside, a dusty leather sack sits atop a flat stone.</em>`,
+`<em>The skeleton of a long-dead adventurer slumps against a wall, their pack still intact beside them. Perhaps their loss can be your gain...</em>`
+];
+narrate(pick(scenarios));
+setChoices([
+{text:'Open it! (Dex check DC 10 to pick lock)',action:()=>{
+const r=d20()+mod(G.player.stats.dex);
+SFX.play('dice');
+narrate(`<div class="roll-result">Dexterity Check (DC 10): <span class="die-val">${r-mod(G.player.stats.dex)}</span> + ${mod(G.player.stats.dex)} = ${r}</div>`);
+if(r>=10){
+const gold=d(20)+10+G.player.level*5;G.player.gold+=gold;
+SFX.play('loot');
+narrate(`<span class="loot-text">The lock clicks open! Inside you find ${gold} gold!</span>`);
+if(d(100)<=50){
+const loot=pick([...LOOT_WEAPONS,...LOOT_ARMOR].filter(l=>l.tier<=Math.ceil(G.player.level/2)+1));
+if(loot){G.player.inventory.push(loot.name);narrate(`<span class="loot-text">You also find: ${loot.name}!</span>`);}
+}
+if(d(100)<=30){G.player.inventory.push('Health Potion');narrate(`<span class="loot-text">And a Health Potion!</span>`);}
+}else{
+narrate(`<em>The lock resists your attempts. In frustration, you force it open but a small blade springs out!</em>`);
+const dmg=d(4);G.player.hp=Math.max(1,G.player.hp-dmg);SFX.play('hit');
+narrate(`<span class="combat-hit">Trapped! ${dmg} damage from the hidden blade.</span>`);
+const gold=d(10)+5;G.player.gold+=gold;narrate(`<span class="gold-text">At least you find ${gold} gold inside.</span>`);
+}
+addLog('Found treasure!');updateSidebar();
+setChoices([{text:'Continue your adventure...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Leave it (might be trapped)',action:()=>{
+narrate(`<em>Wisdom sometimes means knowing when to walk away. You leave the treasure and continue onward.</em>`);
+setChoices([{text:'Continue...',action:()=>{clearNarrative();presentAdventure();}}]);
+}}
+]);
+}
+
+function mysteriousStranger(){
+clearNarrative();
+const strangers=[
+{desc:`<em>A cloaked figure steps from the treeline, hands raised in peace. Their face is hidden, but their voice is warm and measured.</em>\n\n"I mean you no harm, traveler. I am but a wanderer with a proposition..."`,
+choices:[
+{text:'Hear them out',action:()=>{
+const r=d20()+mod(G.player.stats.wis);
+SFX.play('dice');
+narrate(`<div class="roll-result">Wisdom Check (DC 10): <span class="die-val">${r-mod(G.player.stats.wis)}</span> + ${mod(G.player.stats.wis)} = ${r}</div>`);
+if(r>=10){
+narrate(`<em>"I can see you are true of heart. Take this -- you will need it more than I."</em>`);
+G.player.inventory.push('Health Potion');G.player.inventory.push('Health Potion');
+const gold=d(15)+10;G.player.gold+=gold;
+SFX.play('loot');narrate(`<span class="loot-text">The stranger gives you 2 Health Potions and ${gold} gold!</span>`);
+}else{
+narrate(`<em>Something feels off. You accept their offer, but the "potion" they give you tastes strange...</em>`);
+const dmg=d(4);G.player.hp=Math.max(1,G.player.hp-dmg);SFX.play('hit');
+narrate(`<span class="combat-hit">It was poison! -${dmg} HP. The stranger vanishes into the shadows.</span>`);
+}
+updateSidebar();setChoices([{text:'Continue...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Refuse and walk away',action:()=>{narrate(`<em>You politely decline and continue on your way. The stranger watches you go in silence.</em>`);
+setChoices([{text:'Continue...',action:()=>{clearNarrative();presentAdventure();}}]);}}
+]},
+{desc:`<em>An old woman sits beside the road, a crystal ball before her on a faded cloth. She beckons with a gnarled finger.</em>\n\n"Come, let me read your fortune, brave one. For a small offering of gold, I can reveal what lies ahead..."`,
+choices:[
+{text:'Pay 15 gold for a reading',action:()=>{
+if(G.player.gold>=15){G.player.gold-=15;
+const fortunes=['Your next battle will be fierce, but victory is assured if you stand firm.','A great treasure awaits in the darkness ahead.','Beware the one who smiles -- they are not what they seem.','The stars favor you. Fortune smiles upon your quest.'];
+narrate(`<em>The crystal ball swirls with mist. "${pick(fortunes)}"</em>`);
+// buff: small stat boost for narrative flavor, plus a bonus item
+G.player.inventory.push('Potion of Fortune');
+SFX.play('loot');narrate(`<span class="loot-text">She slips you a Potion of Fortune!</span>`);
+}else{narrate(`<em>You lack the coin. The old woman shrugs and returns to her crystal ball.</em>`);}
+updateSidebar();setChoices([{text:'Continue...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Decline politely',action:()=>{narrate(`<em>"Your loss, dear. The road is long and full of surprises..."</em>`);
+setChoices([{text:'Continue...',action:()=>{clearNarrative();presentAdventure();}}]);}}
+]}
+];
+const s=pick(strangers);
+narrate(s.desc);
+setChoices(s.choices);
+}
+
+function campEvent(){
+clearNarrative();
+narrate(`<em>Night falls and you make camp beneath the stars. The fire crackles as the heavens wheel overhead. You settle in, keeping your weapon close.</em>\n\nThe warmth of the campfire is a welcome comfort after the day's hardships.`);
+setChoices([
+{text:'Rest and recover',action:()=>{
+const heal=d(6)+mod(G.player.stats.con)+2;
+G.player.hp=Math.min(G.player.maxHp,G.player.hp+heal);
+G.player.mana=Math.min(G.player.maxMana,G.player.mana+Math.floor(G.player.maxMana/3));
+SFX.play('heal');
+narrate(`<em>A peaceful night's rest restores your strength.</em>\n<span class="combat-heal">You recover ${heal} HP.</span>`);
+updateSidebar();
+setChoices([{text:'Break camp and continue...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Reflect on your journey (gain XP)',action:()=>{
+narrate(`<em>You sit by the fire, reflecting on the battles fought and the lessons learned. The quiet solitude sharpens your focus. Every scar tells a story, and every story makes you stronger.</em>`);
+const xp=10+G.player.level*3;G.player.xp+=xp;
+narrate(`<span class="xp-text">+${xp} XP from quiet reflection.</span>`);
+updateSidebar();
+setChoices([{text:'Break camp...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Keep watch (Perception check)',action:()=>{
+const r=d20()+mod(G.player.stats.wis);
+SFX.play('dice');
+narrate(`<div class="roll-result">Perception Check (DC 13): <span class="die-val">${r-mod(G.player.stats.wis)}</span> + ${mod(G.player.stats.wis)} = ${r}</div>`);
+if(r>=13){
+narrate(`<em>Your vigilance pays off! You spot movement in the treeline -- bandits planning an ambush. You prepare a counter-ambush, driving them off before they can strike.</em>`);
+const gold=d(20)+15;G.player.gold+=gold;G.player.xp+=30;
+SFX.play('loot');narrate(`<span class="loot-text">The bandits flee, dropping ${gold} gold!</span>\n<span class="xp-text">+30 XP</span>`);
+}else{
+narrate(`<em>The night passes uneventfully. You nod off briefly but nothing happens -- this time.</em>`);
+G.player.hp=Math.min(G.player.maxHp,G.player.hp+d(4));
+}
+updateSidebar();
+setChoices([{text:'Break camp...',action:()=>{clearNarrative();presentAdventure();}}]);
+}}
+]);
+}
+
+function shrineEvent(){
+clearNarrative();
+const shrines=[
+{name:'Shrine of Valor',stat:'str',desc:'A weathered stone shrine to an ancient war god. A sword is carved into the altar.'},
+{name:'Shrine of Shadows',stat:'dex',desc:'A dark alcove with a shrine to the god of thieves. A silver coin gleams on the altar.'},
+{name:'Shrine of Wisdom',stat:'wis',desc:'A serene pool surrounds a moss-covered shrine. The air hums with quiet power.'},
+{name:'Shrine of Knowledge',stat:'int',desc:'An ancient library shrine, books turned to stone. Runes glow faintly on the pedestal.'}
+];
+const shrine=pick(shrines);
+narrate(`<em>${shrine.desc}</em>\n\nYou study the shrine carefully. "These old shrines sometimes grant blessings to the worthy... but they can also curse the unworthy."`);
+setChoices([
+{text:`Pray at the ${shrine.name}`,action:()=>{
+const r=d20();
+SFX.play('dice');
+narrate(`<div class="roll-result">Divine Favor: <span class="die-val">${r}</span></div>`);
+if(r>=10){
+G.player.stats[shrine.stat]+=1;
+SFX.play('levelup');
+narrate(`<span class="loot-text">The shrine glows with warm light! Your ${shrine.stat.toUpperCase()} permanently increases by 1!</span> (Now: ${G.player.stats[shrine.stat]})`);
+G.player.hp=G.player.maxHp;G.player.mana=G.player.maxMana;
+narrate(`<span class="combat-heal">You feel completely restored!</span>`);
+}else{
+const dmg=d(6)+2;G.player.hp=Math.max(1,G.player.hp-dmg);
+SFX.play('hit');
+narrate(`<span class="combat-hit">The shrine pulses with dark energy! You take ${dmg} damage as the old magic lashes out.</span>`);
+}
+updateSidebar();
+setChoices([{text:'Continue your journey...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Pass by respectfully',action:()=>{
+narrate(`<em>You bow your head in respect and continue on your way. Some powers are best left undisturbed.</em>`);
+setChoices([{text:'Continue...',action:()=>{clearNarrative();presentAdventure();}}]);
+}}
+]);
+}
+
+function questEvent(){
+clearNarrative();
+const activeQuest=G.quests.find(q=>!q.done);
+if(activeQuest){
+activeQuest.progress++;
+narrate(`<em>Your travels bring you closer to completing your quest: <strong>${activeQuest.name}</strong>.</em>\n\nA weathered signpost points the way. You study it carefully. "Making progress. ${activeQuest.goal-activeQuest.progress} more steps to go."\n\n<span class="xp-text">Quest progress: ${activeQuest.progress}/${activeQuest.goal}</span>`);
+if(activeQuest.progress>=activeQuest.goal){
+activeQuest.done=true;
+const qxp=100*G.player.level;const qgold=50*G.player.level;
+G.player.xp+=qxp;G.player.gold+=qgold;
+SFX.play('levelup');
+narrate(`\n<span class="loot-text">&#10003; QUEST COMPLETE: ${activeQuest.name}! +${qxp} XP, +${qgold} Gold</span>`);
+addLog(`Quest done: ${activeQuest.name}.`);
+addQuest();
+}
+}else{
+narrate(`<em>A notice board at a crossroads catches your eye. New quests are posted...</em>`);
+addQuest();
+narrate(`<span class="loot-text">New quest: ${G.quests[G.quests.length-1].name}</span>`);
+}
+updateSidebar();
+setChoices([{text:'Continue your adventure...',action:()=>{clearNarrative();presentAdventure();}}]);
+}
+
+function stormEvent(){
+clearNarrative();
+narrate(`<em>Dark clouds roll in with unnatural speed. Thunder cracks across the sky and rain lashes down upon you. Lightning illuminates the landscape in stark white flashes.</em>\n\n"Need to find shelter!" you shout against the howling wind.`);
+setChoices([
+{text:'Seek shelter in a cave',action:()=>{
+const r=d20()+mod(G.player.stats.wis);
+SFX.play('dice');
+narrate(`<div class="roll-result">Survival Check (DC 11): <span class="die-val">${r-mod(G.player.stats.wis)}</span> + ${mod(G.player.stats.wis)} = ${r}</div>`);
+if(r>=11){
+narrate(`<em>You find a dry cave and wait out the storm. Inside, ancient cave paintings depict a great battle...</em>`);
+G.player.xp+=20;narrate(`<span class="xp-text">+20 XP from studying the paintings.</span>`);
+if(d(100)<=30){
+const gold=d(15)+5;G.player.gold+=gold;
+SFX.play('loot');narrate(`<span class="gold-text">You find ${gold} gold tucked in a crevice!</span>`);
+}
+}else{
+narrate(`<em>The cave you find is already occupied! A startled bear charges at you before you can react!</em>`);
+const dmg=d(6)+3;G.player.hp=Math.max(1,G.player.hp-dmg);
+SFX.play('hit');narrate(`<span class="combat-hit">The bear mauls you before fleeing! -${dmg} HP</span>`);
+}
+updateSidebar();
+setChoices([{text:'Continue when the storm passes...',action:()=>{clearNarrative();presentAdventure();}}]);
+}},
+{text:'Push through the storm (Con check DC 13)',action:()=>{
+const r=d20()+mod(G.player.stats.con);
+SFX.play('dice');
+narrate(`<div class="roll-result">Constitution Check (DC 13): <span class="die-val">${r-mod(G.player.stats.con)}</span> + ${mod(G.player.stats.con)} = ${r}</div>`);
+if(r>=13){
+narrate(`<em>Gritting your teeth against the elements, you push through. The storm breaks and golden sunlight bathes the land. Your resolve has been tested and found worthy.</em>`);
+G.player.xp+=40;narrate(`<span class="xp-text">+40 XP for enduring the storm!</span>`);
+}else{
+const dmg=d(4)+2;G.player.hp=Math.max(1,G.player.hp-dmg);
+narrate(`<span class="combat-hit">The storm batters you! You lose ${dmg} HP.</span>`);
+SFX.play('hit');
+}
+updateSidebar();
+setChoices([{text:'Continue...',action:()=>{clearNarrative();presentAdventure();}}]);
+}}
+]);
+}
+
+// ========== LEVELING ==========
+function checkLevelUp(){
+while(G.player.xp>=G.player.xpNext){
+G.player.xp-=G.player.xpNext;
+G.player.level++;
+G.player.xpNext=Math.floor(G.player.xpNext*1.5);
+const hpGain=d(CLASS_DATA[G.player.class].hpBase)+mod(G.player.stats.con);
+G.player.maxHp+=hpGain;G.player.hp=G.player.maxHp;
+G.player.maxMana+=Math.floor(CLASS_DATA[G.player.class].manaBase/3);G.player.mana=G.player.maxMana;
+// boost a random stat
+const statKeys=['str','dex','con','int','wis','cha'];
+const boostStat=pick(statKeys);
+G.player.stats[boostStat]+=1;
+SFX.play('levelup');
+narrate(`\n<span class="loot-text" style="font-size:19px">&#9733; LEVEL UP! You are now Level ${G.player.level}! &#9733;</span>\n<span class="combat-heal">+${hpGain} Max HP | ${boostStat.toUpperCase()} +1 | Full heal!</span>`);
+addLog(`LEVEL UP to ${G.player.level}! +${hpGain} Max HP, ${boostStat.toUpperCase()} +1.`);
+updateSidebar();
+}
+}
+
+// ========== GAME OVER ==========
+function gameOver(){
+SFX.play('death');
+clearNarrative();
+narrate(`<em>The world grows dark. Your wounds are too grievous, your strength spent. As consciousness fades, you collapse to the cold ground.</em>\n\n"Not... like this..." you whisper, clutching your weapon one last time.\n\n<em>The light fades. Your adventure ends here, but the tales of <strong>${G.player.name}</strong> the ${G.player.class} will be told for generations.</em>\n\n<strong style="color:#e74c3c;font-size:22px">&#9760; GAME OVER &#9760;</strong>\n\nYou reached <strong>Level ${G.player.level}</strong> with <strong>${G.player.gold} gold</strong>.\nQuests completed: <strong>${G.quests.filter(q=>q.done).length}</strong>\nEncounters survived: <strong>${G.events}</strong>.`);
+setChoices([{text:'Start a New Adventure',action:()=>{G={phase:'create',player:null,quests:[],turn:0,encounter:null,location:'wilderness',combatLog:[],events:0};renderCreate();}}]);
+}
+
+// ========== EQUIP FROM INVENTORY ==========
+// Simple auto-equip: on finding weapons/armor, check if better
+function tryAutoEquip(){
+const p=G.player;
+p.inventory.forEach((item,idx)=>{
+const wMatch=item.match(/\+(\d+)\)$/);
+const aMatch=item.match(/AC (\d+)\)/);
+if(wMatch){
+const bonus=parseInt(wMatch[1]);
+if(bonus>p.weaponBonus){
+const old=p.equipment.weapon;
+p.equipment.weapon=item;p.weaponBonus=bonus;
+p.inventory[idx]=old;
+narrate(`<span class="loot-text">Equipped ${item}! (replaced ${old})</span>`);
+}
+}else if(aMatch){
+const ac=parseInt(aMatch[1]);
+if(ac>p.ac){
+const old=p.equipment.armor;
+p.equipment.armor=item;p.ac=ac;
+p.inventory[idx]=old;
+narrate(`<span class="loot-text">Equipped ${item}! (replaced ${old})</span>`);
+}
+}
+});
+// clean up inventory - remove equipped items that were swapped
+p.inventory=p.inventory.filter(i=>i!==p.equipment.weapon&&i!==p.equipment.armor);
+}
+
+// Override loot narration to auto-equip
+const origNarrate=narrate;
+const origCombatVictory=combatVictory;
+
+// Patch: after adding loot to inventory, try auto-equip
+const _origPresentAdv=presentAdventure;
+
+// ========== INIT ==========
+renderCreate();
 </script>
 </body>
 </html>
