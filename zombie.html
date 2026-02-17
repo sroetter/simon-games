@@ -457,7 +457,7 @@ function spawnZombie(){
   if(wave >= 3) pool.push('fast');
   if(wave >= 5) pool.push('tank');
   if(wave >= 7) pool.push('exploder');
-  if(wave >= 8) pool.push('spitter');
+  if(wave >= 10) pool.push('spitter');
   if(wave >= 10) pool.push('boss');
   if(wave >= 30) pool.push('mega_boss');
   const type = pool[Math.floor(Math.random() * pool.length)];
@@ -467,7 +467,7 @@ function spawnZombie(){
     case 'fast':     hp=20;  speed=1.1; size=8;  color='#b5cc18'; bldgDmg=12; break;
     case 'tank':     hp=120; speed=.3;  size=16; color='#8B5E3C'; bldgDmg=25; break;
     case 'exploder': hp=40;  speed=.6;  size=11; color='#e74c3c'; bldgDmg=15; break;
-    case 'spitter':   hp=35;   speed=.7;  size=9;  color='#9b59b6'; bldgDmg=8;  break;
+    case 'spitter':   hp=22;   speed=.5;  size=9;  color='#9b59b6'; bldgDmg=5;  break;
     case 'boss':      hp=500;  speed=.2;  size=22; color='#c0392b'; bldgDmg=40; break;
     case 'mega_boss': hp=2000; speed=.15; size=30; color='#8b0000'; bldgDmg=60; break;
   }
@@ -984,11 +984,11 @@ function update(){
       const dist = Math.hypot(z.x-player.x, z.y-player.y);
       if(dist < 200 && dist > 40){
         z.pAtkTimer++;
-        if(z.pAtkTimer >= 80){
+        if(z.pAtkTimer >= 130){
           z.pAtkTimer = 0;
           const sa = Math.atan2(player.y-z.y, player.x-z.x);
-          towerProj.push({ x:z.x, y:z.y, vx:Math.cos(sa)*5, vy:Math.sin(sa)*5,
-            dmg:8, splash:0, life:60, kind:'acid', color:'#9b59b6', size:4, hostile:true });
+          towerProj.push({ x:z.x, y:z.y, vx:Math.cos(sa)*4, vy:Math.sin(sa)*4,
+            dmg:5, splash:0, life:50, kind:'acid', color:'#9b59b6', size:4, hostile:true });
           sfx('hit');
         }
       }
