@@ -1649,21 +1649,24 @@ function loadGame(){
 function hasSave(){ return !!localStorage.getItem('zombieSurvivalSave'); }
 
 /* ===================== START / RESTART ===================== */
+function startPlaying(){
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('gameover-screen').style.display = 'none';
+  state = 'playing';
+  if(audio.state === 'suspended') audio.resume();
+}
+
 document.getElementById('hs-start').textContent = highScore > 0 ? 'High Score: '+highScore+' kills' : '';
 if(hasSave()) document.getElementById('load-btn').style.display = 'inline-block';
 
 document.getElementById('start-btn').addEventListener('click', () => {
-  document.getElementById('start-screen').style.display = 'none';
   initGame();
-  state = 'playing';
-  if(audio.state === 'suspended') audio.resume();
+  startPlaying();
 });
 
 document.getElementById('load-btn').addEventListener('click', () => {
   if(loadGame()){
-    document.getElementById('start-screen').style.display = 'none';
-    state = 'playing';
-    if(audio.state === 'suspended') audio.resume();
+    startPlaying();
     floatTexts.push({ x:W/2, y:H/2-20, text:'GAME LOADED!', color:'#2ecc71', size:24, life:80, vy:-.5 });
   }
 });
@@ -1676,13 +1679,18 @@ document.getElementById('save-btn').addEventListener('click', () => {
 });
 
 document.getElementById('restart-btn').addEventListener('click', () => {
-  document.getElementById('gameover-screen').style.display = 'none';
   initGame();
-  state = 'playing';
+  startPlaying();
 });
 
-// init and start loop
-initGame();
+// Auto-load save on page open, or show start screen
+if(hasSave()){
+  loadGame();
+  startPlaying();
+  floatTexts.push({ x:W/2, y:H/2-20, text:'GAME LOADED!', color:'#2ecc71', size:24, life:80, vy:-.5 });
+} else {
+  initGame();
+}
 gameLoop();
 
 })();
