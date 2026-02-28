@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stack - Simon's Game Gallery</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e1a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            text-decoration: none;
+            color: #7ea8e0;
+            background: rgba(10, 15, 40, 0.8);
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+        .back-btn:hover {
+            background: rgba(30, 60, 150, 0.5);
+            border-color: rgba(100, 150, 255, 0.5);
+            color: white;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+        }
+
+        #scoreDisplay {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            text-align: right;
+            z-index: 10;
+            font-family: 'Cinzel', serif;
+        }
+        #scoreDisplay .score-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 2px;
+        }
+        #scoreDisplay .score-value {
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(180deg, #fff 0%, #aac 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+        #scoreDisplay .high-score {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 2px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(5, 8, 20, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+        }
+        .overlay.hidden { display: none; }
+
+        .overlay h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 56px;
+            font-weight: 900;
+            background: linear-gradient(180deg, #ffd700 0%, #ff6600 50%, #ff3300 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 25px rgba(255, 160, 0, 0.4));
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+
+        .overlay .subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 30px;
+        }
+
+        .overlay .instructions {
+            font-size: 15px;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .overlay .start-hint {
+            font-size: 20px;
+            color: rgba(255,255,255,0.8);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .overlay .final-score {
+            font-family: 'Cinzel', serif;
+            font-size: 72px;
+            font-weight: 900;
+            background: linear-gradient(180deg, #ffd700 0%, #ff6600 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 10px 0;
+        }
+
+        .overlay .new-best {
+            font-size: 18px;
+            color: #ffd700;
+            margin-bottom: 20px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        #perfectText {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cinzel', serif;
+            font-size: 48px;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 215, 0, 0.3);
+            pointer-events: none;
+            z-index: 15;
+            opacity: 0;
+            transition: none;
+        }
+
+        #comboText {
+            position: fixed;
+            top: calc(50% + 50px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffaa00;
+            text-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+            pointer-events: none;
+            z-index: 15;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">&#8592; Gallery</a>
+
+    <div id="scoreDisplay" class="hidden">
+        <div class="score-label">SCORE</div>
+        <div class="score-value" id="scoreValue">0</div>
+        <div class="high-score" id="highScoreValue">BEST: 0</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="perfectText">PERFECT!</div>
+    <div id="comboText"></div>
+
+    <div id="startOverlay" class="overlay">
+        <h1>STACK</h1>
+        <div class="subtitle">Build the tallest tower you can</div>
+        <div class="instructions">
+            Blocks slide back and forth<br>
+            Click or press Space to drop<br>
+            Line it up perfectly for bonus points!<br>
+            Miss the edge and it gets sliced off
+        </div>
+        <div class="start-hint">Click or press Space to start</div>
+    </div>
+
+    <div id="gameOverOverlay" class="overlay hidden">
+        <h1>GAME OVER</h1>
+        <div class="subtitle">Your score</div>
+        <div class="final-score" id="finalScore">0</div>
+        <div class="new-best hidden" id="newBest">NEW HIGH SCORE!</div>
+        <div class="subtitle" id="bestScoreText">Best: 0</div>
+        <div class="start-hint">Click or press Space to play again</div>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        // --- Canvas setup ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let W, H;
+
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- DOM refs ---
+        const startOverlay = document.getElementById('startOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const scoreValue = document.getElementById('scoreValue');
+        const highScoreValue = document.getElementById('highScoreValue');
+        const finalScoreEl = document.getElementById('finalScore');
+        const newBestEl = document.getElementById('newBest');
+        const bestScoreTextEl = document.getElementById('bestScoreText');
+        const perfectTextEl = document.getElementById('perfectText');
+        const comboTextEl = document.getElementById('comboText');
+
+        // --- Audio ---
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function ensureAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playPlace() {
+            ensureAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440 + score * 15, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function playPerfect() {
+            ensureAudio();
+            const t = audioCtx.currentTime;
+            [523, 659, 784].forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, t + i * 0.08);
+                gain.gain.setValueAtTime(0.12, t + i * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.4);
+                osc.start(t + i * 0.08);
+                osc.stop(t + i * 0.08 + 0.4);
+            });
+        }
+
+        function playGameOver() {
+            ensureAudio();
+            const t = audioCtx.currentTime;
+            [330, 262, 196].forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, t + i * 0.2);
+                gain.gain.setValueAtTime(0.15, t + i * 0.2);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.2 + 0.5);
+                osc.start(t + i * 0.2);
+                osc.stop(t + i * 0.2 + 0.5);
+            });
+        }
+
+        // --- 3D Isometric Helpers ---
+        // We use a simple isometric projection.
+        // World: x = right, z = into screen (alternating slide axis), y = up
+        const ISO_ANGLE = Math.PI / 6; // 30 degrees
+        const SCALE = 1.0;
+        const BLOCK_HEIGHT = 22;
+        const INITIAL_WIDTH = 200;
+        const INITIAL_DEPTH = 200;
+        const PERFECT_TOLERANCE = 8;
+
+        function isoProject(x, y, z) {
+            // Isometric projection: x goes right-down, z goes left-down, y goes up
+            const px = (x - z) * Math.cos(ISO_ANGLE) * SCALE;
+            const py = -y * SCALE + (x + z) * Math.sin(ISO_ANGLE) * SCALE;
+            return { x: px, y: py };
+        }
+
+        // --- Color generation ---
+        function hslColor(h, s, l) {
+            return `hsl(${h}, ${s}%, ${l}%)`;
+        }
+
+        function getBlockColor(index) {
+            const hue = (index * 28 + 200) % 360;
+            return {
+                top: hslColor(hue, 70, 60),
+                left: hslColor(hue, 65, 42),
+                right: hslColor(hue, 65, 50),
+            };
+        }
+
+        // --- Game State ---
+        let state = 'start'; // 'start', 'playing', 'gameover'
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('stackHighScore')) || 0;
+        let combo = 0;
+        let stack = []; // Array of { x, z, width, depth, color }
+        let currentBlock = null; // { x, z, width, depth, dir: 'x'|'z', moving: true, speed, color }
+        let fallingPieces = []; // { x, z, width, depth, vy, y, color, opacity }
+        let cameraY = 0;
+        let targetCameraY = 0;
+        let perfectAnim = 0;
+        let lastTime = 0;
+        let animFrameId = null;
+
+        highScoreValue.textContent = 'BEST: ' + highScore;
+
+        function resetGame() {
+            score = 0;
+            combo = 0;
+            highScore = parseInt(localStorage.getItem('stackHighScore')) || 0;
+            highScoreValue.textContent = 'BEST: ' + highScore;
+            stack = [];
+            fallingPieces = [];
+            currentBlock = null;
+            cameraY = 0;
+            targetCameraY = 0;
+
+            // Base block
+            stack.push({
+                x: 0,
+                z: 0,
+                width: INITIAL_WIDTH,
+                depth: INITIAL_DEPTH,
+                color: getBlockColor(0)
+            });
+
+            spawnBlock();
+            scoreValue.textContent = '0';
+            scoreDisplay.classList.remove('hidden');
+        }
+
+        function spawnBlock() {
+            const prev = stack[stack.length - 1];
+            const index = stack.length;
+            const dir = index % 2 === 1 ? 'x' : 'z';
+            const speed = 2.75;
+            const startOffset = Math.max(INITIAL_WIDTH, INITIAL_DEPTH) + 200;
+
+            currentBlock = {
+                x: dir === 'x' ? -startOffset : prev.x,
+                z: dir === 'z' ? -startOffset : prev.z,
+                width: prev.width,
+                depth: prev.depth,
+                dir: dir,
+                speed: speed,
+                moving: true,
+                color: getBlockColor(index)
+            };
+        }
+
+        function placeBlock() {
+            if (!currentBlock || !currentBlock.moving) return;
+            currentBlock.moving = false;
+
+            const prev = stack[stack.length - 1];
+            const dir = currentBlock.dir;
+            const blockY = stack.length * BLOCK_HEIGHT;
+
+            // offset = how far the current block center is from the prev block center
+            // overlap = remaining size along the sliding axis
+            let offset, overlap;
+            if (dir === 'x') {
+                offset = currentBlock.x - prev.x;
+                overlap = prev.width - Math.abs(offset);
+            } else {
+                offset = currentBlock.z - prev.z;
+                overlap = prev.depth - Math.abs(offset);
+            }
+
+            if (overlap <= 0) {
+                // Missed entirely — whole block falls, game over
+                fallingPieces.push({
+                    x: currentBlock.x,
+                    z: currentBlock.z,
+                    width: currentBlock.width,
+                    depth: currentBlock.depth,
+                    y: blockY,
+                    vy: 0,
+                    color: currentBlock.color,
+                    opacity: 1
+                });
+                gameOver();
+                return;
+            }
+
+            // Check for perfect placement
+            let isPerfect = Math.abs(offset) < PERFECT_TOLERANCE;
+
+            if (isPerfect) {
+                // Snap to previous block position
+                stack.push({
+                    x: prev.x,
+                    z: prev.z,
+                    width: prev.width,
+                    depth: prev.depth,
+                    color: currentBlock.color
+                });
+            } else {
+                // The placed block center is midway between the overlap region
+                // overlap region starts at max(prevLeft, curLeft) and ends at min(prevRight, curRight)
+                if (dir === 'x') {
+                    const newX = prev.x + offset / 2;
+                    stack.push({
+                        x: newX,
+                        z: prev.z,
+                        width: overlap,
+                        depth: prev.depth,
+                        color: currentBlock.color
+                    });
+
+                    // Cut piece: the part that doesn't overlap
+                    const cutWidth = currentBlock.width - overlap;
+                    const cutX = offset > 0
+                        ? newX + overlap / 2 + cutWidth / 2
+                        : newX - overlap / 2 - cutWidth / 2;
+                    fallingPieces.push({
+                        x: cutX,
+                        z: prev.z,
+                        width: cutWidth,
+                        depth: prev.depth,
+                        y: blockY,
+                        vy: 0,
+                        color: currentBlock.color,
+                        opacity: 1
+                    });
+                } else {
+                    const newZ = prev.z + offset / 2;
+                    stack.push({
+                        x: prev.x,
+                        z: newZ,
+                        width: prev.width,
+                        depth: overlap,
+                        color: currentBlock.color
+                    });
+
+                    const cutDepth = currentBlock.depth - overlap;
+                    const cutZ = offset > 0
+                        ? newZ + overlap / 2 + cutDepth / 2
+                        : newZ - overlap / 2 - cutDepth / 2;
+                    fallingPieces.push({
+                        x: prev.x,
+                        z: cutZ,
+                        width: prev.width,
+                        depth: cutDepth,
+                        y: blockY,
+                        vy: 0,
+                        color: currentBlock.color,
+                        opacity: 1
+                    });
+                }
+                combo = 0;
+            }
+
+            // Scoring
+            score++;
+            if (isPerfect) {
+                combo++;
+                score += combo;
+                playPerfect();
+                showPerfect(combo);
+            } else {
+                playPlace();
+            }
+
+            scoreValue.textContent = score;
+
+            // Camera
+            targetCameraY = Math.max(0, (stack.length - 6) * BLOCK_HEIGHT);
+
+            // Spawn next
+            spawnBlock();
+        }
+
+        function showPerfect(comboCount) {
+            perfectTextEl.style.opacity = '1';
+            perfectTextEl.style.transform = 'translate(-50%, -50%) scale(1.2)';
+            perfectTextEl.style.transition = 'none';
+
+            if (comboCount > 1) {
+                comboTextEl.textContent = comboCount + 'x COMBO!';
+                comboTextEl.style.opacity = '1';
+                comboTextEl.style.transition = 'none';
+            }
+
+            setTimeout(() => {
+                perfectTextEl.style.transition = 'opacity 0.8s, transform 0.8s';
+                perfectTextEl.style.opacity = '0';
+                perfectTextEl.style.transform = 'translate(-50%, -70%) scale(1)';
+                comboTextEl.style.transition = 'opacity 0.8s';
+                comboTextEl.style.opacity = '0';
+            }, 50);
+        }
+
+        function gameOver() {
+            state = 'gameover';
+            playGameOver();
+
+            let isNewBest = false;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('stackHighScore', highScore);
+                highScoreValue.textContent = 'BEST: ' + highScore;
+                isNewBest = true;
+            }
+
+            setTimeout(() => {
+                finalScoreEl.textContent = score;
+                bestScoreTextEl.textContent = 'Best: ' + highScore;
+                if (isNewBest) {
+                    newBestEl.classList.remove('hidden');
+                } else {
+                    newBestEl.classList.add('hidden');
+                }
+                gameOverOverlay.classList.remove('hidden');
+                scoreDisplay.classList.add('hidden');
+            }, 800);
+        }
+
+        // --- Drawing ---
+        function drawBlock(bx, bz, bw, bd, by, color, alpha) {
+            // Draw an isometric block
+            // bx, bz = world position (center), bw, bd = full width/depth
+            // by = world y (bottom of block)
+            const hw = bw / 2;
+            const hd = bd / 2;
+            const bh = BLOCK_HEIGHT;
+
+            // 8 corners
+            const frontLeftBottom = isoProject(bx - hw, by, bz + hd);
+            const frontRightBottom = isoProject(bx + hw, by, bz + hd);
+            const backRightBottom = isoProject(bx + hw, by, bz - hd);
+            const backLeftBottom = isoProject(bx - hw, by, bz - hd);
+
+            const frontLeftTop = isoProject(bx - hw, by + bh, bz + hd);
+            const frontRightTop = isoProject(bx + hw, by + bh, bz + hd);
+            const backRightTop = isoProject(bx + hw, by + bh, bz - hd);
+            const backLeftTop = isoProject(bx - hw, by + bh, bz - hd);
+
+            ctx.globalAlpha = alpha !== undefined ? alpha : 1;
+
+            // Top face
+            ctx.beginPath();
+            ctx.moveTo(frontLeftTop.x, frontLeftTop.y);
+            ctx.lineTo(backLeftTop.x, backLeftTop.y);
+            ctx.lineTo(backRightTop.x, backRightTop.y);
+            ctx.lineTo(frontRightTop.x, frontRightTop.y);
+            ctx.closePath();
+            ctx.fillStyle = color.top;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+
+            // Left face (front-left)
+            ctx.beginPath();
+            ctx.moveTo(frontLeftTop.x, frontLeftTop.y);
+            ctx.lineTo(frontRightTop.x, frontRightTop.y);
+            ctx.lineTo(frontRightBottom.x, frontRightBottom.y);
+            ctx.lineTo(frontLeftBottom.x, frontLeftBottom.y);
+            ctx.closePath();
+            ctx.fillStyle = color.left;
+            ctx.fill();
+            ctx.stroke();
+
+            // Right face (front-right)
+            ctx.beginPath();
+            ctx.moveTo(frontRightTop.x, frontRightTop.y);
+            ctx.lineTo(backRightTop.x, backRightTop.y);
+            ctx.lineTo(backRightBottom.x, backRightBottom.y);
+            ctx.lineTo(frontRightBottom.x, frontRightBottom.y);
+            ctx.closePath();
+            ctx.fillStyle = color.right;
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.globalAlpha = 1;
+        }
+
+        function draw(time) {
+            const dt = Math.min((time - lastTime) / 1000, 0.05);
+            lastTime = time;
+
+            ctx.clearRect(0, 0, W, H);
+
+            // Background gradient
+            const grad = ctx.createLinearGradient(0, 0, 0, H);
+            grad.addColorStop(0, '#0a0e1a');
+            grad.addColorStop(0.5, '#121830');
+            grad.addColorStop(1, '#1a1040');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+
+            // Draw some background stars
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            for (let i = 0; i < 50; i++) {
+                const sx = ((i * 137.5) % W);
+                const sy = ((i * 97.3 + i * i * 3.7) % H);
+                const sr = 0.5 + (i % 3) * 0.5;
+                ctx.beginPath();
+                ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Smooth camera
+            cameraY += (targetCameraY - cameraY) * 0.08;
+
+            // Center offset
+            const centerX = W / 2;
+            const centerY = H * 0.65;
+
+            ctx.save();
+            ctx.translate(centerX, centerY + cameraY * SCALE * Math.sin(ISO_ANGLE));
+
+            // Update current block position
+            if (state === 'playing' && currentBlock && currentBlock.moving) {
+                const range = Math.max(INITIAL_WIDTH, INITIAL_DEPTH) + 200;
+                if (currentBlock.dir === 'x') {
+                    currentBlock.x += currentBlock.speed;
+                    if (currentBlock.x > range) { currentBlock.x = range; currentBlock.speed *= -1; }
+                    if (currentBlock.x < -range) { currentBlock.x = -range; currentBlock.speed *= -1; }
+                } else {
+                    currentBlock.z += currentBlock.speed;
+                    if (currentBlock.z > range) { currentBlock.z = range; currentBlock.speed *= -1; }
+                    if (currentBlock.z < -range) { currentBlock.z = -range; currentBlock.speed *= -1; }
+                }
+            }
+
+            // Update falling pieces
+            for (let i = fallingPieces.length - 1; i >= 0; i--) {
+                const fp = fallingPieces[i];
+                fp.vy -= 400 * dt; // gravity
+                fp.y += fp.vy * dt;
+                fp.opacity -= dt * 0.8;
+                if (fp.opacity <= 0 || fp.y < -500) {
+                    fallingPieces.splice(i, 1);
+                }
+            }
+
+            // Draw stacked blocks (bottom to top)
+            const startIdx = Math.max(0, stack.length - 20);
+            for (let i = startIdx; i < stack.length; i++) {
+                const b = stack[i];
+                drawBlock(b.x, b.z, b.width, b.depth, i * BLOCK_HEIGHT, b.color);
+            }
+
+            // Draw current moving block
+            if (currentBlock && state === 'playing') {
+                const blockY = stack.length * BLOCK_HEIGHT;
+                drawBlock(currentBlock.x, currentBlock.z, currentBlock.width, currentBlock.depth, blockY, currentBlock.color);
+            }
+
+            // Draw falling pieces
+            for (const fp of fallingPieces) {
+                drawBlock(fp.x, fp.z, fp.width, fp.depth, fp.y, fp.color, fp.opacity);
+            }
+
+            ctx.restore();
+
+            if (state === 'playing' || state === 'gameover') {
+                animFrameId = requestAnimationFrame(draw);
+            }
+        }
+
+        // --- Input Handling ---
+        function handleInput(e) {
+            if (e.type === 'keydown' && e.code !== 'Space') return;
+            if (e.type === 'keydown') e.preventDefault();
+
+            ensureAudio();
+
+            if (state === 'start') {
+                state = 'playing';
+                startOverlay.classList.add('hidden');
+                resetGame();
+                if (animFrameId) cancelAnimationFrame(animFrameId);
+                lastTime = performance.now();
+                animFrameId = requestAnimationFrame(draw);
+                return;
+            }
+
+            if (state === 'playing') {
+                placeBlock();
+                return;
+            }
+
+            if (state === 'gameover') {
+                // Delay before allowing restart
+                gameOverOverlay.classList.add('hidden');
+                state = 'playing';
+                resetGame();
+                if (animFrameId) cancelAnimationFrame(animFrameId);
+                lastTime = performance.now();
+                animFrameId = requestAnimationFrame(draw);
+            }
+        }
+
+        document.addEventListener('keydown', handleInput);
+        canvas.addEventListener('click', handleInput);
+
+        // Prevent double-tap zoom on mobile
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handleInput(e);
+        });
+
+        // Initial draw for start screen background
+        function drawStartBg(time) {
+            lastTime = time || performance.now();
+            ctx.clearRect(0, 0, W, H);
+            const grad = ctx.createLinearGradient(0, 0, 0, H);
+            grad.addColorStop(0, '#0a0e1a');
+            grad.addColorStop(0.5, '#121830');
+            grad.addColorStop(1, '#1a1040');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            for (let i = 0; i < 50; i++) {
+                const sx = ((i * 137.5) % W);
+                const sy = ((i * 97.3 + i * i * 3.7) % H);
+                const sr = 0.5 + (i % 3) * 0.5;
+                ctx.beginPath();
+                ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw a demo stack
+            ctx.save();
+            ctx.translate(W / 2, H * 0.65);
+            for (let i = 0; i < 8; i++) {
+                const col = getBlockColor(i);
+                drawBlock(0, 0, INITIAL_WIDTH - i * 5, INITIAL_DEPTH - i * 5, i * BLOCK_HEIGHT, col, 0.5);
+            }
+            ctx.restore();
+
+            if (state === 'start') animFrameId = requestAnimationFrame(drawStartBg);
+        }
+        animFrameId = requestAnimationFrame(drawStartBg);
+
+    })();
+    </script>
+</body>
+</html>
