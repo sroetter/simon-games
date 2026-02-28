@@ -22,16 +22,16 @@
         .container {
             text-align: center;
             background: white;
-            padding: 60px 40px;
+            padding: 40px 30px;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 900px;
+            max-width: 1200px;
             width: 100%;
             margin: 0 auto;
         }
 
         h1 {
-            font-size: 56px;
+            font-size: 46px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #1e3c72 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -41,22 +41,22 @@
         }
 
         .subtitle {
-            font-size: 24px;
+            font-size: 22px;
             color: #666;
-            margin-bottom: 50px;
+            margin-bottom: 20px;
         }
 
         .games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
         }
 
         .game-card {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 15px;
-            padding: 40px 30px;
+            border-radius: 12px;
+            padding: 24px 18px;
             text-decoration: none;
             color: #333;
             transition: all 0.3s;
@@ -87,25 +87,25 @@
         }
 
         .game-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
+            font-size: 50px;
+            margin-bottom: 10px;
             position: relative;
             z-index: 1;
         }
 
         .game-title {
-            font-size: 32px;
+            font-size: 22px;
             font-weight: bold;
             color: #1e3c72;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             position: relative;
             z-index: 1;
         }
 
         .game-description {
-            font-size: 16px;
+            font-size: 13px;
             color: #666;
-            line-height: 1.6;
+            line-height: 1.5;
             position: relative;
             z-index: 1;
         }
@@ -175,6 +175,19 @@
             background: linear-gradient(135deg, #1a1a0a 0%, #2d3a1a 50%, #4a0a0a 100%);
         }
 
+        .game-card.stack {
+            background: linear-gradient(135deg, #667eea 0%, #ffd700 50%, #ff6600 100%);
+        }
+
+        .game-card.flappy {
+            background: linear-gradient(135deg, #87ceeb 0%, #228B22 50%, #ffd700 100%);
+        }
+
+        .game-card.learnpython {
+            background: linear-gradient(135deg, #306998 0%, #FFD43B 50%, #306998 100%);
+        }
+
+
 
 
         .game-card.pong .game-title {
@@ -189,8 +202,8 @@
         }
 
         .pacman-icon {
-            width: 80px;
-            height: 80px;
+            width: 50px;
+            height: 50px;
             background: #ffff00;
             border-radius: 50%;
             position: relative;
@@ -205,19 +218,19 @@
 
         @media (max-width: 600px) {
             h1 {
-                font-size: 42px;
+                font-size: 32px;
             }
 
             .subtitle {
-                font-size: 18px;
+                font-size: 16px;
             }
 
             .game-icon {
-                font-size: 60px;
+                font-size: 40px;
             }
 
             .game-title {
-                font-size: 24px;
+                font-size: 18px;
             }
         }
     </style>
@@ -247,7 +260,7 @@
             <a href="pacman.html" class="game-card pacman">
                 <div class="game-icon">
                     <div class="pacman-icon"></div>
-                    <span style="font-size: 70px;">👻</span>
+                    <span style="font-size: 45px;">👻</span>
                 </div>
                 <div class="game-title">Pac-Man</div>
                 <div class="game-description">
@@ -330,6 +343,29 @@
                 </div>
             </a>
 
+            <a href="stack.html" class="game-card stack">
+                <div class="game-icon">🏗️📦</div>
+                <div class="game-title">Stack</div>
+                <div class="game-description">
+                    Stack blocks as high as you can! Time your clicks to slice and stack perfectly. Speed increases as you climb. How tall can you build?
+                </div>
+            </a>
+
+            <a href="flappy.html" class="game-card flappy">
+                <div class="game-icon">🐦🌵</div>
+                <div class="game-title">Flappy Bird</div>
+                <div class="game-description">
+                    Tap to fly through the pipes! Simple but addictive — time your flaps, dodge the obstacles, and chase the high score. How far can you go?
+                </div>
+            </a>
+
+            <a href="learn-python.html" class="game-card learnpython">
+                <div class="game-icon">🐍💻</div>
+                <div class="game-title">Learn Python</div>
+                <div class="game-description">
+                    Learn to code with Python! Interactive lessons teach you variables, loops, functions, and more. Type real code and see it run instantly!
+                </div>
+            </a>
 
         </div>
 

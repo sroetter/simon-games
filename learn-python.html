@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Python - Simon's Game Gallery</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            text-decoration: none;
+            color: #FFD43B;
+            background: rgba(48, 105, 152, 0.85);
+            border: 1px solid rgba(255, 212, 59, 0.3);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        .back-btn:hover {
+            background: rgba(48, 105, 152, 1);
+            border-color: rgba(255, 212, 59, 0.6);
+            color: #fff;
+        }
+
+        .main-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 36px;
+            background: linear-gradient(135deg, #FFD43B 0%, #306998 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+
+        .page-header .subtitle {
+            color: #8899aa;
+            font-size: 15px;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .progress-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #2a3a5e;
+            border: 2px solid #3a5a8e;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .progress-dot.completed {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        .progress-dot.active {
+            background: #FFD43B;
+            border-color: #FFD43B;
+            transform: scale(1.3);
+            box-shadow: 0 0 10px rgba(255, 212, 59, 0.5);
+        }
+
+        .progress-dot:hover {
+            transform: scale(1.2);
+            border-color: #FFD43B;
+        }
+
+        .progress-label {
+            color: #8899aa;
+            font-size: 13px;
+            margin-left: 8px;
+        }
+
+        /* Layout */
+        .lesson-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .lesson-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Lesson Panel */
+        .lesson-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .lesson-number {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #FFD43B;
+            margin-bottom: 6px;
+        }
+
+        .lesson-title {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: #FFD43B;
+            margin-bottom: 14px;
+        }
+
+        .lesson-explanation {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #c0d0e0;
+            margin-bottom: 18px;
+        }
+
+        .lesson-explanation code {
+            background: rgba(255, 212, 59, 0.15);
+            color: #FFD43B;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+        }
+
+        .challenge-box {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .challenge-box h3 {
+            color: #4CAF50;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .challenge-box p {
+            font-size: 14px;
+            color: #a0c0a0;
+            line-height: 1.5;
+        }
+
+        .expected-output {
+            background: rgba(48, 105, 152, 0.2);
+            border: 1px solid rgba(48, 105, 152, 0.3);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .expected-output h3 {
+            color: #6aa8d8;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .expected-output pre {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            color: #90b8d8;
+            white-space: pre-wrap;
+        }
+
+        /* Code Panel */
+        .code-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .editor-label {
+            font-size: 13px;
+            color: #8899aa;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .editor-label span {
+            color: #FFD43B;
+        }
+
+        .reset-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #8899aa;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .reset-btn:hover {
+            border-color: #FFD43B;
+            color: #FFD43B;
+        }
+
+        #code-editor {
+            width: 100%;
+            min-height: 200px;
+            background: #0d1117;
+            color: #c9d1d9;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            resize: vertical;
+            tab-size: 4;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #code-editor:focus {
+            border-color: #FFD43B;
+        }
+
+        .run-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .run-btn:hover {
+            background: linear-gradient(135deg, #56c95a, #50b454);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .run-btn:active {
+            transform: translateY(0);
+        }
+
+        .output-header {
+            font-size: 13px;
+            color: #8899aa;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #output-panel {
+            background: #0d1117;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: #8b949e;
+        }
+
+        #output-panel.has-output {
+            color: #58d68d;
+        }
+
+        #output-panel.has-error {
+            color: #f97583;
+        }
+
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 24px;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #c0d0e0;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: rgba(255, 212, 59, 0.1);
+            border-color: #FFD43B;
+            color: #FFD43B;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-btn.next {
+            margin-left: auto;
+        }
+
+        /* Success animation */
+        @keyframes successPulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        .success-pulse {
+            animation: successPulse 0.6s ease-out;
+        }
+
+        /* Loading overlay */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+
+        #loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-text {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: #FFD43B;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 212, 59, 0.2);
+            border-top-color: #FFD43B;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">&#8592; Back to Gallery</a>
+
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Python...</div>
+    </div>
+
+    <div class="main-container">
+        <div class="page-header">
+            <h1>&#x1F40D; Learn Python</h1>
+            <p class="subtitle">Interactive coding lessons &mdash; type real code and see it run!</p>
+        </div>
+
+        <div class="progress-bar" id="progress-bar"></div>
+
+        <div class="lesson-layout">
+            <div class="lesson-panel">
+                <div class="lesson-number" id="lesson-number">Lesson 1 of 10</div>
+                <h2 class="lesson-title" id="lesson-title"></h2>
+                <div class="lesson-explanation" id="lesson-explanation"></div>
+                <div class="challenge-box">
+                    <h3>&#x1F3AF; Try it!</h3>
+                    <p id="lesson-challenge"></p>
+                </div>
+                <div class="expected-output">
+                    <h3>&#x2705; Expected Output</h3>
+                    <pre id="lesson-expected"></pre>
+                </div>
+            </div>
+
+            <div class="code-panel">
+                <div class="editor-header">
+                    <div class="editor-label"><span>&#x1F4DD;</span> Code Editor</div>
+                    <button class="reset-btn" onclick="resetCode()">Reset Code</button>
+                </div>
+                <textarea id="code-editor" spellcheck="false"></textarea>
+                <button class="run-btn" onclick="runCode()">&#9654; Run Code</button>
+                <div class="output-header">&#x1F4E4; Output</div>
+                <div id="output-panel">Click "Run Code" to see your output here...</div>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn prev" id="prev-btn" onclick="changeLesson(-1)">&#8592; Previous</button>
+            <button class="nav-btn next" id="next-btn" onclick="changeLesson(1)">Next &#8594;</button>
+        </div>
+    </div>
+
+    <script src="https://skulpt.org/js/skulpt.min.js"></script>
+    <script src="https://skulpt.org/js/skulpt-stdlib.js"></script>
+    <script>
+        // ===== LESSONS =====
+        const lessons = [
+            {
+                title: "Hello World",
+                explanation: `Every programmer starts here! The <code>print()</code> function shows text on the screen. Whatever you put inside the parentheses and quotes gets printed out. It's how your program talks to you!`,
+                starterCode: `print("Hello, World!")
+print("My name is Simon!")`,
+                challenge: `Change the second line to print your favorite food instead of your name. For example: <code>print("I love pizza!")</code>`,
+                expected: `Hello, World!\nI love pizza!`,
+                hint: `Replace "My name is Simon!" with whatever you want to say about your favorite food.`
+            },
+            {
+                title: "Variables",
+                explanation: `Variables are like labeled boxes that store information. You create one by picking a name and using <code>=</code> to put a value in it. You can store text (in quotes) or numbers (no quotes needed).`,
+                starterCode: `name = "Simon"
+age = 10
+print("Hello, " + name)
+print("You are", age, "years old")`,
+                challenge: `Add a new variable called <code>favorite_color</code> and set it to your favorite color. Then print it with a message like "My favorite color is blue".`,
+                expected: `Hello, Simon\nYou are 10 years old\nMy favorite color is blue`,
+                hint: `Add: favorite_color = "blue" and then print("My favorite color is", favorite_color)`
+            },
+            {
+                title: "Math",
+                explanation: `Python is a great calculator! Use <code>+</code> to add, <code>-</code> to subtract, <code>*</code> to multiply, and <code>/</code> to divide. You can print the results or store them in variables.`,
+                starterCode: `print(5 + 3)
+print(10 - 4)
+print(6 * 7)
+print(20 / 5)`,
+                challenge: `Calculate how many hours are in a week (24 hours x 7 days) and print the result with a label like "Hours in a week: 168".`,
+                expected: `8\n6\n42\n4.0\nHours in a week: 168`,
+                hint: `Add: print("Hours in a week:", 24 * 7)`
+            },
+            {
+                title: "Strings",
+                explanation: `Strings are text in Python. You can combine them with <code>+</code>, use <code>f"..."</code> to insert variables, and use methods like <code>.upper()</code> and <code>.lower()</code> to change the case.`,
+                starterCode: `name = "Simon"
+greeting = "Hello, " + name + "!"
+print(greeting)
+print(f"Welcome, {name}!")
+print(name.upper())
+print(name.lower())`,
+                challenge: `Create a variable <code>animal</code> set to your favorite animal. Use an f-string to print "I love [animal]s!" (for example, "I love dogs!").`,
+                expected: `Hello, Simon!\nWelcome, Simon!\nSIMON\nsimon\nI love dogs!`,
+                hint: `Add: animal = "dogs" and then print(f"I love {animal}!")`
+            },
+            {
+                title: "Input",
+                explanation: `The <code>input()</code> function asks the user to type something. It shows a message and waits for a response. Whatever they type gets stored as text. A popup will appear for you to type your answer!`,
+                starterCode: `name = input("What is your name? ")
+print(f"Nice to meet you, {name}!")`,
+                challenge: `Add a second <code>input()</code> that asks "What is your favorite game?" and then print a message using their answer.`,
+                expected: `What is your name? [your name]\nNice to meet you, [your name]!\nWhat is your favorite game? [your game]\nI love [your game] too!`,
+                hint: `Add: game = input("What is your favorite game? ") and then print(f"I love {game} too!")`
+            },
+            {
+                title: "If / Else",
+                explanation: `Programs can make decisions! Use <code>if</code> to check a condition. If it's true, that code runs. Use <code>else</code> for what happens when it's not true. Use <code>==</code> to check if things are equal, and <code>&gt;</code> or <code>&lt;</code> to compare numbers.`,
+                starterCode: `age = 10
+
+if age >= 13:
+    print("You're a teenager!")
+else:
+    print("You're not a teenager yet!")
+
+score = 85
+if score >= 90:
+    print("Grade: A")
+elif score >= 80:
+    print("Grade: B")
+else:
+    print("Grade: C")`,
+                challenge: `Change the <code>score</code> to 95 and run it again. What grade do you get now?`,
+                expected: `You're not a teenager yet!\nGrade: A`,
+                hint: `Change score = 85 to score = 95 and run the code.`
+            },
+            {
+                title: "For Loops",
+                explanation: `Loops let you repeat code! A <code>for</code> loop with <code>range()</code> repeats a set number of times. <code>range(5)</code> counts from 0 to 4. The indented code inside the loop runs each time.`,
+                starterCode: `for i in range(5):
+    print(f"Count: {i}")
+
+print("---")
+
+for i in range(1, 4):
+    print(f"{i} x 3 = {i * 3}")`,
+                challenge: `Add a loop that prints the numbers 1 through 5 (not 0 through 4). Hint: <code>range(1, 6)</code> gives you 1, 2, 3, 4, 5.`,
+                expected: `Count: 0\nCount: 1\nCount: 2\nCount: 3\nCount: 4\n---\n1 x 3 = 3\n2 x 3 = 6\n3 x 3 = 9\n1\n2\n3\n4\n5`,
+                hint: `Add: for i in range(1, 6): followed by print(i) on the next line (indented with 4 spaces).`
+            },
+            {
+                title: "While Loops",
+                explanation: `A <code>while</code> loop keeps running as long as its condition is true. Be careful &mdash; make sure the condition eventually becomes false, or the loop will run forever! Usually you change a variable inside the loop.`,
+                starterCode: `count = 1
+while count <= 5:
+    print(f"Count is: {count}")
+    count = count + 1
+
+print("Done counting!")`,
+                challenge: `Change the code so it counts from 1 to 10 instead of 1 to 5.`,
+                expected: `Count is: 1\nCount is: 2\nCount is: 3\nCount is: 4\nCount is: 5\nCount is: 6\nCount is: 7\nCount is: 8\nCount is: 9\nCount is: 10\nDone counting!`,
+                hint: `Change "while count <= 5" to "while count <= 10".`
+            },
+            {
+                title: "Lists",
+                explanation: `Lists store multiple items in order, using square brackets. You can add items with <code>.append()</code>, check how many with <code>len()</code>, and loop through them with a <code>for</code> loop.`,
+                starterCode: `fruits = ["apple", "banana", "cherry"]
+print(fruits)
+print(f"I have {len(fruits)} fruits")
+
+fruits.append("mango")
+print(f"Now I have {len(fruits)} fruits")
+
+for fruit in fruits:
+    print(f"I like {fruit}!")`,
+                challenge: `Add another fruit to the list using <code>.append()</code> before the for loop. You should see 5 fruits printed.`,
+                expected: `['apple', 'banana', 'cherry']\nI have 3 fruits\nNow I have 4 fruits\nI like apple!\nI like banana!\nI like cherry!\nI like mango!\nI like grape!`,
+                hint: `Add fruits.append("grape") before the for loop.`
+            },
+            {
+                title: "Functions",
+                explanation: `Functions are reusable blocks of code. You define them with <code>def</code>, give them a name, and can pass in values called parameters. Use <code>return</code> to send a value back. Then you call the function by its name!`,
+                starterCode: `def greet(name):
+    print(f"Hello, {name}! Welcome!")
+
+greet("Simon")
+greet("Python")
+
+def add(a, b):
+    return a + b
+
+result = add(5, 3)
+print(f"5 + 3 = {result}")`,
+                challenge: `Create a new function called <code>multiply</code> that takes two numbers and returns their product. Then call it with 4 and 7 and print the result.`,
+                expected: `Hello, Simon! Welcome!\nHello, Python! Welcome!\n5 + 3 = 8\n4 x 7 = 28`,
+                hint: `Add: def multiply(a, b): return a * b, then print(f"4 x 7 = {multiply(4, 7)}")`
+            }
+        ];
+
+        // ===== STATE =====
+        let currentLesson = 0;
+        let completedLessons = new Set();
+        let skulptReady = false;
+
+        // ===== LOAD PROGRESS =====
+        function loadProgress() {
+            try {
+                const saved = localStorage.getItem('pythonLessonProgress');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    currentLesson = data.currentLesson || 0;
+                    completedLessons = new Set(data.completedLessons || []);
+                }
+            } catch (e) {}
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem('pythonLessonProgress', JSON.stringify({
+                    currentLesson,
+                    completedLessons: [...completedLessons]
+                }));
+            } catch (e) {}
+        }
+
+        // ===== RENDER =====
+        function renderLesson() {
+            const lesson = lessons[currentLesson];
+
+            document.getElementById('lesson-number').textContent = `Lesson ${currentLesson + 1} of ${lessons.length}`;
+            document.getElementById('lesson-title').textContent = lesson.title;
+            document.getElementById('lesson-explanation').innerHTML = lesson.explanation;
+            document.getElementById('lesson-challenge').innerHTML = lesson.challenge;
+            document.getElementById('lesson-expected').textContent = lesson.expected.replace(/\\n/g, '\n');
+
+            document.getElementById('code-editor').value = lesson.starterCode;
+
+            const output = document.getElementById('output-panel');
+            output.textContent = 'Click "Run Code" to see your output here...';
+            output.className = '';
+
+            document.getElementById('prev-btn').disabled = currentLesson === 0;
+            document.getElementById('next-btn').disabled = currentLesson === lessons.length - 1;
+
+            renderProgress();
+            saveProgress();
+        }
+
+        function renderProgress() {
+            const bar = document.getElementById('progress-bar');
+            bar.innerHTML = '';
+            for (let i = 0; i < lessons.length; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                if (completedLessons.has(i)) dot.classList.add('completed');
+                if (i === currentLesson) dot.classList.add('active');
+                dot.title = `Lesson ${i + 1}: ${lessons[i].title}`;
+                dot.onclick = () => goToLesson(i);
+                bar.appendChild(dot);
+            }
+            const label = document.createElement('span');
+            label.className = 'progress-label';
+            label.textContent = `${completedLessons.size} / ${lessons.length} completed`;
+            bar.appendChild(label);
+        }
+
+        // ===== NAVIGATION =====
+        function changeLesson(delta) {
+            const next = currentLesson + delta;
+            if (next >= 0 && next < lessons.length) {
+                currentLesson = next;
+                renderLesson();
+            }
+        }
+
+        function goToLesson(index) {
+            currentLesson = index;
+            renderLesson();
+        }
+
+        function resetCode() {
+            document.getElementById('code-editor').value = lessons[currentLesson].starterCode;
+            const output = document.getElementById('output-panel');
+            output.textContent = 'Code reset! Click "Run Code" to try again.';
+            output.className = '';
+        }
+
+        // ===== SOUND =====
+        function playSuccessSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523, ctx.currentTime);
+                osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.4);
+            } catch (e) {}
+        }
+
+        // ===== RUN CODE =====
+        function runCode() {
+            if (!skulptReady) {
+                document.getElementById('output-panel').textContent = 'Python is still loading... please wait a moment!';
+                return;
+            }
+
+            const code = document.getElementById('code-editor').value;
+            const output = document.getElementById('output-panel');
+            output.textContent = '';
+            output.className = '';
+
+            Sk.configure({
+                output: function(text) {
+                    output.textContent += text;
+                },
+                read: function(x) {
+                    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined) {
+                        throw "File not found: '" + x + "'";
+                    }
+                    return Sk.builtinFiles["files"][x];
+                },
+                inputfun: function(prompt) {
+                    return window.prompt(prompt || "Enter input:");
+                },
+                inputfunTakesPrompt: true
+            });
+
+            Sk.misceval.asyncToPromise(function() {
+                return Sk.importMainWithBody("<stdin>", false, code, true);
+            }).then(function() {
+                output.classList.add('has-output');
+                if (!output.textContent) {
+                    output.textContent = '(No output — try using print() to display something!)';
+                }
+                completedLessons.add(currentLesson);
+                renderProgress();
+                saveProgress();
+                playSuccessSound();
+
+                // Pulse the output panel
+                output.classList.add('success-pulse');
+                setTimeout(() => output.classList.remove('success-pulse'), 700);
+            }).catch(function(err) {
+                output.classList.add('has-error');
+                // Make error messages friendlier
+                let msg = err.toString();
+                if (msg.includes('SyntaxError')) {
+                    output.textContent = "Oops! There's a typo in your code.\n\n" + msg + "\n\nCheck your spelling, quotes, and colons!";
+                } else if (msg.includes('NameError')) {
+                    output.textContent = "Hmm, Python doesn't recognize that name.\n\n" + msg + "\n\nDid you spell the variable name correctly?";
+                } else if (msg.includes('IndentationError')) {
+                    output.textContent = "Watch your spacing!\n\n" + msg + "\n\nCode inside if/for/while/def needs to be indented with spaces.";
+                } else if (msg.includes('TypeError')) {
+                    output.textContent = "Type mix-up!\n\n" + msg + "\n\nYou might be mixing text and numbers. Try using str() or int().";
+                } else {
+                    output.textContent = "Something went wrong:\n\n" + msg + "\n\nDouble-check your code and try again!";
+                }
+            });
+        }
+
+        // ===== KEYBOARD SHORTCUT =====
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runCode();
+            }
+        });
+
+        // ===== TAB SUPPORT IN EDITOR =====
+        document.getElementById('code-editor').addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        // ===== INIT =====
+        loadProgress();
+        renderLesson();
+
+        // Check if Skulpt is loaded
+        function checkSkulpt() {
+            if (typeof Sk !== 'undefined' && Sk.builtinFiles) {
+                skulptReady = true;
+                document.getElementById('loading-overlay').classList.add('hidden');
+            } else {
+                setTimeout(checkSkulpt, 200);
+            }
+        }
+
+        // Start checking after scripts should be loaded
+        window.addEventListener('load', function() {
+            setTimeout(checkSkulpt, 100);
+            // Fallback: hide loading after 8 seconds regardless
+            setTimeout(function() {
+                const overlay = document.getElementById('loading-overlay');
+                if (!overlay.classList.contains('hidden')) {
+                    if (typeof Sk !== 'undefined') {
+                        skulptReady = true;
+                    }
+                    overlay.classList.add('hidden');
+                }
+            }, 8000);
+        });
+    </script>
+</body>
+</html>

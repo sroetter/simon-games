@@ -28,6 +28,23 @@ canvas#gameCanvas{display:block;border-radius:10px;cursor:crosshair;border:1px s
 .overlay .big-stat{font-size:20px;color:#f1c40f;margin:8px 0}
 .overlay button{margin-top:16px;padding:10px 32px;font-family:'Cinzel',serif;font-weight:700;font-size:15px;background:linear-gradient(135deg,#8b0000,#c0392b);color:#fff;border:none;border-radius:6px;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 15px rgba(200,30,30,.3)}.overlay button:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(200,30,30,.5)}
 .gold-color{color:#f1c40f}
+.save-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,5,10,.92);display:none;justify-content:center;align-items:center;z-index:200;backdrop-filter:blur(8px)}
+.save-overlay.show{display:flex}
+.save-gallery{max-width:700px;width:90vw;background:rgba(15,15,25,.95);border:1px solid rgba(200,30,30,.2);border-radius:14px;padding:24px;text-align:center}
+.save-gallery h2{font-family:'Cinzel',serif;font-size:28px;color:#e74c3c;margin-bottom:8px;text-shadow:0 0 20px rgba(200,30,30,.4)}
+.save-gallery .save-hint{color:#667;font-size:13px;margin-bottom:15px}
+.save-gallery .save-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;max-height:55vh;overflow-y:auto;padding:5px}
+.save-card{background:linear-gradient(135deg,rgba(30,15,15,.8),rgba(20,10,10,.8));border:1px solid rgba(200,30,30,.15);border-radius:10px;padding:10px;cursor:pointer;transition:all .2s;text-align:left}
+.save-card:hover{border-color:#c0392b;box-shadow:0 0 15px rgba(200,30,30,.25);transform:translateY(-3px)}
+.save-card img{width:100%;border-radius:6px;margin-bottom:8px;border:1px solid rgba(200,30,30,.1)}
+.save-card .save-name{font-weight:bold;color:#e57373;font-size:13px;margin-bottom:3px;font-family:'Cinzel',serif}
+.save-card .save-details{color:#889;font-size:11px;line-height:1.5}
+.save-card .save-delete{background:rgba(180,40,40,.3);border:1px solid rgba(220,60,60,.3);border-radius:4px;color:#ff8888;font-size:10px;padding:2px 8px;cursor:pointer;float:right;margin-top:4px}
+.save-card .save-delete:hover{background:rgba(200,50,50,.5)}
+.save-gallery .close-btn{margin-top:15px;background:rgba(40,20,20,.5);border:1px solid rgba(200,30,30,.2);border-radius:8px;padding:8px 25px;color:#d09090;cursor:pointer;font-size:14px;font-family:'Cinzel',serif}
+.save-gallery .close-btn:hover{background:rgba(60,30,30,.5)}
+.save-gallery .no-saves{color:#556;font-style:italic;padding:40px 0}
+.save-card .no-thumb{height:80px;background:rgba(0,0,0,.3);border-radius:6px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:#445;font-size:12px}
 </style>
 </head>
 <body>
@@ -79,7 +96,8 @@ canvas#gameCanvas{display:block;border-radius:10px;cursor:crosshair;border:1px s
   <h2>PAUSED</h2>
   <p>Press P or Escape to resume</p>
   <div style="margin-top:12px;display:flex;gap:10px">
-    <button id="save-btn" style="padding:8px 20px;font-family:'Cinzel',serif;font-size:13px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;border:none;border-radius:6px;cursor:pointer">SAVE GAME</button>
+    <button id="save-btn" style="padding:8px 20px;font-family:'Cinzel',serif;font-size:13px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;border:none;border-radius:6px;cursor:pointer">&#x1F4BE; SAVE GAME</button>
+    <button id="load-gallery-btn" style="padding:8px 20px;font-family:'Cinzel',serif;font-size:13px;background:linear-gradient(135deg,#2c3e50,#3498db);color:#fff;border:none;border-radius:6px;cursor:pointer">&#x1F4C2; LOAD GAME</button>
   </div>
   <p id="save-msg" style="color:#2ecc71;font-size:12px;margin-top:6px"></p>
 </div>
@@ -91,6 +109,15 @@ canvas#gameCanvas{display:block;border-radius:10px;cursor:crosshair;border:1px s
   <p id="go-hs" class="gold-color"></p>
   <button id="restart-btn">PLAY AGAIN</button>
 </div>
+</div>
+
+<div class="save-overlay" id="loadOverlay">
+  <div class="save-gallery">
+    <h2>&#x1F4C2; Saved Games</h2>
+    <p class="save-hint">Click a save to load it</p>
+    <div class="save-list" id="saveList"></div>
+    <button class="close-btn" onclick="closeLoadGallery()">Close</button>
+  </div>
 </div>
 
 <script>
@@ -302,6 +329,22 @@ function startWave(){
   spawnTimer = 0;
   sfx('wave');
   floatTexts.push({ x:W/2, y:H/2-40, text:'WAVE '+wave, color:'#fff', size:42, life:120, vy:-.3 });
+  // Wave 15: Necromancer Boss
+  if(wave === 15){
+    floatTexts.push({ x:W/2, y:H/2, text:'NECROMANCER APPROACHES...', color:'#ff00ff', size:28, life:180, vy:-.2 });
+    sfx('cannon');
+    // Spawn the necromancer from a random edge
+    const side = Math.floor(Math.random()*4);
+    let bx,by;
+    if(side===0){ bx=Math.random()*W; by=-30; }
+    else if(side===1){ bx=W+30; by=Math.random()*H; }
+    else if(side===2){ bx=Math.random()*W; by=H+30; }
+    else { bx=-30; by=Math.random()*H; }
+    const nhp = 5000;
+    zombies.push({ x:bx, y:by, hp:nhp, maxHp:nhp, speed:.18, size:36, color:'#9900cc', type:'necromancer', bldgDmg:80, atkTimer:0, pAtkTimer:0, lastSpike:0, frozen:0, shootTimer:0, spawnTimer:0, slamTimer:0, phase:1 });
+    zombiesLeft++;
+    zombiesToSpawn++;
+  }
 }
 
 /* ===================== INPUT ===================== */
@@ -422,12 +465,13 @@ document.addEventListener('keydown', e => {
         document.getElementById('shop-menu').style.display = 'none';
       }
     }
-    if(shopMode && (e.key >= '1' && e.key <= '9' || e.key === '0')){
-      const num = e.key === '0' ? 10 : parseInt(e.key);
-      if(e.shiftKey && shopPage === 1 && num >= 1 && num <= 5){
-        // Shift+1-5 buys super weapons (indices 10-14)
-        buyWeapon(9 + num);
-      } else {
+    if(shopMode){
+      // Z,X,C,V,B for super weapons
+      const superMap = {'z':1,'x':2,'c':3,'v':4,'b':5};
+      if(shopPage === 1 && superMap[e.key.toLowerCase()]){
+        buyWeapon(9 + superMap[e.key.toLowerCase()]);
+      } else if(e.key >= '1' && e.key <= '9' || e.key === '0'){
+        const num = e.key === '0' ? 10 : parseInt(e.key);
         buyShopItem(num-1);
       }
     }
@@ -467,9 +511,9 @@ function spawnZombie(){
     case 'fast':     hp=20;  speed=1.1; size=8;  color='#b5cc18'; bldgDmg=12; break;
     case 'tank':     hp=120; speed=.3;  size=16; color='#8B5E3C'; bldgDmg=25; break;
     case 'exploder': hp=40;  speed=.6;  size=11; color='#e74c3c'; bldgDmg=15; break;
-    case 'spitter':   hp=22;   speed=.5;  size=9;  color='#9b59b6'; bldgDmg=5;  break;
-    case 'boss':      hp=500;  speed=.2;  size=22; color='#c0392b'; bldgDmg=40; break;
-    case 'mega_boss': hp=2000; speed=.15; size=30; color='#8b0000'; bldgDmg=60; break;
+    case 'spitter':   hp=45;   speed=.65; size=10; color='#9b59b6'; bldgDmg=8;  break;
+    case 'boss':      hp=350;  speed=.2;  size=22; color='#c0392b'; bldgDmg=40; break;
+    case 'mega_boss': hp=1400; speed=.15; size=30; color='#8b0000'; bldgDmg=60; break;
   }
   hp = Math.floor(hp * (1 + wave * .06));
   let x, y;
@@ -570,6 +614,25 @@ function killZombie(idx){
 
   // floating gold
   floatTexts.push({ x:z.x, y:z.y-10, text:'+'+g+' gold', color:'#f1c40f', size:13, life:50, vy:-.8 });
+
+  // Necromancer boss death
+  if(z.type === 'necromancer'){
+    gold += 500;
+    shakeT = 30;
+    sfx('explosion');
+    floatTexts.push({ x:z.x, y:z.y-30, text:'NECROMANCER SLAIN!', color:'#ff00ff', size:32, life:150, vy:-.3 });
+    floatTexts.push({ x:z.x, y:z.y-10, text:'+500 gold', color:'#f1c40f', size:20, life:100, vy:-.5 });
+    // Massive death explosion
+    for(let k=0;k<40;k++) particles.push({ x:z.x, y:z.y, vx:(Math.random()-.5)*8,
+      vy:(Math.random()-.5)*8, life:40, maxLife:40, color:Math.random()<.5?'#cc00ff':'#ff00ff', size:4+Math.random()*6 });
+    for(let k=0;k<20;k++) particles.push({ x:z.x, y:z.y, vx:(Math.random()-.5)*5,
+      vy:(Math.random()-.5)*5, life:30, maxLife:30, color:'#fff', size:2+Math.random()*3 });
+    // Drop health and ammo
+    drops.push({ x:z.x-15, y:z.y, kind:'health', label:'+30 HP', color:'#2ecc71', life:600 });
+    drops.push({ x:z.x+15, y:z.y, kind:'health', label:'+30 HP', color:'#2ecc71', life:600 });
+    drops.push({ x:z.x, y:z.y-15, kind:'ammo', label:'+20 Ammo', color:'#3498db', life:600 });
+    drops.push({ x:z.x, y:z.y+15, kind:'ammo', label:'+20 Ammo', color:'#3498db', life:600 });
+  }
 
   // drops (no weapon drops - buy them from shop)
   const rnd = Math.random();
@@ -765,8 +828,10 @@ function updateShopUI(){
       const w = WEAPONS[i];
       const owned = unlockedWeapons.has(i);
       const desc = w.pierce?'Pierce':w.chain?'Chain':w.freeze?'Freeze':w.splash>100?'Mega Blast':'';
-      if(owned) html += '<div class="bm-item">[Shift+'+(i-9)+'] '+w.name+' <span style="color:#2ecc71">OWNED</span></div>';
-      else html += '<div class="bm-item">[Shift+'+(i-9)+'] '+w.name+' ('+desc+') <span style="color:#ff6600">'+w.cost+'g</span></div>';
+      const superKeys = ['Z','X','C','V','B'];
+      const sk = superKeys[i-10];
+      if(owned) html += '<div class="bm-item">['+sk+'] '+w.name+' <span style="color:#2ecc71">OWNED</span></div>';
+      else html += '<div class="bm-item">['+sk+'] '+w.name+' ('+desc+') <span style="color:#ff6600">'+w.cost+'g</span></div>';
     }
     html += '<div style="color:#666;font-size:9px;margin-top:4px">Use Q/E to cycle all weapons</div>';
   } else if(shopPage === 2){
@@ -1020,6 +1085,76 @@ function update(){
         }
         sfx('wave');
         floatTexts.push({ x:z.x, y:z.y-20, text:'SUMMON!', color:'#ff0000', size:16, life:40, vy:-.8 });
+      }
+    }
+
+    // Necromancer boss (wave 15)
+    if(z.type === 'necromancer'){
+      if(!z.shootTimer) z.shootTimer = 0;
+      if(!z.spawnTimer) z.spawnTimer = 0;
+      if(!z.slamTimer) z.slamTimer = 0;
+      z.shootTimer++;
+      z.spawnTimer++;
+      z.slamTimer++;
+      // Phase 2 at half HP - faster attacks, more minions
+      z.phase = z.hp < z.maxHp * 0.5 ? 2 : 1;
+      const shootRate = z.phase === 2 ? 30 : 50;
+      const spawnRate = z.phase === 2 ? 120 : 200;
+      // Spiral shot attack
+      if(z.shootTimer >= shootRate){
+        z.shootTimer = 0;
+        const sa = Math.atan2(player.y-z.y, player.x-z.x);
+        const numShots = z.phase === 2 ? 5 : 3;
+        for(let s2 = 0; s2 < numShots; s2++){
+          const spread = (s2 - (numShots-1)/2) * 0.25;
+          towerProj.push({ x:z.x, y:z.y, vx:Math.cos(sa+spread)*5, vy:Math.sin(sa+spread)*5,
+            dmg:12, splash:0, life:70, kind:'acid', color:'#cc00ff', size:6, hostile:true });
+        }
+        sfx('cannon');
+      }
+      // Summon undead minions
+      if(z.spawnTimer >= spawnRate){
+        z.spawnTimer = 0;
+        const minionCount = z.phase === 2 ? 5 : 3;
+        for(let m=0;m<minionCount;m++){
+          const ma = (m / minionCount) * Math.PI * 2;
+          const mhp = Math.floor(35*(1+wave*.06));
+          const mtype = Math.random() < 0.3 ? 'exploder' : 'fast';
+          const mcolor = mtype === 'exploder' ? '#e74c3c' : '#cc44cc';
+          const mspd = mtype === 'exploder' ? .6 : .9;
+          const msize = mtype === 'exploder' ? 11 : 8;
+          zombies.push({ x:z.x+Math.cos(ma)*40, y:z.y+Math.sin(ma)*40, hp:mhp, maxHp:mhp, speed:mspd, size:msize, color:mcolor, type:mtype, bldgDmg:10, atkTimer:0, pAtkTimer:0, lastSpike:0, frozen:0 });
+          zombiesLeft++;
+        }
+        sfx('wave');
+        floatTexts.push({ x:z.x, y:z.y-30, text:'RISE!', color:'#cc00ff', size:22, life:50, vy:-.8 });
+        // Summon particles
+        for(let p=0;p<15;p++){
+          const pa = Math.random()*Math.PI*2;
+          particles.push({ x:z.x+Math.cos(pa)*30, y:z.y+Math.sin(pa)*30, vx:Math.cos(pa)*2, vy:Math.sin(pa)*2, life:30, color:'#cc00ff', size:4+Math.random()*4 });
+        }
+      }
+      // Ground slam AoE - damages player if nearby
+      if(z.slamTimer >= 180){
+        z.slamTimer = 0;
+        const dist = Math.sqrt((player.x-z.x)**2+(player.y-z.y)**2);
+        if(dist < 120){
+          const slamDmg = z.phase === 2 ? 40 : 25;
+          player.hp -= slamDmg;
+          floatTexts.push({ x:player.x, y:player.y-15, text:'-'+slamDmg, color:'#ff00ff', size:20, life:40, vy:-.8 });
+          sfx('explode');
+        }
+        // Visual shockwave particles
+        for(let p=0;p<20;p++){
+          const pa = (p/20)*Math.PI*2;
+          particles.push({ x:z.x+Math.cos(pa)*10, y:z.y+Math.sin(pa)*10, vx:Math.cos(pa)*4, vy:Math.sin(pa)*4, life:25, color:'#9900cc', size:5+Math.random()*3 });
+        }
+        floatTexts.push({ x:z.x, y:z.y-40, text:'SLAM!', color:'#ff00ff', size:26, life:40, vy:-.5 });
+      }
+      // Phase 2 aura particles
+      if(z.phase === 2 && Math.random() < .15){
+        const pa = Math.random()*Math.PI*2;
+        particles.push({ x:z.x+Math.cos(pa)*z.size, y:z.y+Math.sin(pa)*z.size, vx:Math.cos(pa)*.5, vy:-1, life:20, color:'#ff00ff', size:2+Math.random()*3 });
       }
     }
 
@@ -1392,8 +1527,8 @@ function draw(){
     ctx.beginPath(); ctx.arc(0, -s*.5, s*.45, 0, Math.PI*2); ctx.stroke();
 
     // eyes (glowing)
-    ctx.fillStyle = z.type==='exploder'?'#ff4444':z.type==='spitter'?'#cc66ff':z.type==='mega_boss'?'#ff0':z.type==='boss'?'#ff0000':'#aaff00';
-    ctx.shadowColor = z.type==='exploder'?'#ff0000':z.type==='spitter'?'#9933ff':z.type==='mega_boss'?'#ff0':z.type==='boss'?'#ff0000':'#88ff00'; ctx.shadowBlur = (z.type==='boss'||z.type==='mega_boss')?8:4;
+    ctx.fillStyle = z.type==='necromancer'?'#ff00ff':z.type==='exploder'?'#ff4444':z.type==='spitter'?'#cc66ff':z.type==='mega_boss'?'#ff0':z.type==='boss'?'#ff0000':'#aaff00';
+    ctx.shadowColor = z.type==='necromancer'?'#cc00ff':z.type==='exploder'?'#ff0000':z.type==='spitter'?'#9933ff':z.type==='mega_boss'?'#ff0':z.type==='boss'?'#ff0000':'#88ff00'; ctx.shadowBlur = (z.type==='boss'||z.type==='mega_boss'||z.type==='necromancer')?10:4;
     ctx.beginPath(); ctx.arc(-s*.15, -s*.55, s*.1, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(s*.15, -s*.55, s*.1, 0, Math.PI*2); ctx.fill();
     ctx.shadowBlur = 0;
@@ -1432,6 +1567,54 @@ function draw(){
       ctx.beginPath(); ctx.moveTo(-s*.3,-s*.85); ctx.lineTo(-s*.15,-s*1.3); ctx.lineTo(0,-s*.85); ctx.fill();
       ctx.beginPath(); ctx.moveTo(0,-s*.85); ctx.lineTo(s*.15,-s*1.3); ctx.lineTo(s*.3,-s*.85); ctx.fill();
     }
+    // Necromancer boss
+    if(z.type==='necromancer'){
+      const pulse = 1+Math.sin(now2*.003)*.2;
+      // Dark purple aura
+      ctx.fillStyle = 'rgba(153,0,204,'+(0.06*pulse)+')';
+      ctx.beginPath(); ctx.arc(0,0,s*2.2,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(204,0,255,'+(0.1*pulse)+')';
+      ctx.beginPath(); ctx.arc(0,0,s*1.6,0,Math.PI*2); ctx.fill();
+      // Phase 2 intense aura
+      if(z.phase === 2){
+        ctx.fillStyle = 'rgba(255,0,255,'+(0.08*pulse)+')';
+        ctx.beginPath(); ctx.arc(0,0,s*2.5,0,Math.PI*2); ctx.fill();
+      }
+      // Hood/cloak top
+      ctx.fillStyle = '#330044';
+      ctx.beginPath();
+      ctx.moveTo(-s*.5,-s*.7); ctx.lineTo(0,-s*1.5); ctx.lineTo(s*.5,-s*.7);
+      ctx.closePath(); ctx.fill();
+      // Staff
+      ctx.strokeStyle = '#6d4c41';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(s*.5, -s*.3); ctx.lineTo(s*.7, s*.8); ctx.stroke();
+      // Staff orb
+      ctx.fillStyle = '#ff00ff';
+      ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(s*.5, -s*.35, s*.15, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+      // Skull face detail
+      ctx.fillStyle = '#ddd';
+      ctx.beginPath(); ctx.arc(0, -s*.45, s*.25, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#330044';
+      ctx.beginPath(); ctx.arc(-s*.08, -s*.5, s*.06, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s*.08, -s*.5, s*.06, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-s*.04,-s*.38); ctx.lineTo(s*.04,-s*.38); ctx.lineTo(0,-s*.33); ctx.fill();
+      // Floating runes (orbiting)
+      for(let r=0;r<4;r++){
+        const ra = now2*0.002 + r * Math.PI/2;
+        const rx = Math.cos(ra) * s * 1.3;
+        const ry = Math.sin(ra) * s * 1.3;
+        ctx.fillStyle = 'rgba(204,0,255,0.6)';
+        ctx.beginPath(); ctx.arc(rx, ry, 3, 0, Math.PI*2); ctx.fill();
+      }
+      // Boss name label
+      ctx.fillStyle = '#ff00ff';
+      ctx.font = 'bold 10px Cinzel, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('NECROMANCER', 0, -s-14);
+    }
     // mega boss: huge aura, crown, pulsing glow
     if(z.type==='mega_boss'){
       const pulse = 1+Math.sin(now2*.004)*.15;
@@ -1456,8 +1639,11 @@ function draw(){
 
     // hp bar
     if(z.hp < z.maxHp){
-      ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(-s, -s-8, s*2, 3);
-      ctx.fillStyle = '#e74c3c'; ctx.fillRect(-s, -s-8, s*2*(z.hp/z.maxHp), 3);
+      const barW = z.type==='necromancer' ? s*3 : s*2;
+      const barH = z.type==='necromancer' ? 5 : 3;
+      const barY = z.type==='necromancer' ? -s-20 : -s-8;
+      ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(-barW/2, barY, barW, barH);
+      ctx.fillStyle = z.type==='necromancer' ? '#cc00ff' : '#e74c3c'; ctx.fillRect(-barW/2, barY, barW*(z.hp/z.maxHp), barH);
     }
     ctx.restore();
   }
@@ -1609,9 +1795,21 @@ function gameLoop(){
   requestAnimationFrame(gameLoop);
 }
 
-/* ===================== SAVE / LOAD ===================== */
-function saveGame(){
-  const data = {
+/* ===================== SAVE / LOAD (Multi-Slot) ===================== */
+function getSaveList(){
+  try { return JSON.parse(localStorage.getItem('zombieSurvival_saves') || '[]'); }
+  catch(e){ return []; }
+}
+function setSaveList(list){
+  localStorage.setItem('zombieSurvival_saves', JSON.stringify(list));
+}
+
+function buildSaveData(saveName, isAuto){
+  const thumb = canvas.toDataURL('image/png', 0.5);
+  const now = new Date();
+  const name = saveName || ('Wave ' + wave + ' \u2014 ' + now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+  return {
+    name, thumb, date: now.toISOString(), auto: !!isAuto,
     player: { x:player.x, y:player.y, hp:player.hp, maxHp:player.maxHp, spd:player.spd, weap:player.weap, ammo:player.ammo },
     wave, kills, gold, grenades, nukes,
     hasAutoCollect, speedLevel, hpLevel,
@@ -1621,32 +1819,122 @@ function saveGame(){
     buildings: buildings.map(b => ({ gx:b.gx, gy:b.gy, x:b.x, y:b.y, hp:b.hp, maxHp:b.maxHp, kind:b.kind, color:b.color, name:b.name, cost:b.cost, range:b.range, rate:b.rate, dmg:b.dmg, splash:b.splash, tick:b.tick })),
     obstacles: obstacles.map(o => ({ x:o.x, y:o.y, type:o.type, size:o.size }))
   };
-  localStorage.setItem('zombieSurvivalSave', JSON.stringify(data));
 }
 
-function loadGame(){
-  const raw = localStorage.getItem('zombieSurvivalSave');
-  if(!raw) return false;
+function saveGame(){
+  const d = buildSaveData();
+  const saves = getSaveList();
+  saves.unshift(d);
+  if(saves.length > 20) saves.length = 20;
+  setSaveList(saves);
+}
+
+function autoSave(){
+  if(state !== 'playing' || (wave <= 1 && kills === 0)) return;
+  const now = new Date();
+  const name = 'Auto-save \u00b7 Wave ' + wave + ' \u00b7 ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const d = buildSaveData(name, true);
+  const saves = getSaveList();
+  const autoIdx = saves.findIndex(s => s.auto);
+  if(autoIdx >= 0) saves.splice(autoIdx, 1);
+  saves.unshift(d);
+  if(saves.length > 20) saves.length = 20;
+  setSaveList(saves);
+}
+window.addEventListener('beforeunload', autoSave);
+document.addEventListener('visibilitychange', () => { if(document.hidden) autoSave(); });
+
+function applyLoadData(data){
+  initGame();
+  player.x=data.player.x; player.y=data.player.y; player.hp=data.player.hp;
+  player.maxHp=data.player.maxHp; player.spd=data.player.spd;
+  player.weap=data.player.weap; player.ammo=data.player.ammo;
+  wave=data.wave; kills=data.kills; gold=data.gold;
+  grenades=data.grenades||0; nukes=data.nukes||0;
+  hasAutoCollect=data.hasAutoCollect; speedLevel=data.speedLevel; hpLevel=data.hpLevel;
+  unlockedWeapons=new Set(data.unlockedWeapons||[]);
+  vehicle=data.vehicle; parkedVehicle=data.parkedVehicle;
+  buildings = data.buildings.map(b => ({ ...b, lastShot:0 }));
+  obstacles = data.obstacles;
+  waveActive=false; waveTimer=200;
+  return true;
+}
+
+function showLoadGallery(saves){
+  const list = document.getElementById('saveList');
+  list.innerHTML = '';
+  if(!saves || saves.length === 0){
+    list.innerHTML = '<p class="no-saves">No saved games yet. Press Save to create one!</p>';
+  } else {
+    saves.forEach((s, i) => {
+      const card = document.createElement('div');
+      card.className = 'save-card';
+      const bCount = s.buildings ? s.buildings.length : 0;
+      card.innerHTML =
+        (s.thumb ? '<img src="'+s.thumb+'" alt="Save">' : '<div class="no-thumb">No preview</div>') +
+        '<div class="save-name">' + (s.name || 'Save '+(i+1)) + '</div>' +
+        '<div class="save-details">' +
+          '\u2764\uFE0F ' + (s.player ? s.player.hp : '?') + ' HP \u00b7 \uD83D\uDC80 ' + (s.kills||0) + ' kills<br>' +
+          '\uD83C\uDF0A Wave ' + (s.wave||1) + ' \u00b7 \uD83D\uDCB0 ' + (s.gold||0) + 'g \u00b7 \uD83C\uDFD7 ' + bCount + ' buildings' +
+        '</div>' +
+        '<button class="save-delete" onclick="event.stopPropagation();deleteSave('+i+')">\uD83D\uDDD1 Delete</button>';
+      card.addEventListener('click', () => loadSaveSlot(i));
+      list.appendChild(card);
+    });
+  }
+  document.getElementById('loadOverlay').classList.add('show');
+}
+
+// expose to onclick handlers
+window.closeLoadGallery = function(){ document.getElementById('loadOverlay').classList.remove('show'); };
+window.deleteSave = function(index){
+  const saves = getSaveList();
+  saves.splice(index, 1);
+  setSaveList(saves);
+  showLoadGallery(saves);
+};
+
+function loadSaveSlot(index){
+  const saves = getSaveList();
+  const d = saves[index];
+  if(!d) return;
   try {
-    const data = JSON.parse(raw);
-    initGame(); // reset everything first
-    player.x=data.player.x; player.y=data.player.y; player.hp=data.player.hp;
-    player.maxHp=data.player.maxHp; player.spd=data.player.spd;
-    player.weap=data.player.weap; player.ammo=data.player.ammo;
-    wave=data.wave; kills=data.kills; gold=data.gold;
-    grenades=data.grenades||0; nukes=data.nukes||0;
-    hasAutoCollect=data.hasAutoCollect; speedLevel=data.speedLevel; hpLevel=data.hpLevel;
-    unlockedWeapons=new Set(data.unlockedWeapons);
-    vehicle=data.vehicle; parkedVehicle=data.parkedVehicle;
-    buildings = data.buildings.map(b => ({ ...b, lastShot:0 }));
-    obstacles = data.obstacles;
-    // start between waves
-    waveActive=false; waveTimer=200;
-    return true;
-  } catch(e){ return false; }
+    applyLoadData(d);
+    closeLoadGallery();
+    startPlaying();
+    floatTexts.push({ x:W/2, y:H/2-20, text:'GAME LOADED!', color:'#2ecc71', size:24, life:80, vy:-.5 });
+  } catch(e){}
 }
 
-function hasSave(){ return !!localStorage.getItem('zombieSurvivalSave'); }
+function openLoadGallery(){
+  const saves = getSaveList();
+  // Migrate old single-slot save if it exists
+  const oldRaw = localStorage.getItem('zombieSurvivalSave');
+  if(saves.length === 0 && oldRaw){
+    try {
+      const d = JSON.parse(oldRaw);
+      d.name = 'Old Save';
+      d.thumb = '';
+      d.date = new Date().toISOString();
+      saves.push(d);
+      setSaveList(saves);
+      localStorage.removeItem('zombieSurvivalSave');
+    } catch(e){}
+  }
+  if(saves.length === 0 && !oldRaw){
+    showLoadGallery([]);
+    return;
+  }
+  showLoadGallery(saves);
+}
+
+function showSaveMsg(text){
+  const el = document.getElementById('save-msg');
+  el.textContent = text;
+  setTimeout(() => { el.textContent = ''; }, 3000);
+}
+
+function hasSaves(){ return getSaveList().length > 0 || !!localStorage.getItem('zombieSurvivalSave'); }
 
 /* ===================== START / RESTART ===================== */
 function startPlaying(){
@@ -1657,7 +1945,7 @@ function startPlaying(){
 }
 
 document.getElementById('hs-start').textContent = highScore > 0 ? 'High Score: '+highScore+' kills' : '';
-if(hasSave()) document.getElementById('load-btn').style.display = 'inline-block';
+if(hasSaves()) document.getElementById('load-btn').style.display = 'inline-block';
 
 document.getElementById('start-btn').addEventListener('click', () => {
   initGame();
@@ -1665,17 +1953,17 @@ document.getElementById('start-btn').addEventListener('click', () => {
 });
 
 document.getElementById('load-btn').addEventListener('click', () => {
-  if(loadGame()){
-    startPlaying();
-    floatTexts.push({ x:W/2, y:H/2-20, text:'GAME LOADED!', color:'#2ecc71', size:24, life:80, vy:-.5 });
-  }
+  openLoadGallery();
 });
 
 document.getElementById('save-btn').addEventListener('click', () => {
   saveGame();
-  document.getElementById('save-msg').textContent = 'Game saved! (Wave '+wave+', '+kills+' kills)';
+  showSaveMsg('Game saved! (Wave '+wave+', '+kills+' kills)');
   sfx('gold');
-  setTimeout(() => { document.getElementById('save-msg').textContent = ''; }, 3000);
+});
+
+document.getElementById('load-gallery-btn').addEventListener('click', () => {
+  openLoadGallery();
 });
 
 document.getElementById('restart-btn').addEventListener('click', () => {
@@ -1683,11 +1971,23 @@ document.getElementById('restart-btn').addEventListener('click', () => {
   startPlaying();
 });
 
-// Auto-load save on page open, or show start screen
-if(hasSave()){
-  loadGame();
+// Auto-load most recent save on page open, or show start screen
+const _initSaves = getSaveList();
+if(_initSaves.length > 0){
+  applyLoadData(_initSaves[0]);
   startPlaying();
   floatTexts.push({ x:W/2, y:H/2-20, text:'GAME LOADED!', color:'#2ecc71', size:24, life:80, vy:-.5 });
+} else if(localStorage.getItem('zombieSurvivalSave')){
+  // Legacy single-slot fallback
+  const _oldRaw = localStorage.getItem('zombieSurvivalSave');
+  try {
+    const _oldData = JSON.parse(_oldRaw);
+    _oldData.name = 'Old Save'; _oldData.thumb = ''; _oldData.date = new Date().toISOString();
+    const _migrated = [_oldData]; setSaveList(_migrated); localStorage.removeItem('zombieSurvivalSave');
+    applyLoadData(_oldData);
+    startPlaying();
+    floatTexts.push({ x:W/2, y:H/2-20, text:'GAME LOADED!', color:'#2ecc71', size:24, life:80, vy:-.5 });
+  } catch(e){ initGame(); }
 } else {
   initGame();
 }
